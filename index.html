@@ -1,0 +1,1513 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numiq</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one centred column. Path view (units + lesson nodes) swaps with a lesson view. Bare bones on purpose. */
+:root {
+  --bg: #f6f7fb; --fg: #1d2233; --muted: #6b7285; --line: #d9dce6;
+  --accent: #3b6cf6; --done: #2fa66a; --locked: #c4c8d4; --bad: #d64545;
+  --card: #ffffff;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171f; --fg: #e8eaf2; --muted: #9aa1b5; --line: #2c3140;
+  --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171f; --fg: #e8eaf2; --muted: #9aa1b5; --line: #2c3140;
+  --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; }
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+header h1 { margin: 0; font-size: 24px; }
+.stats { display: flex; gap: 16px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stats b { color: var(--fg); }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); padding: 8px 14px; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .5; cursor: default; }
+.unit { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 8px; }
+.unit-head { align-self: stretch; padding: 10px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+.unit-head small { color: var(--muted); display: block; }
+.unit-head { display: flex; align-items: center; gap: 12px; }
+.unit-head .uh-text { flex: 1; }
+.unit-head .uh-prog { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.mini { width: 70px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.mini > div { height: 100%; background: var(--done); }
+.unit-head .testout { font-size: 13px; padding: 4px 10px; }
+.today { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 12px; margin-bottom: 6px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.tile small { color: var(--muted); }
+.tile button { align-self: flex-start; margin-top: auto; }
+.tile .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tile .row .mini { flex: 1; width: auto; }
+.kn { display: inline-block; min-width: 20px; margin-right: 10px; padding: 0 5px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; text-align: center; }
+.finish { align-items: center; text-align: center; gap: 18px; padding: 32px; }
+.finish .big { font-size: 44px; animation: pop .5s ease-out; }
+.finish h2 { margin: 0; }
+.finish .stats3 { display: flex; gap: 14px; }
+.finish .stats3 div { min-width: 120px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.finish .stats3 b { display: block; font-size: 24px; }
+.finish .stats3 small { color: var(--muted); }
+.finish .goalbar { width: 320px; }
+.finish .goalbar .mini { width: 100%; height: 10px; border-radius: 5px; }
+.bump { display: inline-block; animation: pop .6s ease-out .3s both; }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+.node { width: 64px; height: 64px; border-radius: 50%; border: none; color: #fff; font-weight: 700; padding: 0; }
+.node.done { background: var(--done); }
+.node.current { background: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent); }
+.node.locked { background: var(--locked); cursor: default; }
+.node.test { border-radius: 14px; }
+.node-row { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.node-row span { font-size: 13px; color: var(--muted); }
+.soon { color: var(--muted); font-size: 14px; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--done); width: 0; transition: width .2s; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
+.card .kind { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.q { font-size: 22px; }
+.answer-row { display: flex; gap: 8px; align-items: center; }
+input[type=text] { font: inherit; font-size: 20px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 180px; }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choices button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
+.fb { padding: 12px; border-radius: 8px; }
+.fb.good { background: color-mix(in srgb, var(--done) 18%, transparent); }
+.fb.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); }
+.actions { display: flex; justify-content: space-between; }
+.play { display: flex; gap: 16px; align-items: flex-start; }
+.play .left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; min-height: 440px; }
+.play .left > .actions:last-child { margin-top: auto !important; padding-top: 12px; justify-content: center; }
+.play .left > .actions:last-child span { display: none; }
+.play .left > .actions:last-child button { padding: 10px 40px; }
+.play .side { width: 240px; display: flex; flex-direction: column; gap: 12px; }
+.play .calc { width: auto; }
+.hint { background: var(--card); border: 1px solid var(--line); border-top: none; border-radius: 0 0 12px 12px; margin: 0 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; animation: drop .2s ease-out; }
+@keyframes drop { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.notepad { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.notepad .actions { align-items: center; }
+.notepad button { padding: 4px 10px; font-size: 13px; }
+textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-height: 140px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.calc { width: 220px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.calc input { width: 100%; box-sizing: border-box; font-size: 18px; text-align: right; }
+.calc .res { text-align: right; color: var(--muted); min-height: 1.2em; font-variant-numeric: tabular-nums; }
+.calc .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc .keys button { padding: 8px 0; }
+.calc-tag { font-size: 13px; color: var(--muted); }
+.wrap { max-width: 900px; }
+.footer { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.footer span:empty { display: none; }
+[hidden] { display: none !important; }
+.profile { display: flex; flex-direction: column; gap: 16px; }
+.prof-top { align-items: center; text-align: center; min-height: 0 !important; gap: 10px !important; padding-block: 28px !important; }
+.avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--line); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.prof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.block { border: 2px dashed var(--line); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; font-variant-numeric: tabular-nums; }
+.cal-h { text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding-bottom: 4px; }
+.cal-d { border: 1px dashed var(--line); border-radius: 8px; min-height: 52px; padding: 6px; font-size: 14px; }
+.cal-d.today { border: 2px solid var(--accent); color: var(--accent); font-weight: 700; }
+.stat { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+.cal-d { display: flex; flex-direction: column; gap: 2px; }
+.cal-d .fire { float: right; }
+.cal-d small { font-size: 11px; color: var(--muted); }
+.cal-d.active { border-style: solid; border-color: var(--done); }
+.cal-d.goal { border-style: solid; border-color: var(--done); background: color-mix(in srgb, var(--done) 22%, transparent); }
+.goal-row { display: flex; align-items: center; gap: 12px; }
+.av-pick { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 420px; }
+.av-pick button { font-size: 22px; padding: 4px 8px; }
+.av-pick button.sel, .prof-btns button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
+.field { display: flex; flex-direction: column; gap: 4px; text-align: left; width: 260px; font-size: 13px; color: var(--muted); }
+.field input { width: auto; font-size: 16px; }
+.set-row { display: flex; flex-direction: column; gap: 8px; }
+.stage { margin-top: 18px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; text-align: center; }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: .85em; line-height: 1.15; margin: 0 2px; }
+.fr > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 3px; }
+.acct { font-size: 12px; color: var(--muted); align-self: center; cursor: default; }
+.acct[onclick], .acct.click { cursor: pointer; text-decoration: underline dotted; }
+.login { max-width: 420px; margin: 40px auto; align-items: center; text-align: center; }
+.login .field { width: 300px; }
+.login input { padding: 9px 10px; font-size: 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.login .primary { width: 300px; padding: 10px; }
+.linkish { border: none; background: none; color: var(--accent); padding: 2px; font-size: 13px; }
+.code-box { width: 100%; height: 70px; font: 12px monospace; resize: vertical; }
+.acct.on { color: var(--done); }
+.dev { font-size: 12px; padding: 2px 8px; }
+.dev.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.gear { border: none; background: transparent; font-size: 20px; padding: 2px 6px; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 8px; background: var(--card); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); z-index: 5; }
+.tabbar button { min-width: 160px; border: none; background: transparent; color: var(--muted); font-weight: 600; }
+.tabbar button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+body { padding-bottom: 90px; }
+.pda { display: flex; gap: 16px; align-items: flex-start; }
+.pda-list { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; max-height: calc(100vh - 220px); overflow-y: auto; }
+.pda-list .cat { display: flex; justify-content: space-between; text-align: left; font-weight: 700; }
+.pda-list .items { display: flex; flex-direction: column; gap: 4px; padding-left: 10px; }
+.pda-list .entry { display: flex; justify-content: space-between; align-items: center; text-align: left; border-color: transparent; background: transparent; }
+.pda-list .entry:hover:not(:disabled) { border-color: var(--line); }
+.pda-list .entry.sel { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); }
+.pda-list .entry:disabled { color: var(--muted); cursor: default; }
+.new { background: var(--accent); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.pda-entry { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 24px; min-height: 300px; line-height: 1.6; }
+.pda-entry section { display: flex; flex-direction: column; gap: 8px; }
+.diag-box { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 20px; gap: 14px !important; }
+.dg-controls { display: flex; gap: 20px; flex-wrap: wrap; }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper button { width: 34px; height: 34px; padding: 0; font-size: 18px; }
+.stepper b { min-width: 24px; text-align: center; font-size: 18px; font-variant-numeric: tabular-nums; }
+.cap.small { font-size: 13px; }
+.pda-entry h2 { margin: 0; font-size: 22px; }
+.pda-entry h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.pda-entry .ex { font-size: 18px; line-height: 1.6; }
+.pda-entry .primary { align-self: flex-start; }
+.dg { width: 100%; max-width: 460px; height: auto; display: block; }
+.dg .b { fill: var(--bg); stroke: var(--fg); stroke-width: 1.5; }
+.dg .h { fill: color-mix(in srgb, var(--accent) 25%, var(--bg)); stroke: var(--accent); stroke-width: 1.5; }
+.dg .k { fill: color-mix(in srgb, var(--done) 25%, var(--bg)); stroke: var(--done); stroke-width: 1.5; }
+.dg .cross { stroke: var(--bad); stroke-width: 2.5; }
+.dg text { fill: var(--fg); font: 15px var(--font); text-anchor: middle; dominant-baseline: central; }
+.dg text.m { fill: var(--muted); font-size: 13px; }
+.dg .ln { stroke: var(--fg); stroke-width: 1.5; fill: none; }
+.dg .acc { stroke: var(--accent); stroke-width: 2; fill: none; }
+.cap { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } .hint { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Numiq</h1>
+    <div class="stats"><span>🔥 <b id="streak">0</b> day streak</span><span>⭐ <b id="xp">0</b> XP</span><span id="acct" class="acct" title="Where your progress is saved">💾 This browser</span><button id="dev" class="dev" title="Developer mode: unlocks everything">🔓 Dev</button><button id="gear" class="gear" aria-label="Settings" title="Settings" hidden>⚙️</button></div>
+  </header>
+  <main id="app"></main>
+  <div class="footer"><button id="reset">Reset progress</button> <span id="resetMsg"></span></div>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <button data-view="learn">📘 Learn</button>
+  <button data-view="notes">🗂️ Notes <span id="notesNew"></span></button>
+  <button data-view="profile">👤 Profile</button>
+  <button data-view="soon">🚧 Coming soon</button>
+</nav>
+
+<script>
+// ---------- helpers ----------
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[rnd(0, arr.length - 1)];
+const sup = (b, e) => `${b}<sup>${e}</sup>`;
+const signed = n => (n < 0 ? `− ${-n}` : `+ ${n}`);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// ---------- content ----------
+// Each lesson: idea + example card, then `count` generated practice questions.
+// A generator returns { q, a, explain, suffix?, choices? }.
+const MAIN_UNITS = [
+  { id: 'u1', title: 'Number power-up', desc: 'Powers, roots, scientific notation', lessons: [
+    { id: 'u1l1', title: 'What is a power?',
+      idea: `A power is repeated multiplication. ${sup(2,3)} means 2 × 2 × 2. The small number is the <b>exponent</b>: it says how many times to multiply.`,
+      example: `${sup(5,2)} = 5 × 5 = 25<br>${sup(3,4)} = 3 × 3 × 3 × 3 = 81`,
+      gen(lv = 0) { const b = rnd(2, 6 + lv), e = rnd(2, Math.min(b <= 3 ? 5 + lv : 3 + Math.floor(lv / 2), 9)); return { q: `${sup(b,e)} = ?`, a: b ** e, calc: b ** e > 50, explain: `${sup(b,e)} = ${Array(e).fill(b).join(' × ')} = ${b ** e}` }; } },
+    { id: 'u1l2', title: 'Multiplying powers',
+      idea: `When you multiply powers with the <b>same base</b>, add the exponents: a<sup>m</sup> × a<sup>n</sup> = a<sup>m+n</sup>.`,
+      example: `${sup(2,3)} × ${sup(2,4)} = (2×2×2) × (2×2×2×2) = ${sup(2,7)}`,
+      gen(lv = 0) { const b = pick(['2','3','5','x','a']), m = rnd(2, 9 + 3 * lv), n = rnd(2, 9 + 3 * lv);
+        if (lv >= 3) { const r = rnd(2, 9 + 2 * lv); return { q: `${sup(b,m)} × ${sup(b,n)} × ${sup(b,r)} = ${b}<sup>?</sup>`, a: m + n + r, explain: `Add all the exponents: ${m} + ${n} + ${r} = ${m + n + r}` }; }
+        return { q: `${sup(b,m)} × ${sup(b,n)} = ${b}<sup>?</sup>`, a: m + n, explain: `Add the exponents: ${m} + ${n} = ${m + n}` }; } },
+    { id: 'u1l3', title: 'Dividing powers, power of a power',
+      idea: `Dividing powers with the same base: <b>subtract</b> the exponents. a<sup>m</sup> ÷ a<sup>n</sup> = a<sup>m−n</sup>.<br>A power of a power: <b>multiply</b> the exponents. (a<sup>m</sup>)<sup>n</sup> = a<sup>m×n</sup>.`,
+      example: `${sup(3,8)} ÷ ${sup(3,5)} = ${sup(3,3)}<br>(${sup(2,3)})<sup>4</sup> = ${sup(2,12)}`,
+      gen(lv = 0) { const b = pick(['2','3','7','x','y']);
+        if (Math.random() < .5) { const n = rnd(2, 6 + 2 * lv), m = n + rnd(1, 7 + 2 * lv); return { q: `${sup(b,m)} ÷ ${sup(b,n)} = ${b}<sup>?</sup>`, a: m - n, explain: `Subtract the exponents: ${m} − ${n} = ${m - n}` }; }
+        const m = rnd(2, 6 + lv), n = rnd(2, 5 + lv); return { q: `(${sup(b,m)})<sup>${n}</sup> = ${b}<sup>?</sup>`, a: m * n, explain: `Multiply the exponents: ${m} × ${n} = ${m * n}` }; } },
+    { id: 'u1l4', title: 'Square and cube roots',
+      idea: `The <b>square root</b> √n is the number that, multiplied by itself, gives n. The <b>cube root</b> ∛n is the number that, used three times, gives n.`,
+      example: `√49 = 7, because 7 × 7 = 49<br>∛64 = 4, because 4 × 4 × 4 = 64`,
+      gen(lv = 0) { if (Math.random() < .65) { const k = rnd(2, 15 + 4 * lv); return { q: `√${k * k} = ?`, a: k, calc: k > 9, explain: `${k} × ${k} = ${k * k}` }; }
+        const k = rnd(2, 6 + lv); return { q: `∛${k ** 3} = ?`, a: k, calc: k > 3, explain: `${k} × ${k} × ${k} = ${k ** 3}` }; } },
+    { id: 'u1l5', title: 'Scientific notation',
+      idea: `Big numbers can be written as a number between 1 and 10, times a power of 10. 10<sup>4</sup> = 10 000, so 3.2 × 10<sup>4</sup> = 32 000.`,
+      example: `5.7 × 10<sup>3</sup> = 5 700<br>45 000 = 4.5 × 10<sup>4</sup> (move the decimal point 4 places)`,
+      gen(lv = 0) { const m = lv >= 2 ? rnd(101, 999) / 100 : rnd(11, 99) / 10, e = rnd(2, 6 + lv), v = Math.round(m * 10 ** e);
+        if (Math.random() < .5) return { q: `Write ${m} × 10<sup>${e}</sup> as a normal number.`, a: v, explain: `Move the decimal point ${e} places right: ${v.toLocaleString('en-IE')}` };
+        return { q: `${v.toLocaleString('en-IE')} = ${m} × 10<sup>?</sup>`, a: e, explain: `The decimal point moves ${e} places, so the exponent is ${e}.` }; } },
+  ]},
+  { id: 'u2', title: 'Algebra workshop', desc: 'Like terms, brackets, factoring, formulas', lessons: [
+    { id: 'u2l1', title: 'Collecting like terms',
+      idea: `Terms with the same letter are "like terms" and can be added or subtracted: 3x + 5x = 8x. You can't combine x and y, or x and a plain number.`,
+      example: `7a − 2a = 5a<br>4x + 3 + 2x = 6x + 3`,
+      gen(lv = 0) { const v = pick(['x','a','y']), a = rnd(2, 12 + 5 * lv), b = rnd(1, 9 + 5 * lv), plus = Math.random() < .6;
+        return { q: `${a}${v} ${plus ? '+' : '−'} ${b}${v} = ?${v}`, a: plus ? a + b : a - b, suffix: v, explain: `${a} ${plus ? '+' : '−'} ${b} = ${plus ? a + b : a - b}` }; } },
+    { id: 'u2l2', title: 'Expanding brackets',
+      idea: `The number outside the bracket multiplies <b>everything</b> inside: a(b + c) = ab + ac.`,
+      example: `3(x + 4) = 3x + 12<br>5(x − 2) = 5x − 10`,
+      gen(lv = 0) { const a = rnd(2, 9 + 2 * lv), b = rnd(1, 9 + 3 * lv), minus = Math.random() < .4;
+        return { q: `${a}(x ${minus ? '−' : '+'} ${b}) = ${a}x ${minus ? '−' : '+'} ?`, a: a * b, explain: `${a} × ${b} = ${a * b}` }; } },
+    { id: 'u2l3', title: 'Factoring out',
+      idea: `Factoring is expanding backwards: find a number that divides every term and take it outside a bracket.`,
+      example: `12x + 8 = 4(3x + 2), because 4 × 3x = 12x and 4 × 2 = 8`,
+      gen(lv = 0) { const g = rnd(2, 6 + lv), p = rnd(2, 7 + lv), q = rnd(1, 9 + 2 * lv);
+        return { q: `${g * p}x + ${g * q} = ${g}(${p}x + ?)`, a: q, explain: `${g} × ? = ${g * q}, so ? = ${q}` }; } },
+    { id: 'u2l4', title: 'Rearranging formulas',
+      idea: `To get a letter on its own, undo what is being done to it, doing the same thing to both sides.`,
+      example: `A = l × w. Divide both sides by l: w = A ÷ l`,
+      gen(lv = 0) { return pick([
+        { q: 'A = l × w. Which is right?', choices: ['w = A ÷ l', 'w = A × l', 'w = A − l', 'w = l ÷ A'], a: 'w = A ÷ l', explain: 'Divide both sides by l.' },
+        { q: 'P = 4s. Which is right?', choices: ['s = P ÷ 4', 's = 4P', 's = P − 4', 's = 4 ÷ P'], a: 's = P ÷ 4', explain: 'Divide both sides by 4.' },
+        { q: 'y = x + 7. Which is right?', choices: ['x = y − 7', 'x = y + 7', 'x = 7 − y', 'x = 7y'], a: 'x = y − 7', explain: 'Subtract 7 from both sides.' },
+        { q: 'd = s × t. Which is right?', choices: ['t = d ÷ s', 't = d × s', 't = s ÷ d', 't = d − s'], a: 't = d ÷ s', explain: 'Divide both sides by s.' },
+        { q: 'v = u + at. Which is right?', choices: ['u = v − at', 'u = v + at', 'u = at − v', 'u = v ÷ at'], a: 'u = v − at', explain: 'Subtract at from both sides.' },
+        { q: 'y = mx + c. Which is right?', choices: ['x = (y − c) ÷ m', 'x = y − c ÷ m', 'x = (y + c) ÷ m', 'x = m(y − c)'], a: 'x = (y − c) ÷ m', explain: 'Subtract c from both sides, then divide by m.' },
+        { q: 'A = ½bh. Which is right?', choices: ['h = 2A ÷ b', 'h = A ÷ 2b', 'h = 2Ab', 'h = A − ½b'], a: 'h = 2A ÷ b', explain: 'Multiply both sides by 2, then divide by b.' },
+        { q: 'C = 2πr. Which is right?', choices: ['r = C ÷ 2π', 'r = 2πC', 'r = C − 2π', 'r = 2π ÷ C'], a: 'r = C ÷ 2π', explain: 'Divide both sides by 2π.' },
+        { q: 'F = 1.8C + 32. Which is right?', choices: ['C = (F − 32) ÷ 1.8', 'C = F ÷ 1.8 − 32', 'C = (F + 32) ÷ 1.8', 'C = 1.8(F − 32)'], a: 'C = (F − 32) ÷ 1.8', explain: 'Subtract 32 from both sides, then divide by 1.8.' },
+      ].slice(0, 5 + Math.min(lv, 4))); } },
+  ]},
+  { id: 'u3', title: 'Equations', desc: 'Solving linear equations and word problems', lessons: [
+    { id: 'u3l1', title: 'One-step equations',
+      idea: `An equation is a balance. Whatever you do to one side, do to the other, until x is on its own.`,
+      example: `x + 7 = 12 → take 7 from both sides → x = 5<br>4x = 28 → divide both sides by 4 → x = 7`,
+      gen(lv = 0) { if (Math.random() < .5) { const x = rnd(-9 - 3 * lv, 15 + 5 * lv), a = rnd(1, 15 + 5 * lv); return { q: `x + ${a} = ${x + a}.  x = ?`, a: x, explain: `${x + a} − ${a} = ${x}` }; }
+        const x = rnd(-9 - 3 * lv, 12 + 4 * lv), a = rnd(2, 9 + 2 * lv); return { q: `${a}x = ${a * x}.  x = ?`, a: x, explain: `${a * x} ÷ ${a} = ${x}` }; } },
+    { id: 'u3l2', title: 'Two-step equations',
+      idea: `Undo the adding or subtracting first, then undo the multiplying.`,
+      example: `3x + 5 = 20 → 3x = 15 → x = 5`,
+      gen(lv = 0) { const x = rnd(-8 - 2 * lv, 10 + 3 * lv), a = rnd(2, 9 + 2 * lv), b = rnd(-15 - 5 * lv, 15 + 5 * lv) || 4, c = a * x + b;
+        return { q: `${a}x ${signed(b)} = ${c}.  x = ?`, a: x, calc: Math.abs(c) > 50, explain: `${a}x = ${c - b}, so x = ${x}` }; } },
+    { id: 'u3l3', title: 'Equations with brackets',
+      idea: `Expand the bracket first, then solve like before. Or divide both sides by the number outside the bracket.`,
+      example: `4(x − 2) = 20 → x − 2 = 5 → x = 7`,
+      gen(lv = 0) { const x = rnd(-6 - 2 * lv, 10 + 3 * lv), a = rnd(2, 7 + 2 * lv), b = rnd(1, 9 + 3 * lv), minus = Math.random() < .5, c = a * (minus ? x - b : x + b);
+        return { q: `${a}(x ${minus ? '−' : '+'} ${b}) = ${c}.  x = ?`, a: x, calc: Math.abs(c) > 40, explain: `x ${minus ? '−' : '+'} ${b} = ${c / a}, so x = ${x}` }; } },
+    { id: 'u3l4', title: 'Word problems',
+      idea: `Turn the words into an equation. Call the unknown number x, then solve.`,
+      example: `"I think of a number, double it and add 3. I get 17." → 2x + 3 = 17 → x = 7`,
+      gen(lv = 0) { const x = rnd(2, 20 + 5 * lv), a = rnd(2, 6 + lv), b = rnd(1, 20 + 5 * lv);
+        return { q: `I think of a number, multiply it by ${a} and add ${b}. I get ${a * x + b}. What was my number?`, a: x, calc: true, explain: `${a}x + ${b} = ${a * x + b} → ${a}x = ${a * x} → x = ${x}` }; } },
+    { id: 'u3l5', title: 'Letters on both sides',
+      idea: `When x is on both sides, move all the x terms to one side first (take the smaller x term away from both sides), then solve as normal.`,
+      example: `5x + 3 = 2x + 15 → take 2x from both sides → 3x + 3 = 15 → 3x = 12 → x = 4`,
+      gen(lv = 0) { const x = rnd(-5 - lv, 10 + 2 * lv), a = rnd(3, 9 + lv), c = rnd(1, a - 1), b = rnd(-10 - 3 * lv, 10 + 3 * lv) || 2, d = (a - c) * x + b;
+        return { q: `${a}x ${signed(b)} = ${co(c)}x ${signed(d)}.  x = ?`, a: x, calc: Math.abs(d) > 40, explain: `Take ${co(c)}x from both sides: ${a - c === 1 ? '' : a - c}x ${signed(b)} = ${d}, so ${a - c === 1 ? '' : a - c}x = ${d - b}, x = ${x}` }; } },
+  ]},
+];
+
+// ---------- first-year book (Text & Tests 1) ----------
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+const frac = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+// Simplest form as a string the answer checker understands: "3/4", "-1/2" or "2".
+function fracStr(n, d) { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; }
+const fracHtml = (n, d) => { const t = fracStr(n, d); if (!t.includes('/')) return t; const [a, b] = t.split('/'); return a.startsWith('-') ? `−${frac(a.slice(1), b)}` : frac(a, b); };
+const neg = n => (n < 0 ? `(−${-n})` : String(n));
+const factorsOf = n => { const f = []; for (let i = 1; i <= n; i++) if (n % i === 0) f.push(i); return f; };
+const isPrime = n => n > 1 && factorsOf(n).length === 2;
+const dec = n => Number(n.toFixed(6)); // tidy decimals: 0.1 + 0.2 → 0.3
+const supU = (v, e) => v + String(e).split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join(''); // x⁵ as plain text (for multiple choice)
+
+const BOOK_UNITS = [
+  { id: 'b1', stage: 'book', title: 'Natural numbers', desc: 'Book chapter 1: factors, primes, HCF, LCM, order of operations, rounding', lessons: [
+    { id: 'b1l1', title: 'Factors and primes',
+      idea: `A <b>factor</b> of a number divides into it exactly. A <b>prime</b> number has exactly two factors: 1 and itself. 1 is not prime.<br><br>
+        <b>⚡ Shortcuts</b><br>
+        • <b>Find factors in pairs.</b> Try 1, 2, 3… and each one that works gives you two factors: 3 × 8 = 24 gives 3 and 8. Stop when the pairs meet in the middle (at the square root).<br>
+        • <b>Divisibility tricks:</b> 2 if it's even · 3 if its digits add to a multiple of 3 · 4 if the last two digits divide by 4 · 5 if it ends in 0 or 5 · 6 if it works for 2 and 3 · 9 if its digits add to a multiple of 9 · 10 if it ends in 0.<br>
+        • <b>Is it prime?</b> Only test the primes 2, 3, 5 and 7 (up to the square root). If none divide in, it's prime. For numbers under 100 that's all you ever need.<br>
+        • <b>Counting factors:</b> count the pairs and double it. If a pair is a number times itself (6 × 6 = 36), count it once. Square numbers always have an odd number of factors.`,
+      example: `Factors of 36 in pairs: 1 × 36, 2 × 18, 3 × 12, 4 × 9, 6 × 6<br>That's 4 pairs (8 factors) + 6 once = 9 factors<br>91: not even, digits 9 + 1 = 10 (not ÷3), doesn't end in 0/5, 91 ÷ 7 = 13 → not prime`,
+      gen(lv = 0) { const t = rnd(0, 4);
+        if (t === 0) { const n = rnd(2, 50 + 25 * lv); return { q: `Is ${n} a prime number?`, choices: ['Yes', 'No'], a: isPrime(n) ? 'Yes' : 'No', explain: isPrime(n) ? `None of 2, 3, 5, 7 divide into ${n}, so it's prime.` : `${n} = ${factorsOf(n)[1]} × ${n / factorsOf(n)[1]}` }; }
+        if (t === 1) { const d = pick([2, 3, 4, 5, 6, 9, 10]), n = rnd(20, 200 + 200 * lv), yes = n % d === 0;
+          const why = { 2: 'even?', 3: `digits add to ${String(n).split('').reduce((a, c) => a + +c, 0)}`, 4: `last two digits ${n % 100}`, 5: 'ends in 0 or 5?', 6: 'works for both 2 and 3?', 9: `digits add to ${String(n).split('').reduce((a, c) => a + +c, 0)}`, 10: 'ends in 0?' }[d];
+          return { q: `Is ${d} a factor of ${n}?`, choices: ['Yes', 'No'], a: yes ? 'Yes' : 'No', explain: `Check: ${why} ${yes ? `Yes, ${n} = ${d} × ${n / d}` : `No, ${d} doesn't divide in.`}` }; }
+        if (t === 2) { const n = pick([12, 18, 20, 24, 28, 30, 36, 40, 42, 48, 54, 56, 60, 72, 84, 90, 96, 100]) * (lv >= 3 ? 2 : 1), f = factorsOf(n).filter(x => x > 1 && x < n), a = pick(f);
+          return { q: `${a} × ? = ${n}`, a: n / a, explain: `${n} ÷ ${a} = ${n / a}, so ${a} and ${n / a} are a factor pair.` }; }
+        if (t === 3) { const n = rnd(12, 60 + 20 * lv), f = factorsOf(n), no = []; for (let x = 2; x < n && no.length < 10; x++) if (n % x) no.push(x);
+          const right = pick(f.filter(x => x > 1 && x < n).concat(f.length === 2 ? [n] : [])), choices = shuffle(no).slice(0, 3).map(String).concat(String(right));
+          return { q: `Which of these is a factor of ${n}?`, choices, a: String(right), explain: `${n} ÷ ${right} = ${n / right}` }; }
+        const n = rnd(6, 30 + 6 * lv), f = factorsOf(n), pairs = f.filter(v => v * v <= n);
+        return { q: `How many factors does ${n} have? (Tip: find the pairs)`, a: f.length, explain: `Pairs: ${pairs.map(v => `${v} × ${n / v}`).join(', ')} → ${f.length} factors` }; } },
+    { id: 'b1l2', title: 'HCF and LCM',
+      idea: `The <b>highest common factor</b> (HCF) is the biggest number that divides into both. The <b>lowest common multiple</b> (LCM) is the smallest number both divide into.`,
+      example: `12 and 18: HCF = 6, LCM = 36`,
+      gen(lv = 0) { let p, q; do { p = rnd(1, 5 + lv); q = rnd(1, 5 + lv); } while (p === q || gcd(p, q) !== 1); const g = rnd(2, 6 + lv), a = g * p, b = g * q;
+        return Math.random() < .5 ? { q: `What is the HCF of ${a} and ${b}?`, a: g, explain: `${g} divides both: ${a} = ${g} × ${p}, ${b} = ${g} × ${q}` }
+          : { q: `What is the LCM of ${a} and ${b}?`, a: g * p * q, calc: g * p * q > 60, explain: `Multiples of ${Math.max(a, b)}: the first one ${Math.min(a, b)} goes into is ${g * p * q}` }; } },
+    { id: 'b1l3', title: 'Order of operations',
+      idea: `Do things in this order: <b>B</b>rackets, <b>I</b>ndices (powers), <b>D</b>ivision and <b>M</b>ultiplication, then <b>A</b>ddition and <b>S</b>ubtraction (BIMDAS).`,
+      example: `3 + 4 × 2 = 3 + 8 = 11 (multiply first)<br>(3 + 4) × 2 = 7 × 2 = 14 (brackets first)`,
+      gen(lv = 0) { const a = rnd(2, 9 + lv), b = rnd(2, 9 + lv), c = rnd(2, 9), d = rnd(2, 6);
+        return pick([
+          { q: `${a} + ${b} × ${c} = ?`, a: a + b * c, explain: `Multiply first: ${b} × ${c} = ${b * c}, then ${a} + ${b * c} = ${a + b * c}` },
+          { q: `(${a} + ${b}) × ${c} = ?`, a: (a + b) * c, explain: `Brackets first: ${a + b}, then × ${c} = ${(a + b) * c}` },
+          { q: `${a * b} − ${c * d} ÷ ${d} = ?`, a: a * b - c, explain: `Divide first: ${c * d} ÷ ${d} = ${c}, then ${a * b} − ${c} = ${a * b - c}` },
+          { q: `${a} × ${b} − ${c} = ?`, a: a * b - c, explain: `Multiply first: ${a * b}, then − ${c} = ${a * b - c}` },
+          { q: `${a} + ${sup(c, 2)} = ?`, a: a + c * c, explain: `Power first: ${sup(c, 2)} = ${c * c}, then ${a} + ${c * c} = ${a + c * c}` },
+        ]); } },
+    { id: 'b1l4', title: 'Rounding and estimating',
+      idea: `To round, look at the digit just after the place you want. 5 or more: round up. 4 or less: round down.`,
+      example: `3 476 to the nearest 100 → look at the 7 → 3 500<br>3.42 to 1 decimal place → look at the 2 → 3.4`,
+      gen(lv = 0) { if (lv >= 2 && Math.random() < .5) { const v = rnd(1000, 99999) / 1000; return { q: `Round ${v} to 1 decimal place.`, a: Math.round(v * 10) / 10, explain: `Look at the second decimal digit.` }; }
+        const n = rnd(100, 9999 + 5000 * lv), to = pick([10, 100, 1000]); return { q: `Round ${n} to the nearest ${to}.`, a: Math.round(n / to) * to, explain: `Look at the digit after the ${to === 10 ? 'tens' : to === 100 ? 'hundreds' : 'thousands'} place.` }; } },
+  ]},
+  { id: 'b2', stage: 'book', title: 'Integers', desc: 'Book chapter 2: negative numbers', lessons: [
+    { id: 'b2l1', title: 'Adding and subtracting integers',
+      idea: `Picture a number line. Adding moves right, subtracting moves left. Subtracting a negative is the same as adding: 5 − (−3) = 5 + 3.`,
+      example: `−4 + 7 = 3<br>2 − 9 = −7<br>5 − (−3) = 8`,
+      gen(lv = 0) { const a = rnd(-12 - 5 * lv, 12 + 5 * lv), b = rnd(-12 - 5 * lv, 12 + 5 * lv) || 3, plus = Math.random() < .5;
+        return { q: `${neg(a)} ${plus ? '+' : '−'} ${neg(b)} = ?`, a: plus ? a + b : a - b, explain: plus ? `Start at ${a}, move ${b < 0 ? 'left' : 'right'} ${Math.abs(b)}.` : `Subtracting ${neg(b)} is the same as adding ${-b}.` }; } },
+    { id: 'b2l2', title: 'Multiplying and dividing integers',
+      idea: `Same signs give a <b>positive</b> answer. Different signs give a <b>negative</b> answer. Works for × and ÷.`,
+      example: `(−3) × (−4) = 12<br>(−20) ÷ 5 = −4`,
+      gen(lv = 0) { let a = rnd(-12 - 2 * lv, 12 + 2 * lv) || -3, b = rnd(-12, 12) || -2;
+        if (Math.random() < .5) return { q: `${neg(a)} × ${neg(b)} = ?`, a: a * b, explain: `${Math.abs(a)} × ${Math.abs(b)} = ${Math.abs(a * b)}, ${(a < 0) === (b < 0) ? 'same signs, so positive' : 'different signs, so negative'}` };
+        return { q: `${neg(a * b)} ÷ ${neg(b)} = ?`, a: a, explain: `${Math.abs(a * b)} ÷ ${Math.abs(b)} = ${Math.abs(a)}, ${(a * b < 0) === (b < 0) ? 'same signs, so positive' : 'different signs, so negative'}` }; } },
+  ]},
+  { id: 'b3', stage: 'book', title: 'Fractions', desc: 'Book chapter 3', lessons: [
+    { id: 'b3l1', title: 'Equivalent fractions',
+      idea: `Multiply (or divide) the top and bottom by the same number and the fraction stays the same size. Type fraction answers like 3/4.`,
+      example: `${frac(2, 3)} = ${frac(8, 12)} (top and bottom × 4)<br>${frac(10, 15)} = ${frac(2, 3)} (top and bottom ÷ 5)`,
+      gen(lv = 0) { let n, d; do { d = rnd(2, 9 + lv); n = rnd(1, d - 1); } while (gcd(n, d) !== 1); const k = rnd(2, 6 + lv);
+        return Math.random() < .5 ? { q: `${frac(n, d)} = ${frac('?', d * k)}`, a: n * k, explain: `${d} × ${k} = ${d * k}, so the top is ${n} × ${k} = ${n * k}` }
+          : { q: `Simplify ${frac(n * k, d * k)}`, a: `${n}/${d}`, explain: `Divide top and bottom by ${k}.` }; } },
+    { id: 'b3l2', title: 'Adding and subtracting fractions',
+      idea: `Make the bottoms (denominators) the same first, then add or subtract the tops. Give your answer in its simplest form.`,
+      example: `${frac(1, 2)} + ${frac(1, 3)} = ${frac(3, 6)} + ${frac(2, 6)} = ${frac(5, 6)}`,
+      gen(lv = 0) { const b = rnd(2, 6 + lv), d = rnd(2, 6 + lv), a = rnd(1, b - 1), c = rnd(1, d - 1), plus = Math.random() < .6;
+        const n = plus ? a * d + c * b : a * d - c * b, den = b * d;
+        return { q: `${frac(a, b)} ${plus ? '+' : '−'} ${frac(c, d)} = ?`, a: fracStr(n, den), explain: `Common bottom ${den}: ${frac(a * d, den)} ${plus ? '+' : '−'} ${frac(c * b, den)} = ${fracHtml(n, den)}` }; } },
+    { id: 'b3l3', title: 'Multiplying and dividing fractions',
+      idea: `Multiply: tops times tops, bottoms times bottoms. Divide: flip the second fraction and multiply.`,
+      example: `${frac(2, 3)} × ${frac(3, 4)} = ${frac(6, 12)} = ${frac(1, 2)}<br>${frac(1, 2)} ÷ ${frac(1, 4)} = ${frac(1, 2)} × ${frac(4, 1)} = 2`,
+      gen(lv = 0) { const a = rnd(1, 5 + lv), b = rnd(2, 7 + lv), c = rnd(1, 5 + lv), d = rnd(2, 7 + lv);
+        if (Math.random() < .5) return { q: `${frac(a, b)} × ${frac(c, d)} = ?`, a: fracStr(a * c, b * d), explain: `${a} × ${c} = ${a * c} on top, ${b} × ${d} = ${b * d} on the bottom → ${fracHtml(a * c, b * d)}` };
+        return { q: `${frac(a, b)} ÷ ${frac(c, d)} = ?`, a: fracStr(a * d, b * c), explain: `Flip and multiply: ${frac(a, b)} × ${frac(d, c)} = ${fracHtml(a * d, b * c)}` }; } },
+    { id: 'b3l4', title: 'Fraction of a number',
+      idea: `To find a fraction of a number: divide by the bottom, then multiply by the top.`,
+      example: `${frac(3, 4)} of 20: 20 ÷ 4 = 5, 5 × 3 = 15`,
+      gen(lv = 0) { const d = rnd(2, 9 + lv), n = rnd(1, d - 1), k = rnd(2, 12 + 4 * lv);
+        return { q: `What is ${frac(n, d)} of ${d * k}?`, a: n * k, calc: d * k > 60, explain: `${d * k} ÷ ${d} = ${k}, then × ${n} = ${n * k}` }; } },
+  ]},
+  { id: 'b4', stage: 'book', title: 'Probability', desc: 'Book chapter 4', lessons: [
+    { id: 'b4l1', title: 'Listing outcomes',
+      idea: `To count all the outcomes of two things together, multiply how many ways each one can go. A two-way table lists them all.`,
+      example: `A coin (2 ways) and a die (6 ways): 2 × 6 = 12 outcomes`,
+      gen(lv = 0) { const things = [['a coin', 2], ['a die', 6], ['a spinner with 4 colours', 4], ['a spinner with 3 sections', 3], ['a card from the 4 suits', 4], ['a day of the week', 7]];
+        const [x, y] = [pick(things), pick(things)];
+        return { q: `You use ${x[0]} and ${y[0]}. How many outcomes are there?`, a: x[1] * y[1], explain: `${x[1]} × ${y[1]} = ${x[1] * y[1]}` }; } },
+    { id: 'b4l2', title: 'Calculating probability',
+      idea: `Probability = number of ways it can happen ÷ total number of outcomes. It is always between 0 (impossible) and 1 (certain).`,
+      example: `A bag has 3 red and 5 blue sweets. P(red) = ${frac(3, 8)}`,
+      gen(lv = 0) { if (Math.random() < .6) { const r = rnd(1, 9 + lv), bl = rnd(1, 9 + lv), g = rnd(0, 5 + lv), t = r + bl + g, [name, c] = pick([['red', r], ['blue', bl], ['green', g]]);
+          return { q: `A bag has ${r} red, ${bl} blue and ${g} green counters. What is the probability of picking ${name}?`, a: fracStr(c, t), explain: `${c} ${name} out of ${t} → ${fracHtml(c, t)}` }; }
+        const k = rnd(1, 5); return { q: `You roll a die. What is the probability of getting more than ${k}?`, a: fracStr(6 - k, 6), explain: `${6 - k} of the 6 numbers are more than ${k} → ${fracHtml(6 - k, 6)}` }; } },
+  ]},
+  { id: 'b6', stage: 'book', title: 'Decimals', desc: 'Book chapter 5', lessons: [
+    { id: 'b6l1', title: 'Adding and subtracting decimals',
+      idea: `Line up the decimal points, fill gaps with zeros, then add or subtract like normal numbers.`,
+      example: `3.4 + 2.75 = 3.40 + 2.75 = 6.15<br>5 − 1.8 = 5.0 − 1.8 = 3.2`,
+      gen(lv = 0) { const a = rnd(10, 200 + 300 * lv) / pick([10, 100]), b = rnd(10, 200 + 300 * lv) / pick([10, 100]), plus = Math.random() < .5 || a < b;
+        return { q: `${a} ${plus ? '+' : '−'} ${b} = ?`, a: dec(plus ? a + b : a - b), calc: lv >= 3, explain: `Line up the points: ${a} ${plus ? '+' : '−'} ${b} = ${dec(plus ? a + b : a - b)}` }; } },
+    { id: 'b6l2', title: 'Multiplying and dividing decimals',
+      idea: `Multiply: ignore the points, multiply, then put back as many decimal places as the question had in total. Divide: multiply both numbers by 10 (or 100) until you divide by a whole number.`,
+      example: `0.3 × 0.4: 3 × 4 = 12, two decimal places → 0.12<br>4.8 ÷ 0.6 = 48 ÷ 6 = 8`,
+      gen(lv = 0) { const t = pick(lv < 1 ? [0, 1] : [0, 1, 2]);
+        if (t === 0) { const a = rnd(2, 9 + lv), b = rnd(2, 9 + lv), x = a / 10, y = pick([b, b / 10]); return { q: `${x} × ${y} = ?`, a: dec(x * y), explain: `${a} × ${b} = ${a * b}, then count the decimal places → ${dec(x * y)}` }; }
+        if (t === 1) { const d = rnd(2, 9), k = rnd(2, 9 + lv), x = d / 10; return { q: `${dec(x * k)} ÷ ${x} = ?`, a: k, explain: `Multiply both by 10: ${dec(x * k * 10)} ÷ ${d} = ${k}` }; }
+        const v = rnd(11, 999) / 100, p = pick([10, 100, 1000]), m = Math.random() < .5;
+        return { q: `${v} ${m ? '×' : '÷'} ${p} = ?`, a: dec(m ? v * p : v / p), explain: `${m ? '×' : '÷'} ${p} moves the point ${String(p).length - 1} place${p > 10 ? 's' : ''} ${m ? 'right' : 'left'}.` }; } },
+    { id: 'b6l3', title: 'Rounding off decimals',
+      idea: `Find the last digit you are keeping. Look at the next digit: 5 or more, round up; 4 or less, leave it.`,
+      example: `6.473 to 2 decimal places → 6.47<br>6.473 to 1 decimal place → 6.5<br>6.473 to the nearest whole number → 6`,
+      gen(lv = 0) { const v = rnd(1001, 99999 + 50000 * lv) / 1000, p = pick([0, 1, 2]), f = 10 ** p;
+        return { q: `Round ${v} to ${p ? `${p} decimal place${p > 1 ? 's' : ''}` : 'the nearest whole number'}.`, a: dec(Math.round(v * f) / f), explain: `Look at the digit after the ${p ? `${p === 1 ? 'first' : 'second'} decimal place` : 'units'}.` }; } },
+    { id: 'b6l4', title: 'Probability and decimals',
+      idea: `Probabilities can be decimals between 0 and 1. The probability something does <b>not</b> happen is 1 − the probability it does. Expected number = probability × number of tries.`,
+      example: `P(rain) = 0.3, so P(no rain) = 1 − 0.3 = 0.7<br>P(red) = 0.25, spin 40 times → expect 0.25 × 40 = 10 reds`,
+      gen(lv = 0) { const p = rnd(1, 19) * 5 / 100;
+        if (Math.random() < .5) return { q: `The probability of winning a game is ${p}. What is the probability of not winning?`, a: dec(1 - p), explain: `1 − ${p} = ${dec(1 - p)}` };
+        const n = pick([20, 40, 60, 100, 200]) * (lv >= 2 ? 3 : 1); return { q: `P(red) = ${p} on a spinner. You spin it ${n} times. How many reds do you expect?`, a: dec(p * n), calc: true, explain: `${p} × ${n} = ${dec(p * n)}` }; } },
+  ]},
+  { id: 'b7', stage: 'book', title: 'Sets', desc: 'Book chapter 6', lessons: [
+    { id: 'b7l1', title: 'Describing a set',
+      idea: `A <b>set</b> is a collection of things, written in curly brackets. Each thing is an <b>element</b> (∈ means "is an element of"). #A is how many elements A has. Two sets are <b>equal</b> if they have exactly the same elements, in any order.`,
+      example: `A = {2, 4, 6, 8}: 4 ∈ A, 5 ∉ A, #A = 4<br>{1, 2, 3} = {3, 1, 2}`,
+      gen(lv = 0) { const A = shuffle(Array.from({ length: 12 + 4 * lv }, (_, i) => i + 1)).slice(0, rnd(3, 6 + lv)).sort((a, b) => a - b), s = `A = {${A.join(', ')}}`;
+        const t = rnd(0, 3);
+        if (t === 0) return { q: `${s}. What is #A?`, a: A.length, explain: `Count the elements: ${A.length}.` };
+        if (t === 1) { const x = rnd(1, 12 + 4 * lv); return { q: `${s}. Is ${x} ∈ A?`, choices: ['Yes', 'No'], a: A.includes(x) ? 'Yes' : 'No', explain: A.includes(x) ? `${x} is in the list.` : `${x} is not in the list.` }; }
+        if (t === 2) { const n = rnd(10, 20 + 10 * lv), k = pick([2, 3, 5]); const c = Math.floor(n / k); return { q: `B = {multiples of ${k} from 1 to ${n}}. What is #B?`, a: c, explain: `${Array.from({ length: c }, (_, i) => (i + 1) * k).join(', ')}: that's ${c}.` }; }
+        const same = Math.random() < .5, B = same ? shuffle(A) : shuffle(A.map((v, i) => i === 0 ? v + 1 : v));
+        return { q: `${s} and B = {${B.join(', ')}}. Are A and B equal?`, choices: ['Yes', 'No'], a: same ? 'Yes' : 'No', explain: same ? `Same elements, just in a different order.` : `They don't have exactly the same elements.` }; } },
+    { id: 'b7l2', title: 'Union and intersection',
+      idea: `<b>A ∩ B</b> (intersection) is what is in <b>both</b> sets. <b>A ∪ B</b> (union) is everything in <b>either</b> set, written once. A Venn diagram shows them as overlapping circles.`,
+      example: `A = {1, 2, 3, 4}, B = {3, 4, 5}<br>A ∩ B = {3, 4}, A ∪ B = {1, 2, 3, 4, 5}`,
+      gen(lv = 0) { const pool = shuffle(Array.from({ length: 15 + 5 * lv }, (_, i) => i + 1)), nb = rnd(1, 3 + lv), na = rnd(1, 3), nc = rnd(1, 3);
+        const both = pool.slice(0, nb), A = [...both, ...pool.slice(nb, nb + na)].sort((a, b) => a - b), B = [...both, ...pool.slice(nb + na, nb + na + nc)].sort((a, b) => a - b);
+        const s = `A = {${A.join(', ')}}, B = {${B.join(', ')}}.`;
+        if (Math.random() < .5) return { q: `${s} What is #(A ∩ B)?`, a: nb, explain: `In both: {${both.sort((a, b) => a - b).join(', ')}}` };
+        return { q: `${s} What is #(A ∪ B)?`, a: na + nb + nc, explain: `Everything, written once: ${A.length} + ${B.length} − ${nb} = ${na + nb + nc}` }; } },
+    { id: 'b7l3', title: 'Universal set and complement',
+      idea: `The <b>universal set</b> U holds everything we're talking about. The <b>complement</b> A′ is everything in U that is <b>not</b> in A, so #A′ = #U − #A.`,
+      example: `U = {1, 2, 3, 4, 5, 6}, A = {2, 4}<br>A′ = {1, 3, 5, 6}, #A′ = 4`,
+      gen(lv = 0) { if (Math.random() < .5) { const n = rnd(8, 12 + 4 * lv), A = shuffle(Array.from({ length: n }, (_, i) => i + 1)).slice(0, rnd(2, n - 2)).sort((a, b) => a - b);
+          return { q: `U = {1, 2, …, ${n}} and A = {${A.join(', ')}}. What is #A′?`, a: n - A.length, explain: `${n} − ${A.length} = ${n - A.length}` }; }
+        const both = rnd(2, 8 + lv), a = rnd(2, 10 + 3 * lv), b = rnd(2, 10 + 3 * lv), out = rnd(1, 6 + lv), U = a + b + both + out;
+        return { q: `In a class of ${U}, ${a + both} play football, ${b + both} play hurling and ${both} play both. How many play neither?`, a: out, calc: lv >= 2, explain: `Football or hurling: ${a + both} + ${b + both} − ${both} = ${a + b + both}. Neither: ${U} − ${a + b + both} = ${out}` }; } },
+  ]},
+  { id: 'b8', stage: 'book', title: 'Percentages', desc: 'Book chapter 7', lessons: [
+    { id: 'b8l1', title: 'Percentages, fractions and decimals',
+      idea: `Per cent means "out of 100". To change a percentage to a decimal, divide by 100. To a fraction, put it over 100 and simplify. To change a decimal to a percentage, multiply by 100.`,
+      example: `35% = 0.35 = ${frac(35, 100)} = ${frac(7, 20)}<br>0.6 = 60%, ${frac(3, 4)} = 75%`,
+      gen(lv = 0) { const p = pick([5, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 64, 70, 75, 80, 85, 90, 95, ...(lv >= 2 ? [2.5, 12.5, 120, 150] : [])]), t = rnd(0, 3);
+        if (t === 0) return { q: `Write ${p}% as a decimal.`, a: dec(p / 100), explain: `${p} ÷ 100 = ${dec(p / 100)}` };
+        if (t === 1 && Number.isInteger(p)) return { q: `Write ${p}% as a fraction in its simplest form.`, a: fracStr(p, 100), explain: `${frac(p, 100)} = ${fracHtml(p, 100)}` };
+        if (t === 2) return { q: `Write ${dec(p / 100)} as a percentage.`, a: p, suffix: '%', explain: `${dec(p / 100)} × 100 = ${p}%` };
+        const [n, d] = pick([[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 10], [3, 10], [7, 10], [1, 20], [3, 20], [1, 25], [7, 25], [1, 8]]);
+        return { q: `Write ${frac(n, d)} as a percentage.`, a: dec(n / d * 100), suffix: '%', explain: `${n} ÷ ${d} × 100 = ${dec(n / d * 100)}%` }; } },
+    { id: 'b8l2', title: 'Working with percentages',
+      idea: `To find a percentage of an amount, change it to a decimal and multiply. To write one number as a percentage of another, divide and multiply by 100.`,
+      example: `15% of 80 = 0.15 × 80 = 12<br>12 out of 48 = 12 ÷ 48 × 100 = 25%`,
+      gen(lv = 0) { if (Math.random() < .5) { const p = pick([5, 10, 15, 20, 25, 30, 40, 50, 60, 75, ...(lv >= 2 ? [12, 17.5, 35, 65] : [])]), n = rnd(1, 20 + 10 * lv) * 20;
+          return { q: `What is ${p}% of ${n}?`, a: dec(p / 100 * n), calc: lv >= 1, explain: `${dec(p / 100)} × ${n} = ${dec(p / 100 * n)}` }; }
+        const p = pick([10, 20, 25, 40, 50, 60, 75, 80]), whole = rnd(1, 10 + 5 * lv) * 20, part = whole * p / 100;
+        return { q: `You got ${part} out of ${whole} in a test. What percentage is that?`, a: p, suffix: '%', calc: lv >= 1, explain: `${part} ÷ ${whole} × 100 = ${p}%` }; } },
+    { id: 'b8l3', title: 'VAT and discount',
+      idea: `<b>VAT</b> is a tax added on to a price. <b>Discount</b> is money taken off. Work out the percentage, then add it (VAT) or take it away (discount).`,
+      example: `€80 + 23% VAT: 0.23 × 80 = €18.40, so €98.40<br>€60 with 15% off: 0.15 × 60 = €9, so €51`,
+      gen(lv = 0) { const vat = Math.random() < .5, p = vat ? pick([10, 13.5, 20, 23]) : pick([10, 15, 20, 25, 30, 40, 50]), n = rnd(2, 30 + 20 * lv) * 10;
+        const ch = dec(p / 100 * n), tot = dec(vat ? n + ch : n - ch);
+        return { q: vat ? `A bike costs €${n} before VAT. VAT is ${p}%. What is the price with VAT?` : `A jacket costs €${n}. It has a ${p}% discount. What is the sale price?`, a: tot, calc: true, explain: `${p}% of ${n} = ${ch}, so ${n} ${vat ? '+' : '−'} ${ch} = €${tot}` }; } },
+    { id: 'b8l4', title: 'Percentage profit and loss',
+      idea: `Profit = selling price − cost price. Percentage profit = profit ÷ <b>cost price</b> × 100. Loss works the same way.`,
+      example: `Bought for €40, sold for €50: profit €10, 10 ÷ 40 × 100 = 25% profit`,
+      gen(lv = 0) { const p = pick([5, 10, 15, 20, 25, 30, 40, 50, 60]), cost = rnd(1, 15 + 10 * lv) * 20, profit = Math.random() < .65, ch = cost * p / 100, sell = profit ? cost + ch : cost - ch;
+        return { q: `A shop buys a game for €${cost} and sells it for €${sell}. What is the percentage ${profit ? 'profit' : 'loss'}?`, a: p, suffix: '%', calc: true, explain: `${profit ? 'Profit' : 'Loss'} = €${ch}. ${ch} ÷ ${cost} × 100 = ${p}%` }; } },
+  ]},
+  { id: 'b9', stage: 'book', title: 'Algebra basics', desc: 'Book chapter 8', lessons: [
+    { id: 'b9l1', title: 'Using letters',
+      idea: `A letter stands for a number we don't know yet. 3x means 3 × x, x + 3 means "3 more than x", and x − 3 means "3 less than x".`,
+      example: `"5 more than n" → n + 5<br>"double y" → 2y<br>"x shared between 4" → x ÷ 4`,
+      gen(lv = 0) { const v = pick(['x', 'n', 'y']), k = rnd(2, 9 + lv);
+        const opts = [[`${k} more than ${v}`, `${v} + ${k}`], [`${k} less than ${v}`, `${v} − ${k}`], [`${v} multiplied by ${k}`, `${k}${v}`], [`${v} taken away from ${k}`, `${k} − ${v}`], [`${v} divided by ${k}`, `${v} ÷ ${k}`], [`${v} squared`, `${v}²`]];
+        const [words, ans] = pick(opts), choices = shuffle(opts.map(o => o[1]).filter(c => c !== ans)).slice(0, 3).concat(ans);
+        return { q: `Which means "${words}"?`, choices, a: ans, explain: `"${words}" is ${ans}` }; } },
+    { id: 'b9l2', title: 'Substituting numbers for letters',
+      idea: `<b>Substitute</b> means put the number in place of the letter, then work it out. Use brackets around negative numbers, and remember BIMDAS.`,
+      example: `If x = 3 and y = −2: 4x + y = 4(3) + (−2) = 12 − 2 = 10`,
+      gen(lv = 0) { const x = rnd(lv >= 1 ? -6 : 1, 6 + lv), y = rnd(lv >= 1 ? -6 : 1, 6 + lv), a = rnd(2, 6), b = rnd(2, 6);
+        const opts = [
+          [`${a}x + ${b}y`, a * x + b * y, `${a}(${x}) + ${b}(${y}) = ${a * x} + ${neg(b * y)}`],
+          [`${a}x − y`, a * x - y, `${a * x} − ${neg(y)}`],
+          [`${sup('x', 2)} + ${b}`, x * x + b, `${neg(x)}² = ${x * x}, + ${b}`],
+          [`xy + ${a}`, x * y + a, `${neg(x)} × ${neg(y)} = ${x * y}, + ${a}`],
+        ];
+        const [e, val, how] = pick(lv >= 1 ? opts : opts.slice(0, 2).concat([opts[3]]));
+        return { q: `If x = ${x} and y = ${y}, find the value of ${e}.`, a: val, explain: `${how} = ${val}` }; } },
+    { id: 'b9l3', title: 'Removing brackets',
+      idea: `Multiply everything inside the bracket by the number outside. A minus outside changes the sign of everything inside. Then collect like terms.`,
+      example: `−2(x − 3) = −2x + 6<br>3(x + 2) + 2(x + 1) = 3x + 6 + 2x + 2 = 5x + 8`,
+      gen(lv = 0) { const a = rnd(2, 6 + lv), b = rnd(1, 9), c = rnd(2, 5 + lv), d = rnd(1, 9);
+        if (Math.random() < .5) return { q: `−${a}(x − ${b}) = −${a}x + ?`, a: a * b, explain: `−${a} × −${b} = +${a * b}` };
+        return { q: `${a}(x + ${b}) + ${c}(x + ${d}) = ?x + ${a * b + c * d}`, a: a + c, suffix: 'x', explain: `${a}x + ${a * b} + ${c}x + ${c * d} = ${a + c}x + ${a * b + c * d}` }; } },
+    { id: 'b9l4', title: 'Multiplying with indices',
+      idea: `When you multiply the same letter, <b>add</b> the powers: x² × x³ = x⁵. Multiply the numbers in front as normal.`,
+      example: `${sup('x', 2)} × ${sup('x', 4)} = ${sup('x', 6)}<br>3x × 4x = 12${sup('x', 2)}<br>2${sup('a', 3)} × 5a = 10${sup('a', 4)}`,
+      gen(lv = 0) { const v = pick(['x', 'a', 'y']), m = rnd(1, 4 + lv), n = rnd(1, 4 + lv), p = rnd(1, 5 + lv), q = rnd(1, 5 + lv);
+        const t = (c, e) => `${c === 1 ? '' : c}${e === 1 ? v : supU(v, e)}`, ans = t(p * q, m + n);
+        const choices = shuffle([t(p * q, m * n), t(p + q, m + n), t(p * q, m + n + 1)].filter((c, i, arr) => c !== ans && arr.indexOf(c) === i)).slice(0, 3).concat(ans);
+        return { q: `${t(p, m)} × ${t(q, n)} = ?`, choices, a: ans, explain: `Numbers: ${p} × ${q} = ${p * q}. Powers: ${m} + ${n} = ${m + n}.` }; } },
+    { id: 'b9l5', title: 'Multiplying two brackets',
+      idea: `Multiply each term in the first bracket by each term in the second (4 multiplications), then collect like terms.`,
+      example: `(x + 2)(x + 3) = ${sup('x', 2)} + 3x + 2x + 6 = ${sup('x', 2)} + 5x + 6`,
+      gen(lv = 0) { const a = rnd(lv >= 2 ? -6 : 1, 6 + lv) || 1, b = rnd(lv >= 2 ? -6 : 1, 6 + lv) || 2, s = n => (n < 0 ? `− ${-n}` : `+ ${n}`);
+        const br = `(x ${s(a)})(x ${s(b)})`;
+        if (Math.random() < .5) return { q: `${br} = ${sup('x', 2)} + ?x ${s(a * b)}`, a: a + b, explain: `The x terms: ${a}x + ${b}x = ${a + b}x` };
+        return { q: `${br} = ${sup('x', 2)} ${s(a + b)}x + ?`, a: a * b, explain: `The number term: ${neg(a)} × ${neg(b)} = ${a * b}` }; } },
+  ]},
+  { id: 'b10', stage: 'book', title: 'Area, perimeter and volume', desc: 'Book chapter 9', lessons: [
+    { id: 'b10l1', title: 'Metric system',
+      idea: `10 mm = 1 cm, 100 cm = 1 m, 1000 m = 1 km. 1000 g = 1 kg, 1000 ml = 1 litre. Going to a smaller unit: multiply. Going to a bigger unit: divide.`,
+      example: `3.5 m = 350 cm<br>2400 g = 2.4 kg`,
+      gen(lv = 0) { const [big, small, k] = pick([['cm', 'mm', 10], ['m', 'cm', 100], ['km', 'm', 1000], ['kg', 'g', 1000], ['litres', 'ml', 1000]]);
+        if (Math.random() < .5) { const v = rnd(1, 50 + 50 * lv) / pick([1, 10]); return { q: `${v} ${big} = ? ${small}`, a: dec(v * k), suffix: small, explain: `Smaller unit, so multiply by ${k}: ${dec(v * k)}` }; }
+        const v = rnd(1, 99 + 900 * lv) * (k / pick([1, 10])); return { q: `${dec(v)} ${small} = ? ${big}`, a: dec(v / k), suffix: big, explain: `Bigger unit, so divide by ${k}: ${dec(v / k)}` }; } },
+    { id: 'b10l2', title: 'Perimeter',
+      idea: `The <b>perimeter</b> is the distance all the way around the outside of a shape. Add up all the sides.`,
+      example: `Rectangle 8 cm by 5 cm: 8 + 5 + 8 + 5 = 26 cm`,
+      gen(lv = 0) { const l = rnd(3, 15 + 5 * lv), w = rnd(2, 12 + 5 * lv), t = rnd(0, 2);
+        if (t === 0) return { q: `A rectangle is ${l} cm long and ${w} cm wide. What is its perimeter?`, a: 2 * (l + w), suffix: 'cm', explain: `${l} + ${w} + ${l} + ${w} = ${2 * (l + w)}` };
+        if (t === 1) return { q: `A square has a perimeter of ${4 * l} cm. How long is each side?`, a: l, suffix: 'cm', explain: `${4 * l} ÷ 4 = ${l}` };
+        const c = rnd(Math.abs(l - w) + 1, l + w - 1); return { q: `A triangle has sides ${l} cm, ${w} cm and ${c} cm. What is its perimeter?`, a: l + w + c, suffix: 'cm', explain: `${l} + ${w} + ${c} = ${l + w + c}` }; } },
+    { id: 'b10l3', title: 'Area of rectangles and triangles',
+      idea: `Area of a rectangle = length × width. A triangle is half a rectangle, so area of a triangle = ½ × base × perpendicular height. Area is in square units (cm²).`,
+      example: `Rectangle 6 cm × 4 cm = 24 cm²<br>Triangle, base 6 cm, height 4 cm = ½ × 6 × 4 = 12 cm²`,
+      gen(lv = 0) { const l = rnd(2, 12 + 5 * lv), w = rnd(2, 12 + 5 * lv), t = rnd(0, 2), big = l * w > 80;
+        if (t === 0) return { q: `What is the area of a rectangle ${l} cm by ${w} cm?`, a: l * w, suffix: 'cm²', calc: big, explain: `${l} × ${w} = ${l * w}` };
+        if (t === 1) { const b = 2 * Math.ceil(l / 2); return { q: `A triangle has base ${b} cm and perpendicular height ${w} cm. What is its area?`, a: b * w / 2, suffix: 'cm²', calc: big, explain: `½ × ${b} × ${w} = ${b * w / 2}` }; }
+        return { q: `A rectangle has an area of ${l * w} cm² and a length of ${l} cm. What is its width?`, a: w, suffix: 'cm', calc: big, explain: `${l * w} ÷ ${l} = ${w}` }; } },
+    { id: 'b10l4', title: 'Rectangular solids',
+      idea: `A rectangular solid (cuboid) has 6 rectangle faces. <b>Volume</b> = length × width × height (cm³). <b>Surface area</b> = the area of all 6 faces added up.`,
+      example: `A box 5 × 3 × 2 cm: volume = 30 cm³<br>Surface area = 2(5×3) + 2(5×2) + 2(3×2) = 30 + 20 + 12 = 62 cm²`,
+      gen(lv = 0) { const l = rnd(2, 8 + 3 * lv), w = rnd(2, 6 + 2 * lv), h = rnd(1, 6 + 2 * lv), t = rnd(0, lv >= 1 ? 2 : 1);
+        if (t === 0) return { q: `A box is ${l} cm long, ${w} cm wide and ${h} cm high. What is its volume?`, a: l * w * h, suffix: 'cm³', calc: true, explain: `${l} × ${w} × ${h} = ${l * w * h}` };
+        if (t === 1) return { q: `A cube has sides of ${w} cm. What is its volume?`, a: w ** 3, suffix: 'cm³', calc: true, explain: `${w} × ${w} × ${w} = ${w ** 3}` };
+        const sa = 2 * (l * w + l * h + w * h); return { q: `A box is ${l} cm × ${w} cm × ${h} cm. What is its total surface area?`, a: sa, suffix: 'cm²', calc: true, explain: `2(${l * w}) + 2(${l * h}) + 2(${w * h}) = ${sa}` }; } },
+    { id: 'b10l5', title: 'Nets of solids',
+      idea: `A <b>net</b> is a flat shape you can fold up to make a solid. Count the faces of the solid: a cube has 6 squares, a triangular prism has 2 triangles and 3 rectangles.`,
+      example: `Cube: 6 faces, 12 edges, 8 corners (vertices)<br>Square-based pyramid: 5 faces, 8 edges, 5 vertices`,
+      gen(lv = 0) { const S = [['a cube', 6, 12, 8, '6 squares'], ['a cuboid', 6, 12, 8, '6 rectangles'], ['a triangular prism', 5, 9, 6, '2 triangles and 3 rectangles'], ['a square-based pyramid', 5, 8, 5, '1 square and 4 triangles'], ['a triangular pyramid (tetrahedron)', 4, 6, 4, '4 triangles']];
+        const s = pick(S);
+        if (Math.random() < .4) { const choices = shuffle(S.filter(o => o !== s)).slice(0, 3).map(o => o[0]).concat(s[0]); return { q: `A net is made of ${s[4]}. What solid does it fold into?`, choices, a: s[0], explain: `${s[4]} fold into ${s[0]}.` }; }
+        const [what, i] = pick([['faces', 1], ['edges', 2], ['vertices (corners)', 3]]);
+        return { q: `How many ${what} does ${s[0]} have?`, a: s[i], explain: `${s[0][0].toUpperCase() + s[0].slice(1)}: ${s[1]} faces, ${s[2]} edges, ${s[3]} vertices.` }; } },
+  ]},
+  { id: 'b11', stage: 'book', title: 'Geometry 1', desc: 'Book chapter 10: angles and parallel lines', lessons: [
+    { id: 'b11l1', title: 'Types of angles',
+      idea: `<b>Acute</b>: less than 90°. <b>Right</b>: exactly 90°. <b>Obtuse</b>: between 90° and 180°. <b>Straight</b>: 180°. <b>Reflex</b>: more than 180°.`,
+      example: `40° is acute, 90° is right, 130° is obtuse, 250° is reflex`,
+      gen(lv = 0) { const kind = pick(['Acute', 'Right', 'Obtuse', 'Straight', 'Reflex', 'Acute', 'Obtuse', 'Reflex']);
+        const a = { Acute: rnd(5, 89), Right: 90, Obtuse: rnd(91, 179), Straight: 180, Reflex: rnd(181, 355) }[kind];
+        return { q: `What type of angle is ${a}°?`, choices: ['Acute', 'Right', 'Obtuse', 'Straight', 'Reflex'], a: kind, explain: `${a}° is ${kind.toLowerCase()}.` }; } },
+    { id: 'b11l2', title: 'Calculating angles',
+      idea: `Angles on a straight line add up to <b>180°</b>. Angles around a point add up to <b>360°</b>. <b>Vertically opposite</b> angles (where two lines cross) are equal.`,
+      example: `Straight line: 180 − 65 = 115°<br>Around a point: 360 − 100 − 140 = 120°`,
+      gen(lv = 0) { const t = rnd(0, 2);
+        if (t === 0) { const a = rnd(10, 170); return { q: `Two angles sit on a straight line. One is ${a}°. What is the other?`, a: 180 - a, suffix: '°', explain: `180 − ${a} = ${180 - a}` }; }
+        if (t === 1) { const a = rnd(40, 150), b = rnd(40, 300 - a - 20); return { q: `Three angles meet at a point. Two are ${a}° and ${b}°. What is the third?`, a: 360 - a - b, suffix: '°', explain: `360 − ${a} − ${b} = ${360 - a - b}` }; }
+        const a = rnd(20, 160); return { q: `Two lines cross. One angle is ${a}°. What is the angle vertically opposite it?`, a: a, suffix: '°', explain: `Vertically opposite angles are equal.` }; } },
+    { id: 'b11l3', title: 'Angles and parallel lines',
+      idea: `When a line crosses two parallel lines: <b>alternate</b> angles (Z shape) are equal, <b>corresponding</b> angles (F shape) are equal, and <b>co-interior</b> angles (C shape) add up to 180°.`,
+      example: `One angle is 70°. Its alternate angle is 70°, its corresponding angle is 70°, and its co-interior angle is 110°`,
+      gen(lv = 0) { const a = rnd(25, 155), kind = pick(['alternate', 'corresponding', 'co-interior']), ans = kind === 'co-interior' ? 180 - a : a;
+        return { q: `A line crosses two parallel lines. One angle is ${a}°. What is its ${kind} angle?`, a: ans, suffix: '°', explain: kind === 'co-interior' ? `Co-interior angles add to 180: 180 − ${a} = ${ans}` : `${kind[0].toUpperCase() + kind.slice(1)} angles are equal.` }; } },
+  ]},
+  { id: 'b12', stage: 'book', title: 'Ratio and proportion', desc: 'Book chapter 11', lessons: [
+    { id: 'b12l1', title: 'Introducing ratio',
+      idea: `A <b>ratio</b> compares amounts, like 2 : 3. Simplify it like a fraction, by dividing both sides by the same number. Type ratio answers like 2:3.`,
+      example: `12 : 18 = 2 : 3 (divide both by 6)<br>Boys : girls = 2 : 3 and there are 10 boys → 15 girls`,
+      gen(lv = 0) { let p, q; do { p = rnd(1, 7 + lv); q = rnd(1, 7 + lv); } while (p === q || gcd(p, q) !== 1); const k = rnd(2, 8 + 2 * lv);
+        if (Math.random() < .5) return { q: `Simplify the ratio ${p * k} : ${q * k}`, a: `${p}:${q}`, explain: `Divide both by ${k}: ${p} : ${q}` };
+        return { q: `Red : blue = ${p} : ${q}. There are ${p * k} red. How many blue?`, a: q * k, explain: `${p * k} ÷ ${p} = ${k}, so blue = ${q} × ${k} = ${q * k}` }; } },
+    { id: 'b12l2', title: 'Dividing in a given ratio',
+      idea: `Add the parts of the ratio to get the total number of shares. Divide the amount by that to find one share, then multiply.`,
+      example: `Share €40 in the ratio 3 : 5: 3 + 5 = 8 shares, one share = €5, so €15 and €25`,
+      gen(lv = 0) { const p = rnd(1, 6 + lv), q = rnd(1, 6 + lv), r = lv >= 2 && Math.random() < .5 ? rnd(1, 4) : 0, one = rnd(2, 12 + 5 * lv), tot = (p + q + r) * one;
+        const parts = r ? [p, q, r] : [p, q], who = rnd(0, parts.length - 1), names = ['Amy', 'Ben', 'Cara'];
+        return { q: `€${tot} is shared between ${names.slice(0, parts.length).join(' and ')} in the ratio ${parts.join(' : ')}. How much does ${names[who]} get?`, a: parts[who] * one, calc: tot > 100, explain: `${parts.join(' + ')} = ${p + q + r} shares. One share = ${tot} ÷ ${p + q + r} = ${one}. ${names[who]}: ${parts[who]} × ${one} = ${parts[who] * one}` }; } },
+    { id: 'b12l3', title: 'Proportion',
+      idea: `Use the <b>unitary method</b>: first find the value of <b>one</b>, then multiply to get as many as you need. Conversions like money work the same way.`,
+      example: `5 pens cost €3.50 → 1 pen costs €0.70 → 8 pens cost €5.60`,
+      gen(lv = 0) { if (Math.random() < .65) { const [thing, unit] = pick([['pens', '€'], ['tickets', '€'], ['bags of crisps', '€'], ['notebooks', '€']]), one = rnd(2, 40 + 20 * lv) / 10, n = rnd(2, 9), m = rnd(2, 12);
+          return { q: `${n} ${thing} cost ${unit}${dec(n * one).toFixed(2)}. How much do ${m} cost (in €)?`, a: dec(m * one), calc: true, explain: `One costs ${(dec(n * one)).toFixed(2)} ÷ ${n} = ${one.toFixed(2)}, so ${m} cost ${dec(m * one).toFixed(2)}` }; }
+        const r = pick([1.1, 1.2, 0.9, 0.85, 1.5]), e = rnd(2, 50 + 50 * lv) * 2;
+        return { q: `€1 = ${r} dollars. How many dollars do you get for €${e}?`, a: dec(r * e), calc: true, explain: `${e} × ${r} = ${dec(r * e)}` }; } },
+    { id: 'b12l4', title: 'Inverse proportion and value for money',
+      idea: `<b>Inverse proportion</b>: as one thing goes up, the other goes down (more workers → fewer days). Multiply to find the total work, then divide. <b>Value for money</b>: find the price of one unit (like per 100 g) for each and pick the cheaper one.`,
+      example: `3 people take 8 days → 24 "person-days" → 6 people take 24 ÷ 6 = 4 days`,
+      gen(lv = 0) { if (Math.random() < .55) { const total = pick([12, 24, 36, 48, 60, 72]) * (lv >= 2 ? 2 : 1), fs = factorsOf(total).filter(f => f > 1 && f < total), a = pick(fs); let b; do { b = pick(fs); } while (b === a && fs.length > 1);
+          return { q: `${a} people can paint a fence in ${total / a} hours. How long would ${b} people take?`, a: total / b, suffix: 'hours', explain: `${a} × ${total / a} = ${total} person-hours. ${total} ÷ ${b} = ${total / b}` }; }
+        const p1 = rnd(10, 40) / 10, w1 = pick([200, 250, 400, 500]), w2 = pick([600, 750, 800, 1000]), better = Math.random() < .5, per1 = p1 / w1 * 100, p2 = dec(Math.round((per1 * (better ? 0.85 : 1.15)) * w2 / 10) / 10 + (Math.abs(Math.round((per1 * (better ? 0.85 : 1.15)) * w2 / 10) / 10 / w2 - p1 / w1) < 1e-9 ? 0.1 : 0));
+        const best = p2 / w2 < per1 / 100 ? 'B' : 'A';
+        return { q: `Cereal A: ${w1} g for €${p1.toFixed(2)}. Cereal B: ${w2} g for €${p2.toFixed(2)}. Which is better value?`, choices: ['A', 'B'], a: best, calc: true, explain: `Per 100 g: A = €${per1.toFixed(3)}, B = €${(p2 / w2 * 100).toFixed(3)}. ${best} is cheaper.` }; } },
+  ]},
+  { id: 'b13', stage: 'book', title: 'Statistics: collecting data', desc: 'Book chapter 12', lessons: [
+    { id: 'b13l1', title: 'Types of data',
+      idea: `<b>Categorical</b> data is words or categories (favourite colour). <b>Numerical</b> data is numbers: <b>discrete</b> if you count it (number of pets), <b>continuous</b> if you measure it (height, time).`,
+      example: `Eye colour → categorical<br>Number of siblings → numerical discrete<br>Time to run 100 m → numerical continuous`,
+      gen(lv = 0) { const [thing, kind] = pick([['eye colour', 'Categorical'], ['favourite sport', 'Categorical'], ['type of pet', 'Categorical'], ['county you live in', 'Categorical'], ['number of siblings', 'Numerical discrete'], ['shoe size', 'Numerical discrete'], ['goals scored in a match', 'Numerical discrete'], ['number of cars in a car park', 'Numerical discrete'], ['height', 'Numerical continuous'], ['time to run 100 m', 'Numerical continuous'], ['weight of a bag', 'Numerical continuous'], ['temperature', 'Numerical continuous']]);
+        return { q: `What type of data is "${thing}"?`, choices: ['Categorical', 'Numerical discrete', 'Numerical continuous'], a: kind, explain: kind === 'Categorical' ? `It's a word or category, not a number.` : kind.endsWith('discrete') ? `You count it, so it's discrete.` : `You measure it, so it's continuous.` }; } },
+    { id: 'b13l2', title: 'Surveys and sampling',
+      idea: `The <b>population</b> is everyone you want to find out about. A <b>sample</b> is the smaller group you actually ask. A good sample is <b>random</b> and big enough, so it isn't <b>biased</b>. <b>Primary data</b> you collect yourself; <b>secondary data</b> someone else collected.`,
+      example: `Asking only your friends about the best football team is biased.<br>Using results from the CSO website is secondary data.`,
+      gen(lv = 0) { const bank = [
+          [`You find out how tall students are by measuring them yourself. What type of data is this?`, ['Primary data', 'Secondary data'], 'Primary data', `You collected it yourself.`],
+          [`You use rainfall figures from Met Éireann's website. What type of data is this?`, ['Primary data', 'Secondary data'], 'Secondary data', `Someone else collected it.`],
+          [`You want to know what all 600 students in your school think. You ask 50 of them. The 50 students are the…`, ['Population', 'Sample', 'Census'], 'Sample', `The group you actually ask is the sample.`],
+          [`Asking every single person in the population is called a…`, ['Sample', 'Census', 'Questionnaire'], 'Census', `A census asks everyone.`],
+          [`To find the school's favourite sport you only ask the rugby team. Is this sample biased?`, ['Yes', 'No'], 'Yes', `The rugby team will mostly pick rugby.`],
+          [`Which is the best way to pick a sample of 30 students from a school?`, ['Pick 30 names at random', 'Ask your 30 friends', 'Ask the first 30 at the gate'], 'Pick 30 names at random', `Random means everyone has the same chance.`],
+          [`Which is a good question for a questionnaire?`, ['How many hours of TV did you watch yesterday?', "Don't you agree TV is bad?", 'Do you watch a lot of TV?'], 'How many hours of TV did you watch yesterday?', `It's clear, not leading, and easy to answer.`],
+          [`"Don't you think school starts too early?" is a bad survey question because it is…`, ['Leading', 'Too short', 'Too personal'], 'Leading', `It pushes people toward one answer.`],
+          [`What is the first step of the data handling cycle?`, ['Pose a question', 'Collect data', 'Draw a chart', 'Interpret results'], 'Pose a question', `Pose a question → collect data → analyse it → interpret the results.`],
+        ];
+        const [q, choices, a, explain] = pick(bank); return { q, choices, a, explain }; } },
+  ]},
+  { id: 'b14', stage: 'book', title: 'Coordinates', desc: 'Book chapter 13', lessons: [
+    { id: 'b14l1', title: 'Plotting points and quadrants',
+      idea: `A point (x, y) means: go <b>across</b> x, then <b>up</b> y (along the corridor, then up the stairs). Negative x is left, negative y is down. The axes split the plane into 4 <b>quadrants</b>, numbered anticlockwise from the top right.`,
+      example: `(3, 2): 3 right, 2 up → 1st quadrant<br>(−3, 2): 2nd quadrant · (−3, −2): 3rd · (3, −2): 4th`,
+      gen(lv = 0) { const x = rnd(1, 9) * pick([1, -1]), y = rnd(1, 9) * pick([1, -1]), qd = x > 0 ? (y > 0 ? '1st' : '4th') : (y > 0 ? '2nd' : '3rd');
+        if (Math.random() < .6) return { q: `Which quadrant is the point (${x}, ${y}) in?`, choices: ['1st', '2nd', '3rd', '4th'], a: qd, explain: `x is ${x > 0 ? 'positive (right)' : 'negative (left)'}, y is ${y > 0 ? 'positive (up)' : 'negative (down)'}.` };
+        const dx = rnd(-5, 5) || 1, dy = rnd(-5, 5) || 2, ask = pick(['x', 'y']);
+        return { q: `Start at (${x}, ${y}). Move ${Math.abs(dx)} ${dx < 0 ? 'left' : 'right'} and ${Math.abs(dy)} ${dy < 0 ? 'down' : 'up'}. What is the ${ask}-coordinate now?`, a: ask === 'x' ? x + dx : y + dy, explain: ask === 'x' ? `${x} ${signed(dx)} = ${x + dx}` : `${y} ${signed(dy)} = ${y + dy}` }; } },
+    { id: 'b14l2', title: 'Midpoint of a line segment',
+      idea: `The <b>midpoint</b> is exactly halfway. Add the two x's and halve, then add the two y's and halve.`,
+      example: `(2, 3) and (8, 7): x = (2 + 8) ÷ 2 = 5, y = (3 + 7) ÷ 2 = 5 → midpoint (5, 5)`,
+      gen(lv = 0) { const r = 6 + 3 * lv, x1 = rnd(-r, r), y1 = rnd(-r, r), x2 = x1 + 2 * rnd(-r, r), y2 = y1 + 2 * rnd(-r, r), ask = pick(['x', 'y']), m = ask === 'x' ? (x1 + x2) / 2 : (y1 + y2) / 2;
+        return { q: `What is the ${ask}-coordinate of the midpoint of (${x1}, ${y1}) and (${x2}, ${y2})?`, a: m, explain: ask === 'x' ? `(${x1} + ${neg(x2)}) ÷ 2 = ${m}` : `(${y1} + ${neg(y2)}) ÷ 2 = ${m}` }; } },
+    { id: 'b14l3', title: 'The slope of a line',
+      idea: `<b>Slope</b> = rise ÷ run: how far up for each step across. Between two points: (change in y) ÷ (change in x). Going down from left to right gives a negative slope.`,
+      example: `(1, 2) to (4, 8): rise = 6, run = 3, slope = 6 ÷ 3 = 2`,
+      gen(lv = 0) { const x1 = rnd(-5, 5), y1 = rnd(-5, 5), run = rnd(1, 5 + lv), rise = rnd(lv >= 1 ? -8 : 1, 8 + lv) || 3;
+        const s = lv >= 2 ? rise : rise - rise % run || run, x2 = x1 + run, y2 = y1 + s;
+        return { q: `What is the slope of the line through (${x1}, ${y1}) and (${x2}, ${y2})?`, a: fracStr(s, run), explain: `Rise = ${y2} − ${neg(y1)} = ${s}, run = ${x2} − ${neg(x1)} = ${run}, slope = ${fracHtml(s, run)}` }; } },
+  ]},
+  { id: 'b5', stage: 'book', title: 'Geometry, data and symmetry', desc: 'Book chapters 15, 16 and 17', lessons: [
+    { id: 'b5l1', title: 'Angles in a triangle',
+      idea: `The three angles inside a triangle always add up to <b>180°</b>.`,
+      example: `Two angles are 50° and 70°. The third is 180 − 50 − 70 = 60°`,
+      gen(lv = 0) { const a = rnd(20, 100), b = rnd(20, 160 - a - 10); return { q: `A triangle has angles ${a}° and ${b}°. What is the third angle?`, a: 180 - a - b, suffix: '°', explain: `180 − ${a} − ${b} = ${180 - a - b}` }; } },
+    { id: 'b5l2', title: 'Exterior angle',
+      idea: `An <b>exterior angle</b> of a triangle equals the two <b>interior opposite</b> angles added together.`,
+      example: `Interior opposite angles 40° and 65° → exterior angle = 105°`,
+      gen(lv = 0) { const a = rnd(20, 80), b = rnd(20, 80);
+        return Math.random() < .5 ? { q: `The two interior opposite angles are ${a}° and ${b}°. What is the exterior angle?`, a: a + b, suffix: '°', explain: `${a} + ${b} = ${a + b}` }
+          : { q: `An exterior angle is ${a + b}°. One interior opposite angle is ${a}°. What is the other?`, a: b, suffix: '°', explain: `${a + b} − ${a} = ${b}` }; } },
+    { id: 'b5l3', title: 'Averages and range',
+      idea: `<b>Mean</b>: add them all up and divide by how many. <b>Median</b>: the middle one when in order. <b>Mode</b>: the most common. <b>Range</b>: biggest − smallest.`,
+      example: `3, 5, 5, 8, 9: mean = 30 ÷ 5 = 6, median = 5, mode = 5, range = 6`,
+      gen(lv = 0) { const n = pick([5, 7]), xs = Array.from({ length: n }, () => rnd(1, 20 + 10 * lv)); xs[1] = xs[0]; // makes a mode
+        const extra = xs.reduce((s, v) => s + v, 0) % n; xs[n - 1] += n - extra === n ? 0 : n - extra; // whole-number mean
+        const sorted = xs.slice().sort((a, b) => a - b), sum = xs.reduce((s, v) => s + v, 0), list = shuffle(xs).join(', ');
+        const counts = {}; xs.forEach(v => counts[v] = (counts[v] || 0) + 1); const top = Math.max(...Object.values(counts)), modes = Object.keys(counts).filter(k => counts[k] === top);
+        const opts = [
+          { q: `Find the mean of: ${list}`, a: sum / n, calc: true, explain: `${sum} ÷ ${n} = ${sum / n}` },
+          { q: `Find the median of: ${list}`, a: sorted[(n - 1) / 2], explain: `In order: ${sorted.join(', ')}. The middle one is ${sorted[(n - 1) / 2]}.` },
+          { q: `Find the range of: ${list}`, a: sorted[n - 1] - sorted[0], explain: `${sorted[n - 1]} − ${sorted[0]} = ${sorted[n - 1] - sorted[0]}` },
+        ];
+        if (modes.length === 1) opts.push({ q: `Find the mode of: ${list}`, a: Number(modes[0]), explain: `${modes[0]} appears ${top} times.` });
+        return pick(opts); } },
+    { id: 'b5l4', title: 'Lines of symmetry',
+      idea: `A <b>line of symmetry</b> (axis of symmetry) splits a shape into two mirror-image halves. Some shapes have none, some have many.`,
+      example: `A rectangle has 2 lines of symmetry. A square has 4.`,
+      gen(lv = 0) { const [shape, n] = pick([['a square', '4'], ['a rectangle', '2'], ['an equilateral triangle', '3'], ['an isosceles triangle', '1'], ['a scalene triangle', '0'], ['a regular hexagon', '6'], ['a regular pentagon', '5'], ['a parallelogram', '0'], ['a rhombus', '2'], ['the letter H', '2'], ['the letter A', '1'], ['the letter Z', '0'], ['a circle', 'Infinitely many']]);
+        const choices = shuffle(['0', '1', '2', '3', '4', '5', '6', 'Infinitely many'].filter(c => c !== n)).slice(0, 3).concat(n);
+        return { q: `How many lines of symmetry does ${shape} have?`, choices, a: n, explain: `${shape[0].toUpperCase() + shape.slice(1)} has ${n === 'Infinitely many' ? 'infinitely many' : n}.` }; } },
+  ]},
+];
+MAIN_UNITS.forEach(u => u.stage = 'main');
+const UNITS = [...BOOK_UNITS, ...MAIN_UNITS];
+const STAGES = { book: 'Stage 0 · Your first-year book (Text & Tests 1)', main: 'Stage 1 · Jumping ahead' };
+// Units planned but not written yet (from the plan).
+const COMING = ['Ratios & percent', 'Shapes 2D', 'Pythagoras', 'Circles', 'Coordinates', 'Shapes 3D', 'Data & chance', 'Exam practice',
+  'Inequalities & systems', 'Functions', 'Quadratics', 'Sequences', 'Trigonometry', 'Exponents & logs', 'Coordinate geometry', 'Probability & stats 2', 'Intro to calculus'];
+
+// ---------- notes databank: diagrams ----------
+// Small SVG helpers. Boxes are 40px squares; ops are plain text between them.
+function chain(parts, y = 30) {
+  let x = 10, out = '';
+  parts.forEach(p => {
+    const [t, cls] = Array.isArray(p) ? p : [p, OPS.includes(p) ? null : 'b'];
+    if (!cls) { out += `<text x="${x + 10}" y="${y}">${t}</text>`; x += 22; }
+    else { const w = Math.max(40, t.length * 10 + 18); out += `<rect class="${cls}" x="${x}" y="${y - 20}" width="${w}" height="40" rx="6"/><text x="${x + w / 2}" y="${y}">${t}</text>`; x += w + 8; }
+  });
+  return { svg: out, w: x + 10 };
+}
+const OPS = ['×', '+', '=', '−', '÷', '→'];
+const co = n => (n === 1 ? '' : n); // 1x is written x
+const svgWrap = (w, h, inner) => `<svg class="dg" viewBox="0 0 ${w} ${h}" role="img">${inner}</svg>`;
+function flow(steps, back) {
+  // steps: ['x', '×3', '+5', '20'] -> boxes joined by labelled arrows
+  let x = 10, out = '';
+  const row = (arr, y, cls, left) => { x = 10; arr.forEach((t, i) => {
+    if (i % 2 === 0) { out += `<rect class="${i === 0 || i === arr.length - 1 ? cls : 'b'}" x="${x}" y="${y - 20}" width="56" height="40" rx="6"/><text x="${x + 28}" y="${y}">${t}</text>`; x += 56; }
+    else { out += `<path class="acc" d="${left ? `M${x + 66} ${y} H${x + 4} m8 -6 l-8 6 l8 6` : `M${x + 4} ${y} H${x + 66} m-8 -6 l8 6 l-8 6`}"/><text class="m" x="${x + 35}" y="${y - 14}">${t}</text>`; x += 70; }
+  }); };
+  row(steps, 34, 'h'); const w = x + 10;
+  if (back) { row(back, 104, 'k', true); out += `<text class="m" x="${w / 2}" y="69">undo it backwards:</text>`; }
+  return svgWrap(w, back ? 134 : 64, out);
+}
+const DIAGRAMS = {
+  u1l1({ base = 2, exp = 3 } = {}) { const parts = []; for (let i = 0; i < exp; i++) { if (i) parts.push('×'); parts.push(String(base)); }
+    const c = chain([...parts, '=', [String(base ** exp), 'h']]);
+    return [svgWrap(Math.max(c.w, 200), 60, c.svg), `${sup(base, exp)} = ${Array(exp).fill(base).join(' × ')} = ${base ** exp}`]; },
+  u1l2({ m = 3, n = 4 } = {}) { const c = chain([...Array(m).fill('2'), '×', ...Array(n).fill(['2', 'h'])]);
+    const mid = 10 + m * 48 + 11;
+    return [svgWrap(c.w, 80, c.svg + `<text class="m" x="${10 + m * 24}" y="68">${m} twos</text><text class="m" x="${mid + 11 + n * 24}" y="68">${n} twos</text>`), `${sup(2, m)} × ${sup(2, n)} = ${m + n} twos = ${sup(2, m + n)}`]; },
+  u1l3(p) { p.n = Math.min(p.n, p.m); const { m, n } = p; let out = '';
+    for (let i = 0; i < m; i++) out += `<rect class="${i < n ? 'b' : 'h'}" x="${10 + i * 48}" y="10" width="40" height="40" rx="6"/><text x="${30 + i * 48}" y="30">3</text>`;
+    out += `<line class="ln" x1="10" y1="62" x2="${Math.max(m, n) * 48 + 4}" y2="62"/>`;
+    for (let i = 0; i < n; i++) out += `<rect class="b" x="${10 + i * 48}" y="74" width="40" height="40" rx="6"/><text x="${30 + i * 48}" y="94">3</text>`;
+    for (let i = 0; i < n; i++) out += `<line class="cross" x1="${12 + i * 48}" y1="112" x2="${48 + i * 48}" y2="12"/>`;
+    return [svgWrap(Math.max(m * 48 + 20, 200), 124, out), `${sup(3, m)} ÷ ${sup(3, n)}: ${n} threes cancel, ${m - n} left → ${sup(3, m - n)}${m - n === 0 ? ' = 1' : ''}`]; },
+  u1l4({ n = 5 } = {}) { let out = ''; const s = 22;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) out += `<rect class="${r === 0 ? 'h' : 'b'}" x="${40 + c * s}" y="${10 + r * s}" width="${s}" height="${s}"/>`;
+    out += `<text class="m" x="${40 + n * s / 2}" y="${20 + n * s}">${n}</text><text class="m" x="24" y="${10 + n * s / 2}">${n}</text><text x="${100 + n * s}" y="${10 + n * s / 2}">${n * n} squares</text>`;
+    return [svgWrap(170 + n * s, 40 + n * s, out), `A square made of ${n * n} little squares has side ${n}, so √${n * n} = ${n}`]; },
+  u1l5({ e }) { let out = ''; const d = ['4', '5', ...Array(Math.max(e - 1, 0)).fill('0')];
+    d.forEach((t, i) => { out += `<rect class="${i < 2 ? 'h' : 'b'}" x="${10 + i * 44}" y="40" width="40" height="40" rx="6"/><text x="${30 + i * 44}" y="60">${t}</text>`; });
+    for (let i = 0; i < e; i++) out += `<path class="acc" d="M${52 + i * 44} 34 q22 -26 44 0"/>`;
+    const w = Math.max(Math.max(d.length, e + 1) * 44 + 20, 240);
+    out += `<text class="m" x="${w / 2}" y="96">the point hops ${e} place${e > 1 ? 's' : ''}</text>`;
+    const v = 45 * 10 ** (e - 1);
+    return [svgWrap(Math.max(w, 240), 104, out), `4.5 × 10<sup>${e}</sup> = ${e === 0 ? '4.5' : v.toLocaleString('en-IE')}`]; },
+  u2l1({ a, b }) { const c = chain([...Array(a).fill(['x', 'h']), '+', ...Array(b).fill(['x', 'k'])]); return [svgWrap(c.w, 60, c.svg), `${co(a)}x + ${co(b)}x = ${a + b}x (count the x tiles)`]; },
+  u2l2({ a, b }) { const h = 24 + a * 10, bw = 24 + b * 14, H = h + 40;
+    const out = `<rect class="h" x="40" y="24" width="140" height="${h}"/><rect class="k" x="180" y="24" width="${bw}" height="${h}"/>
+    <text class="m" x="110" y="12">x</text><text class="m" x="${180 + bw / 2}" y="12">${b}</text><text class="m" x="26" y="${24 + h / 2}">${a}</text>
+    <text x="110" y="${24 + h / 2}">${a}x</text><text x="${180 + bw / 2}" y="${24 + h / 2}">${a * b}</text>`;
+    return [svgWrap(200 + bw, H, out), `${a}(x + ${b}): the area of the whole rectangle is ${a}x + ${a * b}`]; },
+  u2l3({ g, p, q }) { const h = 24 + g * 10, pw = 60 + p * 20, qw = 24 + q * 12;
+    const out = `<rect class="h" x="40" y="24" width="${pw}" height="${h}"/><rect class="k" x="${40 + pw}" y="24" width="${qw}" height="${h}"/>
+    <text class="m" x="${40 + pw / 2}" y="12">${co(p)}x</text><text class="m" x="${40 + pw + qw / 2}" y="12">${q}</text><text class="m" x="26" y="${24 + h / 2}">${g}</text>
+    <text x="${40 + pw / 2}" y="${24 + h / 2}">${g * p}x</text><text x="${40 + pw + qw / 2}" y="${24 + h / 2}">${g * q}</text>`;
+    return [svgWrap(60 + pw + qw, h + 40, out), `${g * p}x + ${g * q} = ${g}(${co(p)}x + ${q}): find the side lengths from the areas`]; },
+  u2l4({ f }) { const F = [['A', 'l', 'w', 'area = length × width'], ['d', 's', 't', 'distance = speed × time'], ['F', 'm', 'a', 'force = mass × acceleration']][f - 1];
+    const out = `<path class="ln" d="M100 10 L190 140 L10 140 Z"/><line class="ln" x1="42" y1="94" x2="158" y2="94"/><line class="ln" x1="100" y1="94" x2="100" y2="140"/>
+    <text x="100" y="66">${F[0]}</text><text x="66" y="120">${F[1]}</text><text x="134" y="120">${F[2]}</text><text class="m" x="100" y="116">×</text>`;
+    return [svgWrap(200, 150, out), `${F[0]} = ${F[1]} × ${F[2]} (${F[3]}). Cover the letter you want: ${F[2]} = ${F[0]} ÷ ${F[1]}, ${F[1]} = ${F[0]} ÷ ${F[2]}`]; },
+  u3l1(p) { p.b = Math.max(p.b, p.a + 1); const { a, b } = p;
+    const out = `<line class="ln" x1="20" y1="60" x2="300" y2="60"/><path class="ln" d="M160 60 L145 100 L175 100 Z"/>
+    <rect class="h" x="40" y="20" width="90" height="40" rx="6"/><text x="85" y="40">x + ${a}</text>
+    <rect class="k" x="190" y="20" width="90" height="40" rx="6"/><text x="235" y="40">${b}</text>`;
+    return [svgWrap(320, 110, out), `x + ${a} = ${b}. Take ${a} off both sides to keep it balanced: x = ${b - a}`]; },
+  u3l2({ a, b, x }) { const c = a * x + b; return [flow(['x', `×${a}`, '?', `+${b}`, String(c)], [String(x), `÷${a}`, String(a * x), `−${b}`, String(c)]), `${a}x + ${b} = ${c}: do it backwards, −${b} then ÷${a}, so x = ${x}`]; },
+  u3l3({ a, b, x }) { const c = a * (x - b); return [flow(['x', `−${b}`, '?', `×${a}`, String(c)], [String(x), `+${b}`, String(x - b), `÷${a}`, String(c)]), `${a}(x − ${b}) = ${c}: undo ×${a} first, then undo −${b}, so x = ${x}`]; },
+  u3l4({ a, b, x }) { const c = a * x + b; return [flow(['?', `×${a}`, '?', `+${b}`, String(c)], [String(x), `÷${a}`, String(a * x), `−${b}`, String(c)]), `"Multiply by ${a} and add ${b}, get ${c}": go backwards from ${c} to get ${x}`]; },
+  u3l5(p) { p.c = Math.min(p.c, p.a - 1); const { a, c, x } = p, b = 3, d = (a - c) * x + b;
+    const out = `<line class="ln" x1="20" y1="60" x2="340" y2="60"/><path class="ln" d="M180 60 L165 100 L195 100 Z"/>
+    <rect class="h" x="30" y="20" width="120" height="40" rx="6"/><text x="90" y="40">${a}x + ${b}</text>
+    <rect class="k" x="210" y="20" width="120" height="40" rx="6"/><text x="270" y="40">${co(c)}x + ${d}</text>`;
+    return [svgWrap(360, 110, out), `Take ${co(c)}x off both sides: ${a - c === 1 ? '' : a - c}x + ${b} = ${d}, so x = ${x}`]; },
+  b1l1({ n }) { const f = factorsOf(n), pairs = f.filter(v => v * v <= n); let out = '';
+    pairs.forEach((v, i) => { const y = 10 + i * 46; out += `<rect class="h" x="10" y="${y}" width="60" height="36" rx="6"/><text x="40" y="${y + 18}">${v}</text><text x="90" y="${y + 18}">×</text><rect class="k" x="110" y="${y}" width="60" height="36" rx="6"/><text x="140" y="${y + 18}">${n / v}</text><text class="m" x="215" y="${y + 18}">= ${n}</text>`; });
+    return [svgWrap(260, 20 + pairs.length * 46, out), `${n} has ${f.length} factors: ${f.join(', ')}${isPrime(n) ? ' → prime!' : ''}`]; },
+  b2l1({ a, b }) { const lo = Math.min(0, a, a + b) - 1, hi = Math.max(0, a, a + b) + 1, W = 440, X = v => 20 + (v - lo) / (hi - lo) * (W - 40); let out = `<line class="ln" x1="10" y1="60" x2="${W - 10}" y2="60"/>`;
+    for (let v = lo; v <= hi; v++) out += `<line class="ln" x1="${X(v)}" y1="54" x2="${X(v)}" y2="66"/>${hi - lo <= 24 || v % 5 === 0 ? `<text class="m" x="${X(v)}" y="80">${v}</text>` : ''}`;
+    out += `<circle class="h" cx="${X(a)}" cy="60" r="7"/><circle class="k" cx="${X(a + b)}" cy="60" r="7"/>`;
+    out += b ? `<path class="acc" d="M${X(a)} 46 Q${(X(a) + X(a + b)) / 2} ${10} ${X(a + b)} 46"/>` : '';
+    return [svgWrap(W, 92, out), `${neg(a)} + ${neg(b)} = ${a + b} (start at ${a}, move ${b < 0 ? 'left' : 'right'} ${Math.abs(b)})`]; },
+  b3l1(p) { p.n = Math.min(p.n, p.d); const { n, d, k } = p; let out = '';
+    const bar = (parts, fill, y) => { const w = 400 / parts; for (let i = 0; i < parts; i++) out += `<rect class="${i < fill ? 'h' : 'b'}" x="${10 + i * w}" y="${y}" width="${w}" height="34"/>`; };
+    bar(d, n, 10); bar(d * k, n * k, 60);
+    return [svgWrap(420, 104, out), `${frac(n, d)} = ${frac(n * k, d * k)}: the same amount is shaded`]; },
+  b3l4({ n, d, k }) { if (n > d) n = d; let out = ''; const total = d * k, w = 400 / d;
+    for (let i = 0; i < d; i++) out += `<rect class="${i < n ? 'h' : 'b'}" x="${10 + i * w}" y="10" width="${w}" height="40"/><text x="${10 + i * w + w / 2}" y="30">${k}</text>`;
+    return [svgWrap(420, 60, out), `${frac(n, d)} of ${total}: split ${total} into ${d} groups of ${k}, take ${n} groups → ${n * k}`]; },
+  b4l2({ r, bl }) { let out = ''; const all = [...Array(r).fill('h'), ...Array(bl).fill('k')];
+    all.forEach((c, i) => out += `<circle class="${c}" cx="${26 + (i % 10) * 34}" cy="${26 + Math.floor(i / 10) * 34}" r="13"/>`);
+    return [svgWrap(360, 20 + Math.ceil(all.length / 10) * 34, out), `P(blue) = ${fracHtml(r, r + bl)} · P(green) = ${fracHtml(bl, r + bl)}`]; },
+  b5l1(p) { p.b = Math.min(p.b, 170 - p.a); const { a, b } = p, c = 180 - a - b, rad = t => t * Math.PI / 180;
+    // base from (40,170) to (380,170); apex found from the two base angles
+    // shrink the base if needed so the apex fits; the shape stays true to the angles
+    const ta = Math.tan(rad(a)), tb = Math.tan(rad(b)), L = Math.min(340, 150 * (ta + tb) / (ta * tb)), x0 = 210 - L / 2, x1 = x0 + L;
+    const px = x0 + L * tb / (ta + tb), py = 170 - (px - x0) * ta;
+    const out = `<path class="ln" d="M${x0} 170 L${x1} 170 L${px} ${py} Z"/><text x="${x0 + 30}" y="158">${a}°</text><text x="${x1 - 30}" y="158">${b}°</text><text x="${px}" y="${py + 32}">${c}°</text>`;
+    return [svgWrap(420, 185, out), `${a}° + ${b}° + ${c}° = 180°`]; },
+  b7l2({ a, both, b }) { const L = (n, cx) => Array.from({ length: n }, (_, i) => `<circle class="b" cx="${cx + (i % 3 - 1) * 18}" cy="${70 + Math.floor(i / 3) * 18 - (Math.ceil(n / 3) - 1) * 9}" r="6"/>`).join('');
+    const out = `<circle class="h" cx="140" cy="80" r="70" style="fill-opacity:.5"/><circle class="k" cx="240" cy="80" r="70" style="fill-opacity:.5"/>
+    <text x="90" y="18">A</text><text x="290" y="18">B</text>${L(a, 105)}${L(both, 190)}${L(b, 275)}`;
+    return [svgWrap(380, 165, out), `#A = ${a + both}, #B = ${b + both} · A ∩ B has ${both} · A ∪ B has ${a + both + b} (${a + both} + ${b + both} − ${both})`]; },
+  b8l1({ p }) { let out = ''; for (let i = 0; i < 100; i++) out += `<rect class="${i < p ? 'h' : 'b'}" x="${10 + (i % 10) * 18}" y="${10 + Math.floor(i / 10) * 18}" width="18" height="18"/>`;
+    return [svgWrap(200, 200, out), `${p} out of 100 squares = ${p}% = ${dec(p / 100)} = ${fracHtml(p, 100)}`]; },
+  b9l5({ a, b }) { const X = 120, sa = a * 18, sb = b * 18, x0 = 40, y0 = 30;
+    const out = `<rect class="h" x="${x0}" y="${y0}" width="${X}" height="${X}"/><rect class="k" x="${x0 + X}" y="${y0}" width="${sb}" height="${X}"/>
+    <rect class="k" x="${x0}" y="${y0 + X}" width="${X}" height="${sa}"/><rect class="b" x="${x0 + X}" y="${y0 + X}" width="${sb}" height="${sa}"/>
+    <text class="m" x="${x0 + X / 2}" y="16">x</text><text class="m" x="${x0 + X + sb / 2}" y="16">${b}</text><text class="m" x="24" y="${y0 + X / 2}">x</text><text class="m" x="24" y="${y0 + X + sa / 2}">${a}</text>
+    <text x="${x0 + X / 2}" y="${y0 + X / 2}">x²</text><text x="${x0 + X + sb / 2}" y="${y0 + X / 2}">${b}x</text><text x="${x0 + X / 2}" y="${y0 + X + sa / 2}">${a}x</text><text x="${x0 + X + sb / 2}" y="${y0 + X + sa / 2}">${a * b}</text>`;
+    return [svgWrap(Math.max(x0 + X + sb + 20, 220), y0 + X + sa + 10, out), `(x + ${a})(x + ${b}) = x² + ${b}x + ${a}x + ${a * b} = x² + ${a + b}x + ${a * b}`]; },
+  b10l3({ l, w }) { const s = 24, out = `<rect class="h" x="40" y="20" width="${l * s}" height="${w * s}"/><path class="ln" d="M40 ${20 + w * s} L${40 + l * s} ${20 + w * s} L${40 + l * s} 20 Z" style="stroke-dasharray:5 4"/>
+    <text class="m" x="${40 + l * s / 2}" y="${36 + w * s}">${l} cm</text><text class="m" x="20" y="${20 + w * s / 2}">${w}</text>`;
+    return [svgWrap(Math.max(60 + l * s, 200), 50 + w * s, out), `Area = ${l} × ${w} = ${l * w} cm² · Perimeter = ${2 * (l + w)} cm · Each half triangle = ${l * w / 2} cm²`]; },
+  b10l4({ l, w, h }) { const s = 22, dx = w * s * .6, dy = w * s * .4, x0 = 20, y0 = 20 + dy, W = l * s, H = h * s;
+    const out = `<path class="h" d="M${x0} ${y0} h${W} v${H} h${-W} Z"/><path class="k" d="M${x0} ${y0} l${dx} ${-dy} h${W} l${-dx} ${dy} Z"/><path class="b" d="M${x0 + W} ${y0} l${dx} ${-dy} v${H} l${-dx} ${dy} Z"/>
+    <text class="m" x="${x0 + W / 2}" y="${y0 + H + 14}">${l} cm</text><text class="m" x="${x0 + W + dx + 18}" y="${y0 - dy + H / 2}">${h}</text><text class="m" x="${x0 + W + dx / 2 + 10}" y="${y0 + H - dy / 2 + 10}">${w}</text>`;
+    return [svgWrap(Math.max(x0 + W + dx + 40, 220), y0 + H + 26, out), `Volume = ${l} × ${w} × ${h} = ${l * w * h} cm³ · Surface area = ${2 * (l * w + l * h + w * h)} cm²`]; },
+  b11l2({ a }) { const r = a * Math.PI / 180, cx = 200, cy = 130, ex = cx + 110 * Math.cos(r), ey = cy - 110 * Math.sin(r);
+    const out = `<line class="ln" x1="40" y1="${cy}" x2="360" y2="${cy}"/><line class="acc" x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}"/>
+    <text x="${cx + 55 * Math.cos(r / 2)}" y="${cy - 40 * Math.sin(r / 2) - 4}">${a}°</text><text x="${cx + 55 * Math.cos((r + Math.PI) / 2)}" y="${cy - 40 * Math.sin((r + Math.PI) / 2) - 4}">${180 - a}°</text>`;
+    return [svgWrap(400, 145, out), `${a}° + ${180 - a}° = 180° (a straight line)`]; },
+  b11l3({ a }) { const r = a * Math.PI / 180, k = 1 / Math.tan(r), y1 = 50, y2 = 130, X = y => 200 + (90 - y) * k;
+    const out = `<line class="ln" x1="20" y1="${y1}" x2="380" y2="${y1}"/><line class="ln" x1="20" y1="${y2}" x2="380" y2="${y2}"/>
+    <line class="acc" x1="${X(5)}" y1="5" x2="${X(175)}" y2="175"/>
+    <text x="${X(y1) + 26}" y="${y1 - 12}">${a}°</text><text x="${X(y1) - 26}" y="${y1 + 12}">${a}°</text><text x="${X(y2) + 26}" y="${y2 - 12}">${a}°</text><text class="m" x="${X(y2) - 30}" y="${y2 - 12}">${180 - a}°</text>`;
+    return [svgWrap(400, 180, out), `Corresponding (F) = ${a}° · Alternate (Z) = ${a}° · Co-interior (C) = ${180 - a}°`]; },
+  b12l2({ p, q, one }) { let out = ''; const w = 380 / (p + q);
+    for (let i = 0; i < p + q; i++) out += `<rect class="${i < p ? 'h' : 'k'}" x="${10 + i * w}" y="10" width="${w}" height="40"/><text x="${10 + i * w + w / 2}" y="30">${one}</text>`;
+    return [svgWrap(400, 60, out), `Share €${(p + q) * one} in the ratio ${p} : ${q}: ${p + q} shares of €${one} → €${p * one} and €${q * one}`]; },
+  b14l1({ x, y }) { const c = 24, o = 150, P = v => o + v * c; let out = '';
+    for (let i = -5; i <= 5; i++) out += `<line class="ln" style="opacity:.2" x1="${P(i)}" y1="${P(-5)}" x2="${P(i)}" y2="${P(5)}"/><line class="ln" style="opacity:.2" x1="${P(-5)}" y1="${P(i)}" x2="${P(5)}" y2="${P(i)}"/>`;
+    out += `<line class="ln" x1="${P(-5.5)}" y1="${o}" x2="${P(5.5)}" y2="${o}"/><line class="ln" x1="${o}" y1="${P(-5.5)}" x2="${o}" y2="${P(5.5)}"/><text class="m" x="${P(5.5) + 10}" y="${o}">x</text><text class="m" x="${o}" y="${P(-5.5) - 10}">y</text>`;
+    out += `<text class="m" x="${P(3)}" y="${P(-4.5)}">1st</text><text class="m" x="${P(-3)}" y="${P(-4.5)}">2nd</text><text class="m" x="${P(-3)}" y="${P(4.5)}">3rd</text><text class="m" x="${P(3)}" y="${P(4.5)}">4th</text>`;
+    out += `<path class="acc" style="stroke-dasharray:4 4" d="M${o} ${o} H${P(x)} V${P(-y)}"/><circle class="h" cx="${P(x)}" cy="${P(-y)}" r="7"/>`;
+    const qd = x === 0 || y === 0 ? 'on an axis' : `in the ${x > 0 ? (y > 0 ? '1st' : '4th') : (y > 0 ? '2nd' : '3rd')} quadrant`;
+    return [svgWrap(310, 300, out), `(${x}, ${y}): ${Math.abs(x)} ${x < 0 ? 'left' : 'right'}, then ${Math.abs(y)} ${y < 0 ? 'down' : 'up'} → ${qd}`]; },
+  b14l3({ run, rise }) { const c = 26, ox = 30, oy = 250, P = (x, y) => [ox + x * c, oy - y * c], [ax, ay] = P(1, 1), [bx, by] = P(1 + run, 1 + rise); let out = '';
+    for (let i = 0; i <= 9; i++) out += `<line class="ln" style="opacity:.2" x1="${ox + i * c}" y1="${oy}" x2="${ox + i * c}" y2="${oy - 9 * c}"/><line class="ln" style="opacity:.2" x1="${ox}" y1="${oy - i * c}" x2="${ox + 9 * c}" y2="${oy - i * c}"/>`;
+    out += `<line class="ln" x1="${ax - (bx - ax) * .3}" y1="${ay - (by - ay) * .3}" x2="${bx + (bx - ax) * .3}" y2="${by + (by - ay) * .3}"/>
+    <path class="acc" d="M${ax} ${ay} H${bx} V${by}"/><text class="m" x="${(ax + bx) / 2}" y="${ay + 14}">run ${run}</text><text class="m" x="${bx + 30}" y="${(ay + by) / 2}">rise ${rise}</text>
+    <circle class="h" cx="${ax}" cy="${ay}" r="6"/><circle class="h" cx="${bx}" cy="${by}" r="6"/>`;
+    return [svgWrap(320, 270, out), `Slope = rise ÷ run = ${rise} ÷ ${run} = ${fracHtml(rise, run)}`]; },
+};
+// Diagrams you can play with: each control is [label, min, max, default, step?].
+const DIAGRAM_CONTROLS = {
+  u1l1: { base: ['Number', 2, 10, 2], exp: ['Power', 1, 6, 3] },
+  u1l2: { m: ['First power', 1, 5, 3], n: ['Second power', 1, 5, 4] },
+  u1l3: { m: ['Top power', 1, 8, 5], n: ['Bottom power', 0, 8, 3] },
+  u1l4: { n: ['Side length', 1, 10, 5] },
+  u1l5: { e: ['Power of 10', 1, 7, 4] },
+  u2l1: { a: ['First', 1, 8, 3], b: ['Second', 1, 8, 5] },
+  u2l2: { a: ['Outside', 2, 9, 3], b: ['Inside', 1, 9, 4] },
+  u2l3: { g: ['Common factor', 2, 6, 4], p: ['x part', 1, 6, 3], q: ['Number part', 1, 9, 2] },
+  u2l4: { f: ['Formula', 1, 3, 1] },
+  u3l1: { a: ['Added', 1, 10, 7], b: ['Total', 2, 20, 12] },
+  u3l2: { a: ['Multiply by', 2, 9, 3], b: ['Add', 1, 15, 5], x: ['Secret x', 1, 10, 5] },
+  u3l3: { a: ['Multiply by', 2, 6, 4], b: ['Take away', 1, 9, 2], x: ['Secret x', 1, 12, 7] },
+  u3l4: { a: ['Multiply by', 2, 6, 2], b: ['Add', 1, 20, 3], x: ['Secret number', 1, 20, 7] },
+  u3l5: { a: ['Left x', 2, 9, 5], c: ['Right x', 1, 8, 2], x: ['Secret x', 1, 10, 4] },
+  b1l1: { n: ['Number', 2, 60, 12] },
+  b2l1: { a: ['Start', -10, 10, -4], b: ['Add', -10, 10, 7] },
+  b3l1: { n: ['Top', 1, 9, 2], d: ['Bottom', 2, 10, 3], k: ['Multiply by', 1, 5, 4] },
+  b3l4: { n: ['Top', 1, 9, 3], d: ['Bottom', 2, 10, 4], k: ['Each group', 1, 12, 5] },
+  b4l2: { r: ['Blue counters', 0, 20, 3], bl: ['Green counters', 0, 20, 5] },
+  b5l1: { a: ['Angle A', 10, 150, 50, 5], b: ['Angle B', 10, 150, 70, 5] },
+  b7l2: { a: ['Only in A', 0, 9, 3], both: ['In both', 0, 9, 2], b: ['Only in B', 0, 9, 4] },
+  b8l1: { p: ['Percent', 0, 100, 35, 5] },
+  b9l5: { a: ['First number', 1, 6, 2], b: ['Second number', 1, 6, 3] },
+  b10l3: { l: ['Length', 1, 12, 6], w: ['Width', 1, 8, 4] },
+  b10l4: { l: ['Length', 1, 8, 5], w: ['Width', 1, 6, 3], h: ['Height', 1, 6, 2] },
+  b11l2: { a: ['Angle', 10, 170, 65, 5] },
+  b11l3: { a: ['Angle', 30, 150, 70, 5] },
+  b12l2: { p: ['First part', 1, 6, 3], q: ['Second part', 1, 6, 5], one: ['One share (€)', 1, 20, 5] },
+  b14l1: { x: ['x', -5, 5, 3], y: ['y', -5, 5, 2] },
+  b14l3: { run: ['Run', 1, 6, 3], rise: ['Rise', 0, 6, 4] },
+};
+// Short name used on the "Practice ___" button.
+const TOPIC = { u1l1: 'powers', u1l2: 'multiplying powers', u1l3: 'dividing powers', u1l4: 'roots', u1l5: 'scientific notation',
+  u2l1: 'like terms', u2l2: 'expanding brackets', u2l3: 'factoring', u2l4: 'rearranging formulas',
+  u3l1: 'one-step equations', u3l5: 'letters on both sides',
+  b1l1: 'factors and primes', b1l2: 'HCF and LCM', b1l3: 'order of operations', b1l4: 'rounding', b2l1: 'adding integers', b2l2: 'multiplying integers',
+  b3l1: 'equivalent fractions', b3l2: 'adding fractions', b3l3: 'multiplying fractions', b3l4: 'fractions of numbers', b4l1: 'listing outcomes', b4l2: 'probability',
+  b5l1: 'triangle angles', b5l2: 'exterior angles', b5l3: 'averages', b5l4: 'symmetry', u3l2: 'two-step equations', u3l3: 'equations with brackets', u3l4: 'word problems',
+  b6l1: 'adding decimals', b6l2: 'multiplying decimals', b6l3: 'rounding decimals', b6l4: 'decimal probability', b7l1: 'describing sets', b7l2: 'union and intersection', b7l3: 'complements',
+  b8l1: 'converting percentages', b8l2: 'percentages', b8l3: 'VAT and discount', b8l4: 'profit and loss', b9l1: 'using letters', b9l2: 'substitution', b9l3: 'removing brackets', b9l4: 'indices', b9l5: 'two brackets',
+  b10l1: 'metric units', b10l2: 'perimeter', b10l3: 'area', b10l4: 'volume', b10l5: 'nets', b11l1: 'types of angles', b11l2: 'calculating angles', b11l3: 'parallel lines',
+  b12l1: 'ratio', b12l2: 'sharing in a ratio', b12l3: 'proportion', b12l4: 'inverse proportion', b13l1: 'types of data', b13l2: 'surveys', b14l1: 'plotting points', b14l2: 'midpoints', b14l3: 'slope' };
+
+const PRACTICE_COUNT = 6, TEST_COUNT = 10, TEST_PASS = 8, XP_LESSON = 10, XP_TEST = 20, XP_PRACTICE = 5;
+
+// ---------- saved progress ----------
+const KEY = 'numiq-progress-v1';
+const freshProgress = () => ({ done: {}, xp: 0, streak: 0, lastDay: null, seen: {}, days: {}, bestLevel: 0, review: {}, daily: {} });
+let state = Object.assign(freshProgress(), { profile: {}, settings: {} });
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.assign(state, s); } catch (e) {}
+// Profile and settings survive a progress reset.
+function fixState() {
+  state.profile = Object.assign({ name: '', user: '', avatar: '👤', joined: null }, state.profile);
+  state.settings = Object.assign({ theme: 'system', goal: 20, sound: true }, state.settings);
+  for (const k of ['done', 'seen', 'days', 'review', 'daily']) if (!state[k]) state[k] = {};
+  if (!state.bestLevel) state.bestLevel = 0;
+}
+fixState();
+// Saved in this browser always, and to the viewer's Claude account when the page can (see cloud below).
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} cloud.push(); };
+
+// ---------- accounts ----------
+// Two ways to save progress beyond this browser, picked by where the page is running:
+//  • on claude.ai: the viewer's Claude account (private data/users/<id>/progress doc, `db` capability)
+//  • on the real website: an email + password account (Supabase), progress in the `progress` table
+// Either way the browser keeps a copy, so the page works offline or signed out.
+const SUPABASE_URL = 'https://cwdvsuloncnvsfoouzfl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OksXcnBBqXS1_8_HgV86Vg_CJpWxuQP'; // publishable: safe in a web page, rows are guarded by RLS
+const inClaude = !!(window.claude && window.claude.use);
+const cloud = {
+  kind: null, name: '', email: '', store: null, timer: null, busy: false, again: false, status: 'local',
+  push() { if (!this.store) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.write(), 1200); },
+  async write() {
+    if (!this.store) return;
+    if (this.busy) { this.again = true; return; }
+    this.busy = true;
+    try { await this.store(JSON.parse(JSON.stringify(state))); this.setStatus('synced'); }
+    catch (e) { this.setStatus('retry'); setTimeout(() => this.push(), 4000 + Math.random() * 3000); }
+    this.busy = false;
+    if (this.again) { this.again = false; this.write(); }
+  },
+  setStatus(st) {
+    this.status = st; const el = document.getElementById('acct'); if (!el) return;
+    el.classList.toggle('on', st === 'synced');
+    el.textContent = st === 'synced' ? '☁️ Saved to your account' : st === 'retry' ? '☁️ Reconnecting…' : this.kind === 'email' ? '🔑 Log in' : '💾 This browser';
+    el.title = st === 'synced' ? `Signed in as ${this.email || this.name || 'you'}. Your progress follows you to any computer.` : 'Progress is saved in this browser only.';
+  },
+  // First sign-in moves this browser's progress into the account. After that the account wins,
+  // unless this browser somehow has more XP (e.g. used offline), so nothing is ever lost.
+  async adopt(remote, store) {
+    if (remote && (remote.xp || 0) >= (state.xp || 0)) { state = Object.assign(freshProgress(), JSON.parse(JSON.stringify(remote))); fixState(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    if (!state.profile.name && this.name) state.profile.name = this.name;
+    this.store = store; this.setStatus('synced');
+    await this.write();
+    applyTheme(); if (!run) show(view === 'login' ? 'learn' : view);
+  },
+  async start() { if (inClaude) await this.startClaude(); else await this.startEmail(); },
+  async startClaude() {
+    this.kind = 'claude';
+    const [user, db] = await Promise.all([claude.use('user'), claude.use('db')]);
+    if (!user || !db) return;
+    const id = await user.id(); if (!id) return;
+    this.name = await user.name();
+    const ref = db.doc(`data/users/${id}/progress`);
+    let snap; try { snap = await ref.get(); } catch (e) { return; }
+    await this.adopt(snap.exists ? snap.data().state : null, s => ref.set({ state: s, savedAt: Date.now() }));
+  },
+  sb: null, user: null,
+  async startEmail() {
+    this.kind = 'email'; this.setStatus('local'); document.getElementById('acct').classList.add('click');
+    document.getElementById('acct').onclick = () => { if (this.status !== 'synced') show('login'); else { ui.profileMode = 'view'; show('profile'); } };
+    try { await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'); }
+    catch (e) { return; } // no internet: keep working from this browser
+    this.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    this.sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { ui.loginMode = 'newpass'; show('login'); }
+      else if (event === 'SIGNED_IN' && session && (!this.user || this.user.id !== session.user.id)) setTimeout(() => this.signedIn(session.user), 0);
+    });
+    const { data } = await this.sb.auth.getSession();
+    if (data.session) await this.signedIn(data.session.user);
+    else if (!skipLogin()) show('login');
+  },
+  async signedIn(user) {
+    this.user = user; this.email = user.email || '';
+    const { data, error } = await this.sb.from('progress').select('state').eq('user_id', user.id).maybeSingle();
+    if (error) { this.setStatus('retry'); return; }
+    await this.adopt(data ? data.state : null, async s => {
+      const { error } = await this.sb.from('progress').upsert({ user_id: user.id, state: s, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    });
+  },
+  async logOut() {
+    if (this.sb) await this.sb.auth.signOut();
+    // Wipe this browser's copy so the next person on this computer starts clean.
+    try { localStorage.removeItem(KEY); sessionStorage.removeItem('numiq-skip-login'); } catch (e) {}
+    location.reload();
+  },
+};
+const skipLogin = () => { try { return sessionStorage.getItem('numiq-skip-login') === '1'; } catch (e) { return false; } };
+function loadScript(src) { return new Promise((ok, bad) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = bad; document.head.appendChild(el); }); }
+
+// Log in / sign up screen (email accounts on the real website).
+function renderLogin() {
+  const mode = ui.loginMode || 'login', sb = cloud.sb;
+  const title = { login: 'Log in to Numiq', signup: 'Create your Numiq account', forgot: 'Reset your password', newpass: 'Choose a new password' }[mode];
+  app.innerHTML = `<div class="card login">
+    <h2 style="margin:0">${title}</h2>
+    ${mode === 'login' || mode === 'signup' ? `<div class="prof-btns"><button data-lm="login" class="${mode === 'login' ? 'sel' : ''}">Log in</button><button data-lm="signup" class="${mode === 'signup' ? 'sel' : ''}">Sign up</button></div>` : ''}
+    ${mode !== 'newpass' ? `<label class="field">Email <input type="email" id="lgEmail" autocomplete="email"></label>` : ''}
+    ${mode !== 'forgot' ? `<label class="field">${mode === 'newpass' ? 'New password' : 'Password'} <input type="password" id="lgPass" autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" placeholder="${mode === 'login' ? '' : 'At least 8 characters'}"></label>` : ''}
+    <button class="primary" id="lgGo">${{ login: 'Log in', signup: 'Create account', forgot: 'Send reset email', newpass: 'Save password' }[mode]}</button>
+    <div id="lgMsg" class="cap"></div>
+    ${mode === 'login' ? '<button class="linkish" data-lm="forgot">Forgot your password?</button>' : mode === 'forgot' ? '<button class="linkish" data-lm="login">Back to log in</button>' : ''}
+    ${mode !== 'newpass' ? '<button class="linkish" id="lgSkip">Use Numiq without an account (progress stays in this browser)</button>' : ''}
+  </div>`;
+  const $ = id => document.getElementById(id), msg = (t, bad) => { $('lgMsg').textContent = t; $('lgMsg').style.color = bad ? 'var(--bad)' : ''; };
+  app.querySelectorAll('[data-lm]').forEach(b => b.onclick = () => { ui.loginMode = b.dataset.lm; renderLogin(); });
+  if ($('lgSkip')) $('lgSkip').onclick = () => { try { sessionStorage.setItem('numiq-skip-login', '1'); } catch (e) {} show('learn'); };
+  const first = $('lgEmail') || $('lgPass'); first.focus();
+  app.querySelectorAll('.login input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') $('lgGo').click(); }));
+  if (!sb) { msg('Still connecting… if this stays, check your internet and refresh.', true); }
+  $('lgGo').onclick = async () => {
+    if (!cloud.sb) return;
+    const email = $('lgEmail') ? $('lgEmail').value.trim() : '', pass = $('lgPass') ? $('lgPass').value : '';
+    if (mode !== 'newpass' && !/^\S+@\S+\.\S+$/.test(email)) return msg('Type a real email address.', true);
+    if (mode !== 'forgot' && mode !== 'login' && pass.length < 8) return msg('Use at least 8 characters for your password.', true);
+    $('lgGo').disabled = true; msg('One moment…');
+    const back = location.origin + location.pathname;
+    let res;
+    if (mode === 'login') res = await cloud.sb.auth.signInWithPassword({ email, password: pass });
+    else if (mode === 'signup') res = await cloud.sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: back } });
+    else if (mode === 'forgot') res = await cloud.sb.auth.resetPasswordForEmail(email, { redirectTo: back });
+    else res = await cloud.sb.auth.updateUser({ password: pass });
+    $('lgGo').disabled = false;
+    if (res.error) return msg(niceAuthError(res.error), true);
+    if (mode === 'signup' && !res.data.session) return msg('Almost done! We sent you an email. Click the link in it to confirm your account, then log in here.');
+    if (mode === 'forgot') return msg('If that email has an account, a reset link is on its way. Check your inbox (and spam).');
+    if (mode === 'newpass') { ui.loginMode = 'login'; msg('Password changed!'); }
+    if (res.data && (res.data.session || res.data.user) && mode !== 'forgot') { const u = (res.data.session || {}).user || res.data.user; if (u && cloud.user?.id !== u.id) await cloud.signedIn(u); else show('learn'); }
+  };
+}
+function niceAuthError(e) {
+  const m = (e && e.message || '').toLowerCase();
+  if (m.includes('invalid login')) return 'Wrong email or password.';
+  if (m.includes('not confirmed')) return 'Confirm your email first: click the link in the email we sent you.';
+  if (m.includes('already registered')) return 'That email already has an account. Try logging in.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Too many tries. Wait a minute and try again.';
+  if (m.includes('fetch') || m.includes('network')) return "Can't reach the server. Check your internet.";
+  return e.message || 'Something went wrong. Try again.';
+}
+
+// Progress code: a copy of all your progress as text, to move it between computers or keep as a backup.
+const progressCode = () => btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+function loadProgressCode(code) {
+  const s2 = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+  if (!s2 || typeof s2 !== 'object' || !s2.done) throw new Error('bad code');
+  state = Object.assign(freshProgress(), s2); fixState(); save();
+}
+const dayStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = () => dayStr(new Date());
+const yesterday = () => dayStr(new Date(Date.now() - 864e5));
+const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return dayStr(d); };
+
+// ---------- mistake review (spaced repetition) ----------
+// A topic you get wrong goes in state.review. It comes back today, then after 1, 3 and 7 days.
+// Get it right each time and it leaves the pile; get it wrong and it starts again tomorrow.
+const GAPS = [0, 1, 3, 7], REVIEW_MAX = 10, XP_DAILY = 15;
+const dueReviews = () => Object.keys(state.review).filter(id => findLesson(id) && state.review[id].due <= today());
+function noteResult(c, ok) {
+  const lid = c.lid; if (!lid) return;
+  if (run.review) {
+    const r = state.review[lid]; if (!r) return;
+    if (ok) { r.step++; if (r.step >= GAPS.length) delete state.review[lid]; else r.due = addDays(GAPS[r.step]); }
+    else { r.step = 0; r.due = addDays(1); }
+  } else if (!ok) state.review[lid] = { step: 0, due: today() };
+  save();
+}
+function shownStreak() { return state.lastDay === today() || state.lastDay === yesterday() ? state.streak : 0; }
+function finishItem(id, xp) {
+  if (id) state.done[id] = true;
+  state.xp += xp;
+  state.days[today()] = (state.days[today()] || 0) + xp;
+  if (state.lastDay !== today()) { state.streak = state.lastDay === yesterday() ? state.streak + 1 : 1; state.lastDay = today(); }
+  save();
+}
+
+// Global order of every node on the path: each lesson, then the unit test.
+const ORDER = UNITS.flatMap(u => [...u.lessons.map(l => l.id), u.id + 'test']);
+// Developer mode (temporary): everything counts as unlocked. Kept apart from progress so Reset doesn't touch it.
+let devMode = false; try { devMode = localStorage.getItem('numiq-dev') === '1'; } catch (e) {}
+function status(id) {
+  if (state.done[id]) return 'done';
+  if (devMode) return 'current';
+  const i = ORDER.indexOf(id);
+  return ORDER.slice(0, i).every(x => state.done[x]) ? 'current' : 'locked';
+}
+
+// ---------- path view ----------
+const app = document.getElementById('app');
+function renderStats() { document.getElementById('xp').textContent = state.xp; document.getElementById('streak').textContent = shownStreak(); }
+
+let view = 'learn', ui = { closed: {}, entry: null };
+function show(v) {
+  view = v || view; run = null; renderStats();
+  document.getElementById('tabbar').hidden = false;
+  document.querySelectorAll('#tabbar [data-view]').forEach(b => { if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  const unseen = ORDER.filter(id => state.done[id] && findLesson(id) && !state.seen[id]).length;
+  document.getElementById('notesNew').innerHTML = unseen ? `<span class="new">+</span>` : '';
+  document.querySelector('.footer').hidden = view !== 'learn';
+  document.getElementById('gear').hidden = view !== 'profile';
+  if (view === 'login') { document.getElementById('tabbar').hidden = true; document.querySelector('.footer').hidden = true; return renderLogin(); }
+  if (view === 'learn') renderPath(); else if (view === 'notes') renderNotes(); else if (view === 'profile') renderProfile(); else renderSoon();
+}
+document.querySelectorAll('#tabbar [data-view]').forEach(b => b.onclick = () => { ui.profileMode = 'view'; show(b.dataset.view); });
+
+function renderNotes() {
+  const unlocked = id => devMode || !!state.done[id];
+  let list = '';
+  UNITS.forEach((u, ui2) => {
+    const closed = ui.closed[u.id];
+    list += `<button class="cat" data-cat="${u.id}" aria-expanded="${!closed}">Unit ${ui2 + 1}: ${u.title}<span>${closed ? '▾' : '▴'}</span></button>`;
+    if (!closed) list += `<div class="items">${u.lessons.map(l => unlocked(l.id)
+      ? `<button class="entry ${ui.entry === l.id ? 'sel' : ''}" data-e="${l.id}">${l.title}${state.seen[l.id] ? '' : '<span class="new">+</span>'}</button>`
+      : `<button class="entry" disabled>🔒 Locked</button>`).join('')}</div>`;
+  });
+  let entry;
+  const l = ui.entry && findLesson(ui.entry);
+  if (l) {
+    const ctl = DIAGRAM_CONTROLS[l.id];
+    const controls = ctl ? `<div class="dg-controls">${Object.entries(ctl).map(([k, [label, , , def]]) =>
+      `<div class="stepper"><span>${label}</span><button data-k="${k}" data-d="-1" aria-label="${label} down">−</button><b id="dv-${k}">${def}</b><button data-k="${k}" data-d="1" aria-label="${label} up">+</button></div>`).join('')}</div>` : '';
+    entry = `<h2>${l.title}</h2>
+      <section><h3>How it works</h3><div>${l.idea}</div></section>
+      <section><h3>Example</h3><div class="ex">${l.example}</div></section>
+      ${DIAGRAMS[l.id] ? `<section class="diag-box"><h3>Diagram</h3>${controls}<div id="dg"></div><div class="cap" id="dgCap"></div>${ctl ? '<div class="cap small">Use − and + to change the numbers.</div>' : ''}</section>` : ''}
+      <button class="primary" id="practice">Practice ${TOPIC[l.id]}</button>`;
+  } else entry = ORDER.some(id => findLesson(id) && unlocked(id))
+    ? `<h2>Notes</h2><div class="cap">Pick a topic on the left.</div>`
+    : `<h2>Notes</h2><div class="cap">Your notes are empty for now. Each lesson you finish adds an entry here, with an explanation, an example, a diagram and a practice button.</div>`;
+  app.innerHTML = `<div class="pda"><nav class="pda-list" aria-label="Topics">${list}</nav><article class="pda-entry">${entry}</article></div>`;
+  app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { ui.closed[b.dataset.cat] = !ui.closed[b.dataset.cat]; renderNotes(); });
+  app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { ui.entry = b.dataset.e; state.seen[ui.entry] = true; save(); show('notes'); });
+  const pb = document.getElementById('practice'); if (pb) pb.onclick = () => startPractice(l.id);
+  if (l && DIAGRAMS[l.id]) {
+    const ctl = DIAGRAM_CONTROLS[l.id] || {}, params = {};
+    Object.entries(ctl).forEach(([k, v]) => params[k] = v[3]);
+    const draw = () => { const [svg, cap] = DIAGRAMS[l.id](params); document.getElementById('dg').innerHTML = svg; document.getElementById('dgCap').innerHTML = cap;
+      Object.keys(params).forEach(k => document.getElementById('dv-' + k).textContent = params[k]); };
+    app.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
+      const [, min, max] = ctl[b.dataset.k];
+      params[b.dataset.k] = Math.min(max, Math.max(min, params[b.dataset.k] + Number(b.dataset.d) * (ctl[b.dataset.k][4] || 1))); draw();
+    });
+    draw();
+  }
+}
+
+// ---------- profile ----------
+const AVATARS = ['👤', '🦊', '🐸', '🐙', '🦉', '🐢', '🚀', '🧠', '🎮', '⭐', '🐉', '🌙'];
+const lessonsDone = () => UNITS.reduce((n, u) => n + u.lessons.filter(l => state.done[l.id]).length, 0);
+function applyTheme() {
+  const t = state.settings.theme;
+  if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+}
+let audio = null;
+function beep(ok) {
+  if (!state.settings.sound) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = ok ? 880 : 220; o.type = ok ? 'sine' : 'square';
+    g.gain.setValueAtTime(0.08, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.25);
+    o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.25);
+  } catch (e) {}
+}
+
+function renderProfile() {
+  const P = state.profile, mode = ui.profileMode || 'view';
+  const stat = (label, val) => `<div class="stat"><b>${val}</b><span>${label}</span></div>`;
+  let top;
+  if (mode === 'edit') {
+    top = `<div class="card prof-top"><div class="avatar" id="avPreview">${P.avatar}</div>
+      <div class="av-pick">${AVATARS.map(a => `<button data-av="${a}" class="${a === P.avatar ? 'sel' : ''}" aria-label="Avatar ${a}">${a}</button>`).join('')}</div>
+      <label class="field">Name <input type="text" id="pfName" maxlength="30" value="${P.name.replace(/"/g, '&quot;')}" placeholder="Your name"></label>
+      <label class="field">Username <input type="text" id="pfUser" maxlength="20" value="${P.user.replace(/"/g, '&quot;')}" placeholder="username"></label>
+      <div class="prof-btns"><button id="pfCancel">Cancel</button><button class="primary" id="pfSave">Save</button></div></div>`;
+  } else if (mode === 'settings') {
+    const opt = (key, val, label) => `<button data-set="${key}" data-val="${val}" class="${String(state.settings[key]) === String(val) ? 'sel' : ''}">${label}</button>`;
+    top = `<div class="card"><div class="actions" style="align-items:center"><h2 style="margin:0">⚙️ Settings</h2><button id="setClose">Done</button></div>
+      <div class="set-row"><b>Theme</b><div class="prof-btns">${opt('theme', 'system', 'Match my computer')}${opt('theme', 'light', 'Light')}${opt('theme', 'dark', 'Dark')}</div></div>
+      <div class="set-row"><b>Daily goal</b><div class="prof-btns">${opt('goal', 10, '10 XP')}${opt('goal', 20, '20 XP')}${opt('goal', 30, '30 XP')}${opt('goal', 50, '50 XP')}</div></div>
+      <div class="set-row"><b>Sound</b><div class="prof-btns">${opt('sound', true, 'On')}${opt('sound', false, 'Off')}</div></div>
+      <div class="set-row" style="align-items:flex-start"><b>Progress code</b><div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <small class="cap">A copy of all your progress as text. Use it as a backup, or to move your progress to another computer or account.</small>
+        <textarea class="code-box" id="codeOut" readonly></textarea>
+        <div class="prof-btns"><button id="codeShow">Show my code</button><button id="codeCopy">Copy</button></div>
+        <textarea class="code-box" id="codeIn" placeholder="Paste a progress code here"></textarea>
+        <div class="prof-btns"><button id="codeLoad">Load this code</button><span id="codeMsg" class="cap"></span></div></div></div>
+      <div class="cap">${cloud.status === 'synced' ? 'Settings are saved to your account.' : 'Settings are saved in this browser.'}</div></div>`;
+  } else {
+    const joined = P.joined ? new Date(P.joined).toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' }) : '---';
+    top = `<div class="card prof-top"><div class="avatar">${P.avatar}</div>
+      <h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'} · joined ${joined}</div>
+      <div class="cap">${cloud.status === 'synced' ? `☁️ Signed in ${cloud.kind === 'email' ? 'as ' + escapeHtml(cloud.email) : 'with Claude' + (cloud.name ? ' as ' + escapeHtml(cloud.name) : '')}. Your progress follows you to any computer.` : '💾 Not signed in, so progress is saved in this browser only.'}</div>
+      <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div>`;
+  }
+  // Calendar, weeks start on Monday. Days with XP are ticked; days that hit the daily goal are filled.
+  const now = new Date(), view = new Date(now.getFullYear(), now.getMonth() + (ui.calOffset || 0), 1);
+  const y = view.getFullYear(), mo = view.getMonth();
+  const first = (view.getDay() + 6) % 7, days = new Date(y, mo + 1, 0).getDate();
+  let cells = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-h">${d}</div>`).join('');
+  for (let i = 0; i < first; i++) cells += '<div></div>';
+  for (let d = 1; d <= days; d++) {
+    const key = dayStr(new Date(y, mo, d)), xp = state.days[key] || 0, fire = xp || key === state.lastDay;
+    const cls = [key === today() ? 'today' : '', xp >= state.settings.goal ? 'goal' : xp ? 'active' : ''].join(' ');
+    cells += `<div class="cal-d ${cls}"><span>${d} ${fire ? '<span class="fire">🔥</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
+  }
+  const todayXp = state.days[today()] || 0;
+  app.innerHTML = `<div class="profile">${top}
+    <div class="prof-grid">${stat('day streak 🔥', shownStreak())}${stat('total XP ⭐', state.xp)}${stat('lessons done', `${lessonsDone()} / ${UNITS.reduce((n, u) => n + u.lessons.length, 0)}`)}${stat('best practice level', state.bestLevel || '–')}</div>
+    <div class="card"><div class="goal-row"><span>Today: <b>${todayXp} / ${state.settings.goal} XP</b></span><div class="bar" style="flex:1"><div style="width:${Math.min(100, todayXp / state.settings.goal * 100)}%"></div></div></div>
+      <div class="actions" style="align-items:center"><button id="calPrev" aria-label="Previous month">‹</button><b>${view.toLocaleString('en-IE', { month: 'long', year: 'numeric' })}</b><button id="calNext" aria-label="Next month">›</button></div>
+      <div class="cal">${cells}</div></div>
+  </div>`;
+  const $ = id => document.getElementById(id);
+  $('calPrev').onclick = () => { ui.calOffset = (ui.calOffset || 0) - 1; renderProfile(); };
+  $('calNext').onclick = () => { ui.calOffset = (ui.calOffset || 0) + 1; renderProfile(); };
+  if ($('pfOut')) $('pfOut').onclick = () => cloud.logOut();
+  if ($('pfIn')) $('pfIn').onclick = () => { ui.loginMode = 'login'; show('login'); };
+  if ($('pfEdit')) $('pfEdit').onclick = () => { ui.profileMode = 'edit'; ui.pickAvatar = P.avatar; renderProfile(); };
+  if (mode === 'edit') {
+    app.querySelectorAll('[data-av]').forEach(b => b.onclick = () => {
+      ui.pickAvatar = b.dataset.av; $('avPreview').textContent = b.dataset.av;
+      app.querySelectorAll('[data-av]').forEach(x => x.classList.toggle('sel', x === b));
+    });
+    $('pfCancel').onclick = () => { ui.profileMode = 'view'; renderProfile(); };
+    $('pfSave').onclick = () => {
+      P.name = $('pfName').value.trim(); P.user = $('pfUser').value.trim().replace(/^@/, '').replace(/\s+/g, '_');
+      P.avatar = ui.pickAvatar || P.avatar; save(); ui.profileMode = 'view'; renderProfile();
+    };
+  }
+  if (mode === 'settings') {
+    $('setClose').onclick = () => { ui.profileMode = 'view'; renderProfile(); };
+    $('codeShow').onclick = () => { $('codeOut').value = progressCode(); $('codeOut').select(); };
+    $('codeCopy').onclick = async () => { $('codeOut').value = progressCode(); $('codeOut').select(); try { await navigator.clipboard.writeText($('codeOut').value); $('codeMsg').textContent = 'Copied!'; } catch (e) { $('codeMsg').textContent = 'Press Ctrl + C to copy the selected code.'; } };
+    $('codeLoad').onclick = () => { try { loadProgressCode($('codeIn').value); $('codeMsg').textContent = '✓ Progress loaded!'; renderStats(); } catch (e) { $('codeMsg').textContent = "That code didn't work. Check you copied all of it."; } };
+    app.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
+      const k = b.dataset.set, v = b.dataset.val;
+      state.settings[k] = k === 'goal' ? Number(v) : k === 'sound' ? v === 'true' : v;
+      save(); applyTheme(); if (k === 'sound' && state.settings.sound) beep(true); renderProfile();
+    });
+  }
+}
+function escapeHtml(t) { return t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+const devBtn = document.getElementById('dev');
+const paintDev = () => { devBtn.classList.toggle('on', devMode); devBtn.textContent = devMode ? '🔓 Dev: ON' : '🔓 Dev'; };
+devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-dev', devMode ? '1' : '0'); } catch (e) {} paintDev(); if (!run) show(view); };
+paintDev();
+document.getElementById('gear').onclick = () => { ui.profileMode = ui.profileMode === 'settings' ? 'view' : 'settings'; show('profile'); };
+
+function renderSoon() {
+  app.innerHTML = `<div class="card"><h2 style="margin:0">Coming soon</h2>
+    <div>Things that aren't built yet:</div>
+    <ul style="margin:0;line-height:1.8">
+      <li>More units (${COMING.length} planned, from ratios and Pythagoras up to intro to calculus)</li>
+      <li>Placement test for the whole path (for now, use ⏩ Test out on each unit)</li>
+      <li>Problem-solving puzzles side path</li>
+    </ul></div>`;
+}
+
+function stageProgress(stage) {
+  const ids = UNITS.filter(u => u.stage === stage).flatMap(u => [...u.lessons.map(l => l.id), u.id + 'test']);
+  return Math.round(ids.filter(id => state.done[id]).length / ids.length * 100);
+}
+function todayPanel() {
+  const due = dueReviews().length, waiting = Object.keys(state.review).length - due, dc = state.daily[today()];
+  const bar = (label, pct) => `<div class="row"><span style="min-width:62px">${label}</span><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
+  return `<div class="today">
+    <div class="tile"><b>📝 Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
+    <div class="tile"><b>⭐ Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
+    <div class="tile"><b>📈 Your progress</b>${bar('Stage 0', stageProgress('book'))}${bar('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>
+  </div>`;
+}
+function renderPath() {
+  renderStats();
+  let html = todayPanel();
+  let stage = null;
+  UNITS.forEach((u, ui) => {
+    if (u.stage !== stage) { stage = u.stage; html += `<div class="stage">${STAGES[stage]}</div>`; }
+    const ids = [...u.lessons.map(l => l.id), u.id + 'test'], nDone = ids.filter(id => state.done[id]).length;
+    const canTestOut = !state.done[u.id + 'test'] && status(u.lessons[0].id) !== 'locked';
+    html += `<section class="unit"><div class="unit-head"><div class="uh-text"><b>Unit ${ui + 1}: ${u.title}</b><small>${u.desc}</small></div>
+      <div class="uh-prog"><div class="mini"><div style="width:${nDone / ids.length * 100}%"></div></div>${nDone}/${ids.length}</div>
+      ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">⏩ Test out</button>` : ''}</div>`;
+    u.lessons.forEach((l, li) => {
+      const st = status(l.id);
+      html += `<div class="node-row" style="transform:translateX(${Math.round(Math.sin(li * 1.1) * 70)}px)"><button class="node ${st}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
+    });
+    const tst = status(u.id + 'test');
+    html += `<div class="node-row"><button class="node test ${tst}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
+  });
+  COMING.forEach((t, i) => { html += `<section class="unit"><div class="unit-head"><b>Unit ${UNITS.length + i + 1}: ${t}</b><small>Coming soon</small></div></section>`; });
+  app.innerHTML = html;
+  app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(b.dataset.l));
+  app.querySelectorAll('[data-t]').forEach(b => b.onclick = () => startTest(b.dataset.t));
+  app.querySelectorAll('[data-to]').forEach(b => b.onclick = () => startTest(b.dataset.to, true));
+  document.getElementById('reviewBtn').onclick = startReview;
+  document.getElementById('dailyBtn').onclick = startDaily;
+  const cur = app.querySelector('.node.current'); if (cur) cur.scrollIntoView({ block: 'center' });
+}
+
+// ---------- lesson / test player ----------
+let run = null; // { cards, i, isTest, id, xp, correct, total }
+
+function findLesson(id) { for (const u of UNITS) for (const l of u.lessons) if (l.id === id) return l; }
+
+function startLesson(id) {
+  const l = findLesson(id);
+  const cards = [{ kind: 'Idea', html: l.idea }, { kind: 'Example', html: l.example }];
+  for (let i = 0; i < PRACTICE_COUNT; i++) cards.push({ kind: 'Practice', lid: id, item: Object.assign(l.gen(), { hint: l.idea }) });
+  run = { notes: '', cards, i: 0, isTest: false, id, title: l.title, xp: XP_LESSON, correct: 0, misses: 0, total: PRACTICE_COUNT };
+  renderCard();
+}
+// Endless practice: one new question at a time until Stop. Every PER_LEVEL right answers, the level goes up.
+const PER_LEVEL = 3;
+const practiceLevel = () => Math.floor(run.correct / PER_LEVEL);
+function startPractice(id) {
+  const l = findLesson(id);
+  run = { notes: '', cards: [], i: 0, isTest: false, practice: true, lesson: l, back: 'notes', id: null, title: `Practice ${TOPIC[id]}`, xp: 0, correct: 0, answered: 0 };
+  addPracticeCard();
+  renderCard();
+}
+function addPracticeCard() {
+  const lv = practiceLevel();
+  run.cards.push({ kind: `Practice · Level ${lv + 1}`, lid: run.lesson.id, item: Object.assign(run.lesson.gen(lv), { hint: run.lesson.idea }) });
+}
+// testOut: a harder version of the unit test. Passing it finishes the whole unit.
+function startTest(uid, testOut = false) {
+  const u = UNITS.find(x => x.id === uid);
+  const cards = [];
+  for (let i = 0; i < TEST_COUNT; i++) { const l = u.lessons[i % u.lessons.length]; cards.push({ kind: testOut ? 'Test out' : 'Test question', lid: l.id, item: Object.assign(l.gen(testOut ? 1 : 0), { hint: l.idea }) }); }
+  run = { notes: '', cards: shuffle(cards), i: 0, isTest: true, testOut, unit: u, id: uid + 'test', title: `${testOut ? 'Test out' : 'Unit test'}: ${u.title}`, xp: testOut ? XP_TEST + 10 : XP_TEST, correct: 0, misses: 0, total: TEST_COUNT };
+  renderCard();
+}
+function startReview() {
+  const due = shuffle(dueReviews()).slice(0, REVIEW_MAX);
+  if (!due.length) return;
+  const cards = due.map(id => { const l = findLesson(id); return { kind: `Review · ${TOPIC[id]}`, lid: id, item: Object.assign(l.gen(1), { hint: l.idea }) }; });
+  run = { notes: '', cards, i: 0, isTest: false, review: true, id: null, title: 'Review mistakes', xp: 0, correct: 0, misses: 0, total: cards.length };
+  renderCard();
+}
+// Same question for everyone all day: Math.random is swapped for a generator seeded by the date.
+function seeded(seed) { return () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }; }
+function startDaily() {
+  if (state.daily[today()] !== undefined) return;
+  const pool = ORDER.filter(id => findLesson(id) && (state.done[id] || status(id) === 'current'));
+  const seed = Number(today().replace(/-/g, '')), rand = seeded(seed), real = Math.random;
+  Math.random = rand; let l, item;
+  try { l = findLesson(pool[Math.floor(rand() * pool.length)]); item = l.gen(3); } finally { Math.random = real; }
+  run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, id: null, title: '⭐ Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
+  renderCard();
+}
+
+function norm(s) { return String(s).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '').replace(/−/g, '-').replace(/°$/, ''); }
+function isRight(item, given) {
+  let g = norm(given), a = norm(item.a);
+  if (item.suffix && g.endsWith(item.suffix)) g = g.slice(0, -item.suffix.length);
+  if (g === '') return false;
+  const val = t => { if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t); const m = t.match(/^(-?\d+)\/(-?\d+)$/); return m && Number(m[2]) ? Number(m[1]) / Number(m[2]) : NaN; };
+  // Fractions: accept any equal value, so 2/4 counts for 1/2.
+  if (Number.isFinite(val(g)) && Number.isFinite(val(a))) return Math.abs(val(g) - val(a)) < 1e-9;
+  return g === a;
+}
+
+function renderCard() {
+  document.querySelector('.footer').hidden = true;
+  document.getElementById('tabbar').hidden = true;
+  document.getElementById('gear').hidden = true;
+  const c = run.cards[run.i];
+  const pct = run.practice ? Math.round((run.correct % PER_LEVEL) / PER_LEVEL * 100) : Math.round(run.i / run.cards.length * 100);
+  let body = `<div class="kind">${c.kind}</div>`;
+  if (c.item) {
+    const it = c.item;
+    body += `${it.calc ? '<div class="calc-tag">🧮 Calculator allowed for this one</div>' : ''}<div class="q">${it.q}</div>`;
+    body += it.choices
+      ? `<div class="choices">${shuffle(it.choices).map((ch, i) => `<button class="choice"><span class="kn">${i + 1}</span><span class="ct">${ch}</span></button>`).join('')}</div>`
+      : `<div class="answer-row"><input type="text" id="ans" autocomplete="off" aria-label="Your answer">${it.suffix ? `<span class="q">${it.suffix}</span>` : ''}</div>`;
+    body += `<div><button id="hintBtn" aria-expanded="false" title="Shortcut: H">💡 Hint</button></div><div id="fb"></div>`;
+  } else body += `<div class="q">${c.html}</div>`;
+
+  app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    <div class="actions"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
+    <div class="bar"><div style="width:${pct}%"></div></div>
+    <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>💡 Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
+      ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad"><div class="actions"><b>Notepad</b><button id="notesClear">Clear</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea></div></div>` : ''}</div>
+</div>`;
+  document.getElementById('quit').onclick = () => run.practice ? (run.answered ? finish() : show('notes')) : show(run.back || 'learn');
+
+  const go = document.getElementById('go');
+  let selected = null, checked = false;
+  if (c.item && c.item.choices) {
+    app.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+      if (checked) return;
+      app.querySelectorAll('.choice').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); selected = b.querySelector('.ct').textContent;
+    });
+  }
+  if (c.item && c.item.calc) wireCalc();
+  if (c.item) {
+    const hb = document.getElementById('hintBtn'), hint = document.getElementById('hint');
+    hb.onclick = () => { hint.hidden = !hint.hidden; hb.setAttribute('aria-expanded', String(!hint.hidden)); };
+    const notes = document.getElementById('notes');
+    notes.value = run.notes;
+    notes.oninput = () => { run.notes = notes.value; };
+    notes.addEventListener('keydown', e => { if (e.key === 'Enter') e.stopPropagation(); });
+    document.getElementById('notesClear').onclick = () => { notes.value = ''; run.notes = ''; };
+  }
+  const input = document.getElementById('ans'); if (input) input.focus();
+
+  go.onclick = () => {
+    if (!c.item) return next();
+    if (checked) return next();
+    const given = c.item.choices ? selected : input.value;
+    if (given == null || String(given).trim() === '') return;
+    checked = true; if (input) input.disabled = true;
+    const ok = isRight(c.item, given), fb = document.getElementById('fb');
+    if (run.practice) run.answered++;
+    if (!ok && !c.retry) run.misses++;
+    noteResult(c, ok);
+    if (run.daily) { state.daily[today()] = ok; save(); }
+    beep(ok);
+    if (ok) { run.correct++; fb.className = 'fb good'; fb.innerHTML = '✓ Correct!'; }
+    else {
+      fb.className = 'fb bad';
+      fb.innerHTML = `✗ Not quite. The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
+      // Duolingo style: a missed practice question comes back at the end (not in tests).
+      if (!run.isTest && !run.practice && !run.review && !run.daily) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
+    }
+    go.textContent = 'Continue';
+  };
+}
+// ---------- calculator (only on harder questions) ----------
+function calcHTML() {
+  const keys = ['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','^','+','(',')','√','=','C','⌫'];
+  return `<div class="calc" aria-label="Calculator"><b>Calculator</b>
+    <input type="text" id="calcIn" autocomplete="off" aria-label="Calculator input" placeholder="e.g. 3^4 or √144">
+    <div class="res" id="calcOut"></div>
+    <div class="keys">${keys.map(k => `<button data-k="${k}">${k}</button>`).join('')}</div></div>`;
+}
+function calcEval(expr) {
+  let e = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\^/g, '**').replace(/\s+/g, '');
+  if (!/^[0-9+\-*/().√]*$/.test(e) || e === '') return '';
+  e = e.replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)').replace(/√\(/g, 'Math.sqrt(');
+  if (e.includes('√')) return 'Error';
+  try { const v = Function('"use strict";return (' + e + ')')(); return Number.isFinite(v) ? String(Math.round(v * 1e9) / 1e9) : 'Error'; }
+  catch (err) { return 'Error'; }
+}
+function wireCalc() {
+  const inp = document.getElementById('calcIn'), out = document.getElementById('calcOut');
+  const run = () => { out.textContent = inp.value ? '= ' + calcEval(inp.value) : ''; };
+  app.querySelectorAll('.calc [data-k]').forEach(b => b.onclick = () => {
+    const k = b.dataset.k;
+    if (k === 'C') { inp.value = ''; out.textContent = ''; }
+    else if (k === '⌫') inp.value = inp.value.slice(0, -1);
+    else if (k === '=') run();
+    else inp.value += k;
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); run(); } });
+}
+
+function next() { if (run.practice) addPracticeCard(); run.i++; run.i >= run.cards.length ? finish() : renderCard(); }
+
+function finish() {
+  if (run.practice) { run.xp = run.correct; state.bestLevel = Math.max(state.bestLevel, practiceLevel() + 1); } // 1 XP per right answer
+  if (run.review) run.xp = run.correct * 2;
+  if (run.daily) { run.xp = run.correct ? XP_DAILY : 0; state.daily[today()] = run.correct > 0; }
+  const passed = !run.isTest || run.correct >= TEST_PASS;
+  const streakBefore = shownStreak();
+  if (passed) {
+    if (run.testOut) run.unit.lessons.forEach(l => state.done[l.id] = true);
+    finishItem(run.id, run.xp);
+  } else save();
+  renderStats();
+  const answered = run.practice ? run.answered : run.total;
+  const right = run.practice || run.isTest || run.review || run.daily ? run.correct : run.total - run.misses;
+  const acc = answered ? Math.round(right / answered * 100) : 0;
+  const [icon, head, sub] = run.daily ? (run.correct ? ['⭐', 'Challenge beaten!', 'Come back tomorrow for a new one.'] : ['🌙', 'Not this time', "It's been added to your review pile. New challenge tomorrow."])
+    : run.review ? ['📝', 'Review done', Object.keys(state.review).length ? 'Topics you got right come back later, spaced out, until they stick.' : 'Your review pile is empty!']
+    : run.isTest ? (passed ? ['🏆', run.testOut ? 'Tested out!' : 'Unit passed!', run.testOut ? `You skipped "${run.unit.title}". All its notes are unlocked.` : 'Next unit unlocked.'] : ['💪', 'Not quite', `You need ${TEST_PASS}/${TEST_COUNT} to pass. Your mistakes went to the review pile.`])
+    : run.practice ? ['🎯', 'Practice stopped', `You reached level ${practiceLevel() + 1}.`]
+    : ['🎉', 'Lesson complete!', 'A new entry was added to your Notes.'];
+  const streakNow = shownStreak(), goal = state.settings.goal, todayXp = state.days[today()] || 0;
+  app.innerHTML = `<div class="card finish">
+    <div class="big">${icon}</div><h2>${head}</h2><div>${sub}</div>
+    <div class="stats3">
+      <div><b class="bump">+${passed ? run.xp : 0}</b><small>XP earned</small></div>
+      <div><b>${acc}%</b><small>accuracy (${right}/${answered})</small></div>
+      <div><b class="${streakNow > streakBefore ? 'bump' : ''}">🔥 ${streakNow}</b><small>${streakNow > streakBefore ? 'streak up!' : 'day streak'}</small></div>
+    </div>
+    <div class="goalbar"><small>Daily goal: ${Math.min(todayXp, goal)} / ${goal} XP ${todayXp >= goal ? '✓' : ''}</small><div class="mini"><div style="width:${Math.min(100, todayXp / goal * 100)}%"></div></div></div>
+    <button class="primary" id="go">${run.back === 'notes' ? 'Back to notes' : 'Back to path'}</button></div>`;
+  if (passed && run.xp) beep(true);
+  const go = document.getElementById('go'); go.focus();
+  const back = run.back || 'learn'; go.onclick = () => show(back);
+}
+
+// Enter key = Check / Continue (desktop).
+// 1-9 = pick a multiple-choice answer, H = hint (not while typing in a box).
+document.addEventListener('keydown', e => {
+  if (!run) return;
+  if (e.key === 'Enter') { const g = document.getElementById('go'); if (g) { e.preventDefault(); g.click(); } return; }
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const ch = app.querySelectorAll('.choice');
+  if (/^[1-9]$/.test(e.key) && ch[e.key - 1]) { ch[e.key - 1].click(); return; }
+  if (e.key.toLowerCase() === 'h') { const hb = document.getElementById('hintBtn'); if (hb) hb.click(); }
+});
+
+// Reset with an in-page confirm (browser confirm() dialogs are blocked in some viewers).
+const resetBtn = document.getElementById('reset'), resetMsg = document.getElementById('resetMsg');
+let armed = false;
+resetBtn.onclick = () => {
+  if (!armed) { armed = true; resetBtn.textContent = 'Click again to wipe all progress'; return; }
+  state = Object.assign(state, freshProgress()); ui.entry = null; save(); armed = false;
+  resetBtn.textContent = 'Reset progress'; resetMsg.textContent = 'Progress wiped.'; show('learn');
+};
+
+if (!state.profile.joined) { state.profile.joined = Date.now(); save(); }
+applyTheme();
+show('learn');
+cloud.start();
+</script>
