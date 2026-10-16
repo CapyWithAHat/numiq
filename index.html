@@ -231,7 +231,7 @@ const MAIN_UNITS = [
     { id: 'u1l5', title: 'Scientific notation',
       idea: `Big numbers can be written as a number between 1 and 10, times a power of 10. 10<sup>4</sup> = 10 000, so 3.2 × 10<sup>4</sup> = 32 000.`,
       example: `5.7 × 10<sup>3</sup> = 5 700<br>45 000 = 4.5 × 10<sup>4</sup> (move the decimal point 4 places)`,
-      gen(lv = 0) { const m = lv >= 2 ? rnd(101, 999) / 100 : rnd(11, 99) / 10, e = rnd(2, 6 + lv), v = Math.round(m * 10 ** e);
+      gen(lv = 0) { const m = lv >= 2 ? rnd(101, 999) / 100 : rnd(11, 99) / 10, e = rnd(2, Math.min(6 + lv, 9)), v = Math.round(m * 10 ** e);
         if (Math.random() < .5) return { q: `Write ${m} × 10<sup>${e}</sup> as a normal number.`, a: v, explain: `Move the decimal point ${e} places right: ${v.toLocaleString('en-IE')}` };
         return { q: `${v.toLocaleString('en-IE')} = ${m} × 10<sup>?</sup>`, a: e, explain: `The decimal point moves ${e} places, so the exponent is ${e}.` }; } },
   ]},
@@ -240,7 +240,7 @@ const MAIN_UNITS = [
       idea: `Terms with the same letter are "like terms" and can be added or subtracted: 3x + 5x = 8x. You can't combine x and y, or x and a plain number.`,
       example: `7a − 2a = 5a<br>4x + 3 + 2x = 6x + 3`,
       gen(lv = 0) { const v = pick(['x','a','y']), a = rnd(2, 12 + 5 * lv), b = rnd(1, 9 + 5 * lv), plus = Math.random() < .6;
-        return { q: `${a}${v} ${plus ? '+' : '−'} ${b}${v} = ?${v}`, a: plus ? a + b : a - b, suffix: v, explain: `${a} ${plus ? '+' : '−'} ${b} = ${plus ? a + b : a - b}` }; } },
+        return { q: `${a}${v} ${plus ? '+' : '−'} ${co(b)}${v} = ?${v}`, a: plus ? a + b : a - b, suffix: v, explain: `${a} ${plus ? '+' : '−'} ${b} = ${plus ? a + b : a - b}` }; } },
     { id: 'u2l2', title: 'Expanding brackets',
       idea: `The number outside the bracket multiplies <b>everything</b> inside: a(b + c) = ab + ac.`,
       example: `3(x + 4) = 3x + 12<br>5(x − 2) = 5x − 10`,
@@ -305,6 +305,10 @@ const neg = n => (n < 0 ? `(−${-n})` : String(n));
 const factorsOf = n => { const f = []; for (let i = 1; i <= n; i++) if (n % i === 0) f.push(i); return f; };
 const isPrime = n => n > 1 && factorsOf(n).length === 2;
 const dec = n => Number(n.toFixed(6)); // tidy decimals: 0.1 + 0.2 → 0.3
+// Round to p decimal places the way people do (4.185 → 4.19). Plain Math.round(v * 100) gets this wrong because 4.185 is stored as 4.18499…
+const roundTo = (v, p) => Number(Math.round(Number(dec(v) + 'e' + p)) + 'e-' + p);
+const listJoin = arr => arr.length < 3 ? arr.join(' and ') : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
+const euro = n => `€${Number(n).toFixed(2)}`;
 const supU = (v, e) => v + String(e).split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join(''); // x⁵ as plain text (for multiple choice)
 
 const BOOK_UNITS = [
@@ -318,7 +322,7 @@ const BOOK_UNITS = [
         • <b>Counting factors:</b> count the pairs and double it. If a pair is a number times itself (6 × 6 = 36), count it once. Square numbers always have an odd number of factors.`,
       example: `Factors of 36 in pairs: 1 × 36, 2 × 18, 3 × 12, 4 × 9, 6 × 6<br>That's 4 pairs (8 factors) + 6 once = 9 factors<br>91: not even, digits 9 + 1 = 10 (not ÷3), doesn't end in 0/5, 91 ÷ 7 = 13 → not prime`,
       gen(lv = 0) { const t = rnd(0, 4);
-        if (t === 0) { const n = rnd(2, 50 + 25 * lv); return { q: `Is ${n} a prime number?`, choices: ['Yes', 'No'], a: isPrime(n) ? 'Yes' : 'No', explain: isPrime(n) ? `None of 2, 3, 5, 7 divide into ${n}, so it's prime.` : `${n} = ${factorsOf(n)[1]} × ${n / factorsOf(n)[1]}` }; }
+        if (t === 0) { const n = rnd(2, Math.min(50 + 25 * lv, 120)); return { q: `Is ${n} a prime number?`, choices: ['Yes', 'No'], a: isPrime(n) ? 'Yes' : 'No', explain: isPrime(n) ? `None of 2, 3, 5, 7 divide into ${n}, so it's prime.` : `${n} = ${factorsOf(n)[1]} × ${n / factorsOf(n)[1]}` }; }
         if (t === 1) { const d = pick([2, 3, 4, 5, 6, 9, 10]), n = rnd(20, 200 + 200 * lv), yes = n % d === 0;
           const why = { 2: 'even?', 3: `digits add to ${String(n).split('').reduce((a, c) => a + +c, 0)}`, 4: `last two digits ${n % 100}`, 5: 'ends in 0 or 5?', 6: 'works for both 2 and 3?', 9: `digits add to ${String(n).split('').reduce((a, c) => a + +c, 0)}`, 10: 'ends in 0?' }[d];
           return { q: `Is ${d} a factor of ${n}?`, choices: ['Yes', 'No'], a: yes ? 'Yes' : 'No', explain: `Check: ${why} ${yes ? `Yes, ${n} = ${d} × ${n / d}` : `No, ${d} doesn't divide in.`}` }; }
@@ -349,7 +353,7 @@ const BOOK_UNITS = [
     { id: 'b1l4', title: 'Rounding and estimating',
       idea: `To round, look at the digit just after the place you want. 5 or more: round up. 4 or less: round down.`,
       example: `3 476 to the nearest 100 → look at the 7 → 3 500<br>3.42 to 1 decimal place → look at the 2 → 3.4`,
-      gen(lv = 0) { if (lv >= 2 && Math.random() < .5) { const v = rnd(1000, 99999) / 1000; return { q: `Round ${v} to 1 decimal place.`, a: Math.round(v * 10) / 10, explain: `Look at the second decimal digit.` }; }
+      gen(lv = 0) { if (lv >= 2 && Math.random() < .5) { const v = rnd(1000, 99999) / 1000; return { q: `Round ${v} to 1 decimal place.`, a: roundTo(v, 1), explain: `Look at the second decimal digit.` }; }
         const n = rnd(100, 9999 + 5000 * lv), to = pick([10, 100, 1000]); return { q: `Round ${n} to the nearest ${to}.`, a: Math.round(n / to) * to, explain: `Look at the digit after the ${to === 10 ? 'tens' : to === 100 ? 'hundreds' : 'thousands'} place.` }; } },
   ]},
   { id: 'b2', stage: 'book', title: 'Integers', desc: 'Book chapter 2: negative numbers', lessons: [
@@ -371,19 +375,19 @@ const BOOK_UNITS = [
       example: `${frac(2, 3)} = ${frac(8, 12)} (top and bottom × 4)<br>${frac(10, 15)} = ${frac(2, 3)} (top and bottom ÷ 5)`,
       gen(lv = 0) { let n, d; do { d = rnd(2, 9 + lv); n = rnd(1, d - 1); } while (gcd(n, d) !== 1); const k = rnd(2, 6 + lv);
         return Math.random() < .5 ? { q: `${frac(n, d)} = ${frac('?', d * k)}`, a: n * k, explain: `${d} × ${k} = ${d * k}, so the top is ${n} × ${k} = ${n * k}` }
-          : { q: `Simplify ${frac(n * k, d * k)}`, a: `${n}/${d}`, explain: `Divide top and bottom by ${k}.` }; } },
+          : { q: `Simplify ${frac(n * k, d * k)}`, a: `${n}/${d}`, simplest: true, explain: `Divide top and bottom by ${k}.` }; } },
     { id: 'b3l2', title: 'Adding and subtracting fractions',
       idea: `Make the bottoms (denominators) the same first, then add or subtract the tops. Give your answer in its simplest form.`,
       example: `${frac(1, 2)} + ${frac(1, 3)} = ${frac(3, 6)} + ${frac(2, 6)} = ${frac(5, 6)}`,
       gen(lv = 0) { const b = rnd(2, 6 + lv), d = rnd(2, 6 + lv), a = rnd(1, b - 1), c = rnd(1, d - 1), plus = Math.random() < .6;
         const n = plus ? a * d + c * b : a * d - c * b, den = b * d;
-        return { q: `${frac(a, b)} ${plus ? '+' : '−'} ${frac(c, d)} = ?`, a: fracStr(n, den), explain: `Common bottom ${den}: ${frac(a * d, den)} ${plus ? '+' : '−'} ${frac(c * b, den)} = ${fracHtml(n, den)}` }; } },
+        return { q: `${frac(a, b)} ${plus ? '+' : '−'} ${frac(c, d)} = ? <small class="cap">(simplest form)</small>`, a: fracStr(n, den), simplest: true, explain: `Common bottom ${den}: ${frac(a * d, den)} ${plus ? '+' : '−'} ${frac(c * b, den)} = ${fracHtml(n, den)}` }; } },
     { id: 'b3l3', title: 'Multiplying and dividing fractions',
       idea: `Multiply: tops times tops, bottoms times bottoms. Divide: flip the second fraction and multiply.`,
       example: `${frac(2, 3)} × ${frac(3, 4)} = ${frac(6, 12)} = ${frac(1, 2)}<br>${frac(1, 2)} ÷ ${frac(1, 4)} = ${frac(1, 2)} × ${frac(4, 1)} = 2`,
       gen(lv = 0) { const a = rnd(1, 5 + lv), b = rnd(2, 7 + lv), c = rnd(1, 5 + lv), d = rnd(2, 7 + lv);
-        if (Math.random() < .5) return { q: `${frac(a, b)} × ${frac(c, d)} = ?`, a: fracStr(a * c, b * d), explain: `${a} × ${c} = ${a * c} on top, ${b} × ${d} = ${b * d} on the bottom → ${fracHtml(a * c, b * d)}` };
-        return { q: `${frac(a, b)} ÷ ${frac(c, d)} = ?`, a: fracStr(a * d, b * c), explain: `Flip and multiply: ${frac(a, b)} × ${frac(d, c)} = ${fracHtml(a * d, b * c)}` }; } },
+        if (Math.random() < .5) return { q: `${frac(a, b)} × ${frac(c, d)} = ? <small class="cap">(simplest form)</small>`, a: fracStr(a * c, b * d), simplest: true, explain: `${a} × ${c} = ${a * c} on top, ${b} × ${d} = ${b * d} on the bottom → ${fracHtml(a * c, b * d)}` };
+        return { q: `${frac(a, b)} ÷ ${frac(c, d)} = ? <small class="cap">(simplest form)</small>`, a: fracStr(a * d, b * c), simplest: true, explain: `Flip and multiply: ${frac(a, b)} × ${frac(d, c)} = ${fracHtml(a * d, b * c)}` }; } },
     { id: 'b3l4', title: 'Fraction of a number',
       idea: `To find a fraction of a number: divide by the bottom, then multiply by the top.`,
       example: `${frac(3, 4)} of 20: 20 ÷ 4 = 5, 5 × 3 = 15`,
@@ -395,12 +399,12 @@ const BOOK_UNITS = [
       idea: `To count all the outcomes of two things together, multiply how many ways each one can go. A two-way table lists them all.`,
       example: `A coin (2 ways) and a die (6 ways): 2 × 6 = 12 outcomes`,
       gen(lv = 0) { const things = [['a coin', 2], ['a die', 6], ['a spinner with 4 colours', 4], ['a spinner with 3 sections', 3], ['a card from the 4 suits', 4], ['a day of the week', 7]];
-        const [x, y] = [pick(things), pick(things)];
+        const [x, y] = shuffle(things);
         return { q: `You use ${x[0]} and ${y[0]}. How many outcomes are there?`, a: x[1] * y[1], explain: `${x[1]} × ${y[1]} = ${x[1] * y[1]}` }; } },
     { id: 'b4l2', title: 'Calculating probability',
       idea: `Probability = number of ways it can happen ÷ total number of outcomes. It is always between 0 (impossible) and 1 (certain).`,
       example: `A bag has 3 red and 5 blue sweets. P(red) = ${frac(3, 8)}`,
-      gen(lv = 0) { if (Math.random() < .6) { const r = rnd(1, 9 + lv), bl = rnd(1, 9 + lv), g = rnd(0, 5 + lv), t = r + bl + g, [name, c] = pick([['red', r], ['blue', bl], ['green', g]]);
+      gen(lv = 0) { if (Math.random() < .6) { const r = rnd(1, 9 + lv), bl = rnd(1, 9 + lv), g = rnd(1, 5 + lv), t = r + bl + g, [name, c] = pick([['red', r], ['blue', bl], ['green', g]]);
           return { q: `A bag has ${r} red, ${bl} blue and ${g} green counters. What is the probability of picking ${name}?`, a: fracStr(c, t), explain: `${c} ${name} out of ${t} → ${fracHtml(c, t)}` }; }
         const k = rnd(1, 5); return { q: `You roll a die. What is the probability of getting more than ${k}?`, a: fracStr(6 - k, 6), explain: `${6 - k} of the 6 numbers are more than ${k} → ${fracHtml(6 - k, 6)}` }; } },
   ]},
@@ -421,8 +425,8 @@ const BOOK_UNITS = [
     { id: 'b6l3', title: 'Rounding off decimals',
       idea: `Find the last digit you are keeping. Look at the next digit: 5 or more, round up; 4 or less, leave it.`,
       example: `6.473 to 2 decimal places → 6.47<br>6.473 to 1 decimal place → 6.5<br>6.473 to the nearest whole number → 6`,
-      gen(lv = 0) { const v = rnd(1001, 99999 + 50000 * lv) / 1000, p = pick([0, 1, 2]), f = 10 ** p;
-        return { q: `Round ${v} to ${p ? `${p} decimal place${p > 1 ? 's' : ''}` : 'the nearest whole number'}.`, a: dec(Math.round(v * f) / f), explain: `Look at the digit after the ${p ? `${p === 1 ? 'first' : 'second'} decimal place` : 'units'}.` }; } },
+      gen(lv = 0) { const v = rnd(1001, 99999 + 50000 * lv) / 1000, p = pick([0, 1, 2]);
+        return { q: `Round ${v} to ${p ? `${p} decimal place${p > 1 ? 's' : ''}` : 'the nearest whole number'}.`, a: roundTo(v, p), explain: `Look at the digit after the ${p ? `${p === 1 ? 'first' : 'second'} decimal place` : 'units'}.` }; } },
     { id: 'b6l4', title: 'Probability and decimals',
       idea: `Probabilities can be decimals between 0 and 1. The probability something does <b>not</b> happen is 1 − the probability it does. Expected number = probability × number of tries.`,
       example: `P(rain) = 0.3, so P(no rain) = 1 − 0.3 = 0.7<br>P(red) = 0.25, spin 40 times → expect 0.25 × 40 = 10 reds`,
@@ -439,7 +443,7 @@ const BOOK_UNITS = [
         if (t === 0) return { q: `${s}. What is #A?`, a: A.length, explain: `Count the elements: ${A.length}.` };
         if (t === 1) { const x = rnd(1, 12 + 4 * lv); return { q: `${s}. Is ${x} ∈ A?`, choices: ['Yes', 'No'], a: A.includes(x) ? 'Yes' : 'No', explain: A.includes(x) ? `${x} is in the list.` : `${x} is not in the list.` }; }
         if (t === 2) { const n = rnd(10, 20 + 10 * lv), k = pick([2, 3, 5]); const c = Math.floor(n / k); return { q: `B = {multiples of ${k} from 1 to ${n}}. What is #B?`, a: c, explain: `${Array.from({ length: c }, (_, i) => (i + 1) * k).join(', ')}: that's ${c}.` }; }
-        const same = Math.random() < .5, B = same ? shuffle(A) : shuffle(A.map((v, i) => i === 0 ? v + 1 : v));
+        const same = Math.random() < .5, B = same ? shuffle(A) : shuffle(A.map((v, i) => { if (i) return v; let w = v + 1; while (A.includes(w)) w++; return w; }));
         return { q: `${s} and B = {${B.join(', ')}}. Are A and B equal?`, choices: ['Yes', 'No'], a: same ? 'Yes' : 'No', explain: same ? `Same elements, just in a different order.` : `They don't have exactly the same elements.` }; } },
     { id: 'b7l2', title: 'Union and intersection',
       idea: `<b>A ∩ B</b> (intersection) is what is in <b>both</b> sets. <b>A ∪ B</b> (union) is everything in <b>either</b> set, written once. A Venn diagram shows them as overlapping circles.`,
@@ -463,7 +467,7 @@ const BOOK_UNITS = [
       example: `35% = 0.35 = ${frac(35, 100)} = ${frac(7, 20)}<br>0.6 = 60%, ${frac(3, 4)} = 75%`,
       gen(lv = 0) { const p = pick([5, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 64, 70, 75, 80, 85, 90, 95, ...(lv >= 2 ? [2.5, 12.5, 120, 150] : [])]), t = rnd(0, 3);
         if (t === 0) return { q: `Write ${p}% as a decimal.`, a: dec(p / 100), explain: `${p} ÷ 100 = ${dec(p / 100)}` };
-        if (t === 1 && Number.isInteger(p)) return { q: `Write ${p}% as a fraction in its simplest form.`, a: fracStr(p, 100), explain: `${frac(p, 100)} = ${fracHtml(p, 100)}` };
+        if (t === 1 && Number.isInteger(p)) return { q: `Write ${p}% as a fraction in its simplest form.`, a: fracStr(p, 100), simplest: true, explain: `${frac(p, 100)} = ${fracHtml(p, 100)}` };
         if (t === 2) return { q: `Write ${dec(p / 100)} as a percentage.`, a: p, suffix: '%', explain: `${dec(p / 100)} × 100 = ${p}%` };
         const [n, d] = pick([[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 10], [3, 10], [7, 10], [1, 20], [3, 20], [1, 25], [7, 25], [1, 8]]);
         return { q: `Write ${frac(n, d)} as a percentage.`, a: dec(n / d * 100), suffix: '%', explain: `${n} ÷ ${d} × 100 = ${dec(n / d * 100)}%` }; } },
@@ -479,7 +483,7 @@ const BOOK_UNITS = [
       example: `€80 + 23% VAT: 0.23 × 80 = €18.40, so €98.40<br>€60 with 15% off: 0.15 × 60 = €9, so €51`,
       gen(lv = 0) { const vat = Math.random() < .5, p = vat ? pick([10, 13.5, 20, 23]) : pick([10, 15, 20, 25, 30, 40, 50]), n = rnd(2, 30 + 20 * lv) * 10;
         const ch = dec(p / 100 * n), tot = dec(vat ? n + ch : n - ch);
-        return { q: vat ? `A bike costs €${n} before VAT. VAT is ${p}%. What is the price with VAT?` : `A jacket costs €${n}. It has a ${p}% discount. What is the sale price?`, a: tot, calc: true, explain: `${p}% of ${n} = ${ch}, so ${n} ${vat ? '+' : '−'} ${ch} = €${tot}` }; } },
+        return { q: vat ? `A bike costs €${n} before VAT. VAT is ${p}%. What is the price with VAT?` : `A jacket costs €${n}. It has a ${p}% discount. What is the sale price?`, a: tot, calc: true, explain: `${p}% of €${n} = ${euro(ch)}, so €${n} ${vat ? '+' : '−'} ${euro(ch)} = ${euro(tot)}` }; } },
     { id: 'b8l4', title: 'Percentage profit and loss',
       idea: `Profit = selling price − cost price. Percentage profit = profit ÷ <b>cost price</b> × 100. Loss works the same way.`,
       example: `Bought for €40, sold for €50: profit €10, 10 ÷ 40 × 100 = 25% profit`,
@@ -517,23 +521,24 @@ const BOOK_UNITS = [
       example: `${sup('x', 2)} × ${sup('x', 4)} = ${sup('x', 6)}<br>3x × 4x = 12${sup('x', 2)}<br>2${sup('a', 3)} × 5a = 10${sup('a', 4)}`,
       gen(lv = 0) { const v = pick(['x', 'a', 'y']), m = rnd(1, 4 + lv), n = rnd(1, 4 + lv), p = rnd(1, 5 + lv), q = rnd(1, 5 + lv);
         const t = (c, e) => `${c === 1 ? '' : c}${e === 1 ? v : supU(v, e)}`, ans = t(p * q, m + n);
-        const choices = shuffle([t(p * q, m * n), t(p + q, m + n), t(p * q, m + n + 1)].filter((c, i, arr) => c !== ans && arr.indexOf(c) === i)).slice(0, 3).concat(ans);
+        const choices = shuffle([t(p * q, m * n), t(p + q, m + n), t(p * q, m + n + 1), t(p + q, m * n), t(p * q + 1, m + n), t(p * q, m + n + 2)].filter((c, i, arr) => c !== ans && arr.indexOf(c) === i)).slice(0, 3).concat(ans);
         return { q: `${t(p, m)} × ${t(q, n)} = ?`, choices, a: ans, explain: `Numbers: ${p} × ${q} = ${p * q}. Powers: ${m} + ${n} = ${m + n}.` }; } },
     { id: 'b9l5', title: 'Multiplying two brackets',
       idea: `Multiply each term in the first bracket by each term in the second (4 multiplications), then collect like terms.`,
       example: `(x + 2)(x + 3) = ${sup('x', 2)} + 3x + 2x + 6 = ${sup('x', 2)} + 5x + 6`,
       gen(lv = 0) { const a = rnd(lv >= 2 ? -6 : 1, 6 + lv) || 1, b = rnd(lv >= 2 ? -6 : 1, 6 + lv) || 2, s = n => (n < 0 ? `− ${-n}` : `+ ${n}`);
         const br = `(x ${s(a)})(x ${s(b)})`;
-        if (Math.random() < .5) return { q: `${br} = ${sup('x', 2)} + ?x ${s(a * b)}`, a: a + b, explain: `The x terms: ${a}x + ${b}x = ${a + b}x` };
-        return { q: `${br} = ${sup('x', 2)} ${s(a + b)}x + ?`, a: a * b, explain: `The number term: ${neg(a)} × ${neg(b)} = ${a * b}` }; } },
+        const xt = a + b === 0 ? '' : ` ${a + b < 0 ? '−' : '+'} ${co(Math.abs(a + b))}x`;
+        if (a + b !== 0 && Math.random() < .5) return { q: `${br} = ${sup('x', 2)} + ?x ${s(a * b)}`, a: a + b, explain: `The x terms: ${a}x + ${neg(b)}x = ${a + b}x` };
+        return { q: `${br} = ${sup('x', 2)}${xt} + ?`, a: a * b, explain: `The number term: ${neg(a)} × ${neg(b)} = ${a * b}` }; } },
   ]},
   { id: 'b10', stage: 'book', title: 'Area, perimeter and volume', desc: 'Book chapter 9', lessons: [
     { id: 'b10l1', title: 'Metric system',
       idea: `10 mm = 1 cm, 100 cm = 1 m, 1000 m = 1 km. 1000 g = 1 kg, 1000 ml = 1 litre. Going to a smaller unit: multiply. Going to a bigger unit: divide.`,
       example: `3.5 m = 350 cm<br>2400 g = 2.4 kg`,
       gen(lv = 0) { const [big, small, k] = pick([['cm', 'mm', 10], ['m', 'cm', 100], ['km', 'm', 1000], ['kg', 'g', 1000], ['litres', 'ml', 1000]]);
-        if (Math.random() < .5) { const v = rnd(1, 50 + 50 * lv) / pick([1, 10]); return { q: `${v} ${big} = ? ${small}`, a: dec(v * k), suffix: small, explain: `Smaller unit, so multiply by ${k}: ${dec(v * k)}` }; }
-        const v = rnd(1, 99 + 900 * lv) * (k / pick([1, 10])); return { q: `${dec(v)} ${small} = ? ${big}`, a: dec(v / k), suffix: big, explain: `Bigger unit, so divide by ${k}: ${dec(v / k)}` }; } },
+        if (Math.random() < .5) { const v = rnd(1, 50 + 50 * lv) / pick([1, 10]); return { q: `${v} ${v === 1 && big === 'litres' ? 'litre' : big} = ? ${small}`, a: dec(v * k), suffix: small, explain: `Smaller unit, so multiply by ${k}: ${dec(v * k)}` }; }
+        const v = rnd(1, 99 + 900 * lv) * (k / pick([1, 10])); return { q: `${dec(v)} ${small} = ? ${big === 'litres' ? 'litre(s)' : big}`, a: dec(v / k), suffix: big, explain: `Bigger unit, so divide by ${k}: ${dec(v / k)}` }; } },
     { id: 'b10l2', title: 'Perimeter',
       idea: `The <b>perimeter</b> is the distance all the way around the outside of a shape. Add up all the sides.`,
       example: `Rectangle 8 cm by 5 cm: 8 + 5 + 8 + 5 = 26 cm`,
@@ -596,7 +601,7 @@ const BOOK_UNITS = [
       example: `Share €40 in the ratio 3 : 5: 3 + 5 = 8 shares, one share = €5, so €15 and €25`,
       gen(lv = 0) { const p = rnd(1, 6 + lv), q = rnd(1, 6 + lv), r = lv >= 2 && Math.random() < .5 ? rnd(1, 4) : 0, one = rnd(2, 12 + 5 * lv), tot = (p + q + r) * one;
         const parts = r ? [p, q, r] : [p, q], who = rnd(0, parts.length - 1), names = ['Amy', 'Ben', 'Cara'];
-        return { q: `€${tot} is shared between ${names.slice(0, parts.length).join(' and ')} in the ratio ${parts.join(' : ')}. How much does ${names[who]} get?`, a: parts[who] * one, calc: tot > 100, explain: `${parts.join(' + ')} = ${p + q + r} shares. One share = ${tot} ÷ ${p + q + r} = ${one}. ${names[who]}: ${parts[who]} × ${one} = ${parts[who] * one}` }; } },
+        return { q: `€${tot} is shared between ${listJoin(names.slice(0, parts.length))} in the ratio ${parts.join(' : ')}. How much does ${names[who]} get?`, a: parts[who] * one, calc: tot > 100, explain: `${parts.join(' + ')} = ${p + q + r} shares. One share = ${tot} ÷ ${p + q + r} = ${one}. ${names[who]}: ${parts[who]} × ${one} = ${parts[who] * one}` }; } },
     { id: 'b12l3', title: 'Proportion',
       idea: `Use the <b>unitary method</b>: first find the value of <b>one</b>, then multiply to get as many as you need. Conversions like money work the same way.`,
       example: `5 pens cost €3.50 → 1 pen costs €0.70 → 8 pens cost €5.60`,
@@ -692,7 +697,7 @@ MAIN_UNITS.forEach(u => u.stage = 'main');
 const UNITS = [...BOOK_UNITS, ...MAIN_UNITS];
 const STAGES = { book: 'Stage 0 · Your first-year book (Text & Tests 1)', main: 'Stage 1 · Jumping ahead' };
 // Units planned but not written yet (from the plan).
-const COMING = ['Ratios & percent', 'Shapes 2D', 'Pythagoras', 'Circles', 'Coordinates', 'Shapes 3D', 'Data & chance', 'Exam practice',
+const COMING = ['Ratios & percent 2 (percent change, interest)', 'Shapes 2D', 'Pythagoras', 'Circles', 'Coordinates 2 (length of a line)', 'Shapes 3D', 'Data & chance 2 (charts)', 'Exam practice',
   'Inequalities & systems', 'Functions', 'Quadratics', 'Sequences', 'Trigonometry', 'Exponents & logs', 'Coordinate geometry', 'Probability & stats 2', 'Intro to calculus'];
 
 // ---------- notes databank: diagrams ----------
@@ -757,7 +762,7 @@ const DIAGRAMS = {
     return [svgWrap(60 + pw + qw, h + 40, out), `${g * p}x + ${g * q} = ${g}(${co(p)}x + ${q}): find the side lengths from the areas`]; },
   u2l4({ f }) { const F = [['A', 'l', 'w', 'area = length × width'], ['d', 's', 't', 'distance = speed × time'], ['F', 'm', 'a', 'force = mass × acceleration']][f - 1];
     const out = `<path class="ln" d="M100 10 L190 140 L10 140 Z"/><line class="ln" x1="42" y1="94" x2="158" y2="94"/><line class="ln" x1="100" y1="94" x2="100" y2="140"/>
-    <text x="100" y="66">${F[0]}</text><text x="66" y="120">${F[1]}</text><text x="134" y="120">${F[2]}</text><text class="m" x="100" y="116">×</text>`;
+    <text x="100" y="66">${F[0]}</text><text x="66" y="120">${F[1]}</text><text x="134" y="120">${F[2]}</text><rect x="91" y="106" width="18" height="20" rx="4" style="fill:var(--bg)"/><text class="m" x="100" y="116">×</text>`;
     return [svgWrap(200, 150, out), `${F[0]} = ${F[1]} × ${F[2]} (${F[3]}). Cover the letter you want: ${F[2]} = ${F[0]} ÷ ${F[1]}, ${F[1]} = ${F[0]} ÷ ${F[2]}`]; },
   u3l1(p) { p.b = Math.max(p.b, p.a + 1); const { a, b } = p;
     const out = `<line class="ln" x1="20" y1="60" x2="300" y2="60"/><path class="ln" d="M160 60 L145 100 L175 100 Z"/>
@@ -789,7 +794,7 @@ const DIAGRAMS = {
     return [svgWrap(420, 60, out), `${frac(n, d)} of ${total}: split ${total} into ${d} groups of ${k}, take ${n} groups → ${n * k}`]; },
   b4l2({ r, bl }) { let out = ''; const all = [...Array(r).fill('h'), ...Array(bl).fill('k')];
     all.forEach((c, i) => out += `<circle class="${c}" cx="${26 + (i % 10) * 34}" cy="${26 + Math.floor(i / 10) * 34}" r="13"/>`);
-    return [svgWrap(360, 20 + Math.ceil(all.length / 10) * 34, out), `P(blue) = ${fracHtml(r, r + bl)} · P(green) = ${fracHtml(bl, r + bl)}`]; },
+    return [svgWrap(360, 20 + Math.ceil(all.length / 10) * 34, out), r + bl ? `P(blue) = ${fracHtml(r, r + bl)} · P(green) = ${fracHtml(bl, r + bl)}` : 'The bag is empty: add some counters.']; },
   b5l1(p) { p.b = Math.min(p.b, 170 - p.a); const { a, b } = p, c = 180 - a - b, rad = t => t * Math.PI / 180;
     // base from (40,170) to (380,170); apex found from the two base angles
     // shrink the base if needed so the apex fits; the shape stays true to the angles
@@ -891,7 +896,7 @@ const PRACTICE_COUNT = 6, TEST_COUNT = 10, TEST_PASS = 8, XP_LESSON = 10, XP_TES
 
 // ---------- saved progress ----------
 const KEY = 'numiq-progress-v1';
-const freshProgress = () => ({ done: {}, xp: 0, streak: 0, lastDay: null, seen: {}, days: {}, bestLevel: 0, review: {}, daily: {} });
+const freshProgress = () => ({ done: {}, xp: 0, streak: 0, lastDay: null, seen: {}, days: {}, xpBy: {}, bestLevel: 0, review: {}, daily: {} });
 let state = Object.assign(freshProgress(), { profile: {}, settings: {} });
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.assign(state, s); } catch (e) {}
 // Profile and settings survive a progress reset.
@@ -900,10 +905,63 @@ function fixState() {
   state.settings = Object.assign({ theme: 'system', goal: 20, sound: true }, state.settings);
   for (const k of ['done', 'seen', 'days', 'review', 'daily']) if (!state[k]) state[k] = {};
   if (!state.bestLevel) state.bestLevel = 0;
+  withXpBy(state); deriveXp(state);
 }
 fixState();
-// Saved in this browser always, and to the viewer's Claude account when the page can (see cloud below).
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} cloud.push(); };
+// Two copies of progress (another tab, another computer, the account) are merged, never overwritten:
+// every finished lesson from either copy is kept, plus the higher XP and each day's best XP.
+// A reset (or loading a progress code) wins over anything saved before it.
+// XP is kept per tab session per day (xpBy), so two tabs or computers earning XP on the same day add up instead of overwriting each other.
+const TAB = (() => { try { let t = sessionStorage.getItem('numiq-tab'); if (!t) sessionStorage.setItem('numiq-tab', t = Math.random().toString(36).slice(2, 10)); return t; } catch (e) { return Math.random().toString(36).slice(2, 10); } })();
+function withXpBy(s) {
+  if (s && (!s.xpBy || (!Object.keys(s.xpBy).length && s.xp > 0))) { // progress saved before xpBy existed
+    const days = Object.assign({}, s.days), extra = (s.xp || 0) - Object.values(days).reduce((t, v) => t + v, 0);
+    if (extra > 0) days.earlier = extra;
+    s.xpBy = { old: days };
+  }
+  return s;
+}
+function deriveXp(s) {
+  s.days = {}; s.xp = 0;
+  for (const per of Object.values(s.xpBy)) for (const [d, v] of Object.entries(per)) { s.xp += v; if (d !== 'earlier') s.days[d] = (s.days[d] || 0) + v; }
+}
+function mergeStates(a, b) {
+  if (!a || !b) return a || b;
+  // After a reset (or loading a progress code), copies from before it are dropped.
+  if ((a.resetAt || 0) !== (b.resetAt || 0)) return (a.resetAt || 0) > (b.resetAt || 0) ? a : b;
+  withXpBy(a); withXpBy(b);
+  const newer = (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a, older = newer === a ? b : a;
+  const m = Object.assign({}, older, newer);
+  const keys = k => new Set([...Object.keys(a[k] || {}), ...Object.keys(b[k] || {})]);
+  m.done = Object.assign({}, a.done, b.done); m.seen = Object.assign({}, a.seen, b.seen);
+  m.xpBy = {}; keys('xpBy').forEach(t => { const x = a.xpBy[t] || {}, y = b.xpBy[t] || {}; m.xpBy[t] = {}; new Set([...Object.keys(x), ...Object.keys(y)]).forEach(d => m.xpBy[t][d] = Math.max(x[d] || 0, y[d] || 0)); });
+  deriveXp(m);
+  m.daily = {}; keys('daily').forEach(d => m.daily[d] = !!((a.daily || {})[d] || (b.daily || {})[d]));
+  m.review = Object.assign({}, newer.review); // the newer copy knows which topics have left the pile
+  m.bestLevel = Math.max(a.bestLevel || 0, b.bestLevel || 0);
+  const la = a.lastDay || '', lb = b.lastDay || '';
+  m.lastDay = (la > lb ? la : lb) || null; m.streak = la === lb ? Math.max(a.streak || 0, b.streak || 0) : la > lb ? a.streak : b.streak;
+  m.resetAt = Math.max(a.resetAt || 0, b.resetAt || 0); m.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
+  return m;
+}
+const readLocal = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+// Saved in this browser always, and to the viewer's account when signed in (see cloud below).
+const save = () => {
+  state.updatedAt = Date.now();
+  state = mergeStates(state, readLocal()); fixState();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  cloud.push();
+};
+// Another copy changed (another tab, or the account): fold it in and redraw, unless a lesson is open.
+function absorb(other, persist) {
+  const before = JSON.stringify(state);
+  state = mergeStates(state, other); fixState();
+  if (JSON.stringify(state) === before) return;
+  if (persist) try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  if (!run && view !== 'login') show(view); else renderStats();
+}
+window.addEventListener('storage', e => { if (e.key === KEY && e.newValue) absorb(readLocal()); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) cloud.sync(); });
 
 // ---------- accounts ----------
 // Two ways to save progress beyond this browser, picked by where the page is running:
@@ -916,11 +974,17 @@ const inClaude = !!(window.claude && window.claude.use);
 const cloud = {
   kind: null, name: '', email: '', store: null, timer: null, busy: false, again: false, status: 'local',
   push() { if (!this.store) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.write(), 1200); },
+  // Coming back to the tab: fetch the account's copy and merge it in.
+  sync() { if (this.store) this.write(); },
+  // Every upload first downloads the account's copy and merges, so an old tab can't wipe newer progress.
   async write() {
     if (!this.store) return;
     if (this.busy) { this.again = true; return; }
     this.busy = true;
-    try { await this.store(JSON.parse(JSON.stringify(state))); this.setStatus('synced'); }
+    try {
+      absorb(await this.store.load(), true);
+      await this.store.save(JSON.parse(JSON.stringify(state))); this.setStatus('synced');
+    }
     catch (e) { this.setStatus('retry'); setTimeout(() => this.push(), 4000 + Math.random() * 3000); }
     this.busy = false;
     if (this.again) { this.again = false; this.write(); }
@@ -931,14 +995,13 @@ const cloud = {
     el.textContent = st === 'synced' ? '☁️ Saved to your account' : st === 'retry' ? '☁️ Reconnecting…' : this.kind === 'email' ? '🔑 Log in' : '💾 This browser';
     el.title = st === 'synced' ? `Signed in as ${this.email || this.name || 'you'}. Your progress follows you to any computer.` : 'Progress is saved in this browser only.';
   },
-  // First sign-in moves this browser's progress into the account. After that the account wins,
-  // unless this browser somehow has more XP (e.g. used offline), so nothing is ever lost.
+  // Signing in merges this browser's progress with the account's, so nothing is lost either way.
   async adopt(remote, store) {
-    if (remote && (remote.xp || 0) >= (state.xp || 0)) { state = Object.assign(freshProgress(), JSON.parse(JSON.stringify(remote))); fixState(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    if (remote) { state = mergeStates(state, JSON.parse(JSON.stringify(remote))); fixState(); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
     if (!state.profile.name && this.name) state.profile.name = this.name;
     this.store = store; this.setStatus('synced');
     await this.write();
-    applyTheme(); if (!run) show(view === 'login' ? 'learn' : view);
+    applyTheme(); if (!run && !this.recovering) show(view === 'login' ? 'learn' : view);
   },
   async start() { if (inClaude) await this.startClaude(); else await this.startEmail(); },
   async startClaude() {
@@ -948,10 +1011,11 @@ const cloud = {
     const id = await user.id(); if (!id) return;
     this.name = await user.name();
     const ref = db.doc(`data/users/${id}/progress`);
-    let snap; try { snap = await ref.get(); } catch (e) { return; }
-    await this.adopt(snap.exists ? snap.data().state : null, s => ref.set({ state: s, savedAt: Date.now() }));
+    const load = async () => { const snap = await ref.get(); return snap.exists ? snap.data().state : null; };
+    let remote; try { remote = await load(); } catch (e) { return; }
+    await this.adopt(remote, { load, save: s => ref.set({ state: s, savedAt: Date.now() }) });
   },
-  sb: null, user: null,
+  sb: null, user: null, recovering: /type=recovery/.test(location.hash),
   async startEmail() {
     this.kind = 'email'; this.setStatus('local'); document.getElementById('acct').classList.add('click');
     document.getElementById('acct').onclick = () => { if (this.status !== 'synced') show('login'); else { ui.profileMode = 'view'; show('profile'); } };
@@ -959,30 +1023,34 @@ const cloud = {
     catch (e) { return; } // no internet: keep working from this browser
     this.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     this.sb.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') { ui.loginMode = 'newpass'; show('login'); }
+      if (event === 'PASSWORD_RECOVERY') { this.recovering = true; ui.loginMode = 'newpass'; show('login'); }
       else if (event === 'SIGNED_IN' && session && (!this.user || this.user.id !== session.user.id)) setTimeout(() => this.signedIn(session.user), 0);
     });
     const { data } = await this.sb.auth.getSession();
+    if (this.recovering) { ui.loginMode = 'newpass'; show('login'); }
     if (data.session) await this.signedIn(data.session.user);
     else if (!skipLogin()) show('login');
   },
   async signedIn(user) {
     this.user = user; this.email = user.email || '';
-    const { data, error } = await this.sb.from('progress').select('state').eq('user_id', user.id).maybeSingle();
-    if (error) { this.setStatus('retry'); return; }
-    await this.adopt(data ? data.state : null, async s => {
+    const load = async () => {
+      const { data, error } = await this.sb.from('progress').select('state').eq('user_id', user.id).maybeSingle();
+      if (error) throw error; return data ? data.state : null;
+    };
+    let remote; try { remote = await load(); } catch (e) { this.setStatus('retry'); return; }
+    await this.adopt(remote, { load, save: async s => {
       const { error } = await this.sb.from('progress').upsert({ user_id: user.id, state: s, updated_at: new Date().toISOString() });
       if (error) throw error;
-    });
+    } });
   },
   async logOut() {
     if (this.sb) await this.sb.auth.signOut();
     // Wipe this browser's copy so the next person on this computer starts clean.
-    try { localStorage.removeItem(KEY); sessionStorage.removeItem('numiq-skip-login'); } catch (e) {}
+    try { localStorage.removeItem(KEY); localStorage.removeItem('numiq-skip-login'); } catch (e) {}
     location.reload();
   },
 };
-const skipLogin = () => { try { return sessionStorage.getItem('numiq-skip-login') === '1'; } catch (e) { return false; } };
+const skipLogin = () => { try { return localStorage.getItem('numiq-skip-login') === '1'; } catch (e) { return false; } };
 function loadScript(src) { return new Promise((ok, bad) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = bad; document.head.appendChild(el); }); }
 
 // Log in / sign up screen (email accounts on the real website).
@@ -1001,7 +1069,7 @@ function renderLogin() {
   </div>`;
   const $ = id => document.getElementById(id), msg = (t, bad) => { $('lgMsg').textContent = t; $('lgMsg').style.color = bad ? 'var(--bad)' : ''; };
   app.querySelectorAll('[data-lm]').forEach(b => b.onclick = () => { ui.loginMode = b.dataset.lm; renderLogin(); });
-  if ($('lgSkip')) $('lgSkip').onclick = () => { try { sessionStorage.setItem('numiq-skip-login', '1'); } catch (e) {} show('learn'); };
+  if ($('lgSkip')) $('lgSkip').onclick = () => { try { localStorage.setItem('numiq-skip-login', '1'); } catch (e) {} show('learn'); };
   const first = $('lgEmail') || $('lgPass'); first.focus();
   app.querySelectorAll('.login input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') $('lgGo').click(); }));
   if (!sb) { msg('Still connecting… if this stays, check your internet and refresh.', true); }
@@ -1021,7 +1089,7 @@ function renderLogin() {
     if (res.error) return msg(niceAuthError(res.error), true);
     if (mode === 'signup' && !res.data.session) return msg('Almost done! We sent you an email. Click the link in it to confirm your account, then log in here.');
     if (mode === 'forgot') return msg('If that email has an account, a reset link is on its way. Check your inbox (and spam).');
-    if (mode === 'newpass') { ui.loginMode = 'login'; msg('Password changed!'); }
+    if (mode === 'newpass') { ui.loginMode = 'login'; cloud.recovering = false; history.replaceState(null, '', location.pathname); msg('Password changed!'); }
     if (res.data && (res.data.session || res.data.user) && mode !== 'forgot') { const u = (res.data.session || {}).user || res.data.user; if (u && cloud.user?.id !== u.id) await cloud.signedIn(u); else show('learn'); }
   };
 }
@@ -1040,12 +1108,12 @@ const progressCode = () => btoa(unescape(encodeURIComponent(JSON.stringify(state
 function loadProgressCode(code) {
   const s2 = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
   if (!s2 || typeof s2 !== 'object' || !s2.done) throw new Error('bad code');
-  state = Object.assign(freshProgress(), s2); fixState(); save();
+  state = Object.assign(freshProgress(), s2, { resetAt: Date.now() }); fixState(); save();
 }
 const dayStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const today = () => dayStr(new Date());
-const yesterday = () => dayStr(new Date(Date.now() - 864e5));
 const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return dayStr(d); };
+const yesterday = () => addDays(-1);
 
 // ---------- mistake review (spaced repetition) ----------
 // A topic you get wrong goes in state.review. It comes back today, then after 1, 3 and 7 days.
@@ -1064,9 +1132,9 @@ function noteResult(c, ok) {
 function shownStreak() { return state.lastDay === today() || state.lastDay === yesterday() ? state.streak : 0; }
 function finishItem(id, xp) {
   if (id) state.done[id] = true;
-  state.xp += xp;
-  state.days[today()] = (state.days[today()] || 0) + xp;
-  if (state.lastDay !== today()) { state.streak = state.lastDay === yesterday() ? state.streak + 1 : 1; state.lastDay = today(); }
+  const mine = state.xpBy[TAB] = state.xpBy[TAB] || {};
+  mine[today()] = (mine[today()] || 0) + xp; deriveXp(state);
+  if (xp > 0 && state.lastDay !== today()) { state.streak = state.lastDay === yesterday() ? state.streak + 1 : 1; state.lastDay = today(); }
   save();
 }
 
@@ -1303,7 +1371,7 @@ function startLesson(id) {
   const l = findLesson(id);
   const cards = [{ kind: 'Idea', html: l.idea }, { kind: 'Example', html: l.example }];
   for (let i = 0; i < PRACTICE_COUNT; i++) cards.push({ kind: 'Practice', lid: id, item: Object.assign(l.gen(), { hint: l.idea }) });
-  run = { notes: '', cards, i: 0, isTest: false, id, title: l.title, xp: XP_LESSON, correct: 0, misses: 0, total: PRACTICE_COUNT };
+  run = { notes: '', cards, baseLen: cards.length, i: 0, isTest: false, id, title: l.title, xp: XP_LESSON, correct: 0, misses: 0, total: PRACTICE_COUNT };
   renderCard();
 }
 // Endless practice: one new question at a time until Stop. Every PER_LEVEL right answers, the level goes up.
@@ -1346,11 +1414,37 @@ function startDaily() {
   renderCard();
 }
 
-function norm(s) { return String(s).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '').replace(/−/g, '-').replace(/°$/, ''); }
+// Other ways people write a unit after their answer.
+const UNIT_ALIASES = { 'cm²': ['cm^2', 'cm2', 'sqcm'], 'cm³': ['cm^3', 'cm3'], hours: ['hours', 'hour', 'hrs', 'hr', 'h'], litres: ['litres', 'litre', 'liters', 'liter', 'l'], '%': ['percent'] };
+// Turn what the learner typed into a plain form: "€98.40" → "98.40", "x = 5" → "5", "1 1/6" → "7/6", "3,5" → "3.5", ".5" → "0.5".
+function tidyAnswer(item, given) {
+  let t = String(given).trim().replace(/−/g, '-');
+  const mixed = t.match(/^(-?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixed) t = `${mixed[1]}${+mixed[2] * +mixed[4] + +mixed[3]}/${mixed[4]}`;
+  let g = norm(t);
+  if (!item.choices) g = g.replace(/^[a-z]=/, '');
+  g = g.replace(/^[€$]|^\+/, '');
+  if (item.suffix) { for (const u of [item.suffix, ...(UNIT_ALIASES[item.suffix] || [])].map(norm)) if (u && g.length > u.length && g.endsWith(u)) { g = g.slice(0, -u.length); break; } }
+  g = g.replace(/^(-?)\./, '$10.');
+  return g;
+}
+function norm(s) {
+  s = String(s).trim().toLowerCase().replace(/−/g, '-');
+  // 3,500 is three thousand five hundred; 3,5 is three and a half (how it's written in Poland)
+  if (/^-?\d+,\d{1,2}$/.test(s.replace(/\s+/g, ''))) s = s.replace(',', '.');
+  return s.replace(/\s+/g, '').replace(/,/g, '').replace(/°$/, '');
+}
+const fracParts = t => { const m = String(t).match(/^(-?\d+)\/(-?\d+)$/); return m ? [Number(m[1]), Number(m[2])] : null; };
+// Right value, but the question asked for the simplest form and this isn't it (e.g. 10/15 for 2/3).
+function notSimplest(item, given) {
+  if (!item.simplest) return false;
+  const f = fracParts(tidyAnswer(item, given));
+  return !!f && f[1] !== 0 && (gcd(f[0], f[1]) !== 1 || Math.abs(f[1]) === 1) && isRight(Object.assign({}, item, { simplest: false }), given);
+}
 function isRight(item, given) {
-  let g = norm(given), a = norm(item.a);
-  if (item.suffix && g.endsWith(item.suffix)) g = g.slice(0, -item.suffix.length);
+  let g = tidyAnswer(item, given), a = norm(item.a);
   if (g === '') return false;
+  if (item.simplest) { const f = fracParts(g); if (f && (gcd(f[0], f[1]) !== 1 || Math.abs(f[1]) === 1)) return false; }
   const val = t => { if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t); const m = t.match(/^(-?\d+)\/(-?\d+)$/); return m && Number(m[2]) ? Number(m[1]) / Number(m[2]) : NaN; };
   // Fractions: accept any equal value, so 2/4 counts for 1/2.
   if (Number.isFinite(val(g)) && Number.isFinite(val(a))) return Math.abs(val(g) - val(a)) < 1e-9;
@@ -1362,7 +1456,7 @@ function renderCard() {
   document.getElementById('tabbar').hidden = true;
   document.getElementById('gear').hidden = true;
   const c = run.cards[run.i];
-  const pct = run.practice ? Math.round((run.correct % PER_LEVEL) / PER_LEVEL * 100) : Math.round(run.i / run.cards.length * 100);
+  const pct = run.practice ? Math.round((run.correct % PER_LEVEL) / PER_LEVEL * 100) : Math.min(100, Math.round(run.i / (run.baseLen || run.cards.length) * 100));
   let body = `<div class="kind">${c.kind}</div>`;
   if (c.item) {
     const it = c.item;
@@ -1379,7 +1473,7 @@ function renderCard() {
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>💡 Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
       ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad"><div class="actions"><b>Notepad</b><button id="notesClear">Clear</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea></div></div>` : ''}</div>
 </div>`;
-  document.getElementById('quit').onclick = () => run.practice ? (run.answered ? finish() : show('notes')) : show(run.back || 'learn');
+  document.getElementById('quit').onclick = () => (run.practice || run.review || run.daily) && run.answered ? finish() : show(run.back || 'learn');
 
   const go = document.getElementById('go');
   let selected = null, checked = false;
@@ -1408,7 +1502,7 @@ function renderCard() {
     if (given == null || String(given).trim() === '') return;
     checked = true; if (input) input.disabled = true;
     const ok = isRight(c.item, given), fb = document.getElementById('fb');
-    if (run.practice) run.answered++;
+    run.answered = (run.answered || 0) + 1;
     if (!ok && !c.retry) run.misses++;
     noteResult(c, ok);
     if (run.daily) { state.daily[today()] = ok; save(); }
@@ -1416,7 +1510,7 @@ function renderCard() {
     if (ok) { run.correct++; fb.className = 'fb good'; fb.innerHTML = '✓ Correct!'; }
     else {
       fb.className = 'fb bad';
-      fb.innerHTML = `✗ Not quite. The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
+      fb.innerHTML = `✗ ${notSimplest(c.item, given) ? 'That\'s equal, but not in its simplest form.' : 'Not quite.'} The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
       // Duolingo style: a missed practice question comes back at the end (not in tests).
       if (!run.isTest && !run.practice && !run.review && !run.daily) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
     }
@@ -1435,6 +1529,7 @@ function calcEval(expr) {
   let e = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\^/g, '**').replace(/\s+/g, '');
   if (!/^[0-9+\-*/().√]*$/.test(e) || e === '') return '';
   e = e.replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)').replace(/√\(/g, 'Math.sqrt(');
+  e = e.replace(/(^|[(*\/+\-])-(\d+(?:\.\d+)?)(?=\*\*)/g, '$1(-1)*$2'); // −3^2 means −(3^2), like on a real calculator
   if (e.includes('√')) return 'Error';
   try { const v = Function('"use strict";return (' + e + ')')(); return Number.isFinite(v) ? String(Math.round(v * 1e9) / 1e9) : 'Error'; }
   catch (err) { return 'Error'; }
@@ -1465,7 +1560,7 @@ function finish() {
     finishItem(run.id, run.xp);
   } else save();
   renderStats();
-  const answered = run.practice ? run.answered : run.total;
+  const answered = run.practice || run.review || run.daily ? run.answered || 0 : run.total;
   const right = run.practice || run.isTest || run.review || run.daily ? run.correct : run.total - run.misses;
   const acc = answered ? Math.round(right / answered * 100) : 0;
   const [icon, head, sub] = run.daily ? (run.correct ? ['⭐', 'Challenge beaten!', 'Come back tomorrow for a new one.'] : ['🌙', 'Not this time', "It's been added to your review pile. New challenge tomorrow."])
@@ -1504,7 +1599,7 @@ const resetBtn = document.getElementById('reset'), resetMsg = document.getElemen
 let armed = false;
 resetBtn.onclick = () => {
   if (!armed) { armed = true; resetBtn.textContent = 'Click again to wipe all progress'; return; }
-  state = Object.assign(state, freshProgress()); ui.entry = null; save(); armed = false;
+  state = Object.assign(state, freshProgress(), { resetAt: Date.now() }); ui.entry = null; save(); armed = false;
   resetBtn.textContent = 'Reset progress'; resetMsg.textContent = 'Progress wiped.'; show('learn');
 };
 
