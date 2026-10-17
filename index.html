@@ -119,6 +119,17 @@ button:disabled { opacity: .5; cursor: default; }
 .path-line .fill { stroke: var(--done); filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--done), #000 22%)); transition: stroke-dashoffset .6s var(--ease-out); }
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
 .soon { color: var(--muted); font-size: 14px; }
+/* Study page: bare-bones blockout, nothing clickable yet */
+.study { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+.study .col { display: flex; flex-direction: column; gap: 16px; }
+.study .card { min-height: 0; }
+.study .lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.study .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.study .chip { border: 1px dashed var(--line); border-radius: 10px; padding: 6px 12px; color: var(--muted); font-size: 14px; }
+.study .ph { border: 1px dashed var(--line); border-radius: 10px; padding: 12px; color: var(--muted); font-size: 14px; text-align: center; }
+.study .qs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.study .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.study .bar { height: 10px; border-radius: 6px; background: var(--line); }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar > div { height: 100%; background: var(--done); width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
@@ -629,6 +640,7 @@ button:disabled:not(.node) { box-shadow: none; }
   <span class="tab-pill" aria-hidden="true"></span>
   <button data-view="learn"><i data-ic="book"></i> Learn</button>
   <button data-view="notes"><i data-ic="cards"></i> Notes <span id="notesNew"></span></button>
+  <button data-view="study"><i data-ic="target"></i> Study</button>
   <button data-view="profile"><i data-ic="user"></i> Profile</button>
   <button data-view="soon"><i data-ic="rocket"></i> Coming soon</button>
 </nav>
@@ -1850,7 +1862,7 @@ function placePill(instant) {
   bar.addEventListener('mouseleave', () => set(null));
 })();
 addEventListener('resize', () => placePill(true));
-const TAB_ORDER = ['learn', 'notes', 'profile', 'soon'];
+const TAB_ORDER = ['learn', 'notes', 'study', 'profile', 'soon'];
 
 let view = 'learn', ui = { closed: {}, entry: null };
 function show(v, how) {
@@ -1866,7 +1878,7 @@ function show(v, how) {
   document.getElementById('gear').hidden = view !== 'profile';
   placePill(barHidden);
   if (view === 'login') { document.getElementById('tabbar').hidden = true; document.querySelector('.footer').hidden = true; return swap(how, renderLogin); }
-  swap(how, view === 'learn' ? renderPath : view === 'notes' ? renderNotes : view === 'profile' ? renderProfile : renderSoon);
+  swap(how, view === 'learn' ? renderPath : view === 'notes' ? renderNotes : view === 'study' ? renderStudy : view === 'profile' ? renderProfile : renderSoon);
 }
 document.querySelectorAll('#tabbar [data-view]').forEach(b => b.onclick = () => { ui.profileMode = 'view'; replay(b, 'nudge'); show(b.dataset.view); });
 
@@ -2118,6 +2130,28 @@ const paintDev = () => { devBtn.classList.toggle('on', devMode); devBtn.innerHTM
 devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-dev', devMode ? '1' : '0'); } catch (e) {} paintDev(); if (!run) { keepScroll = scrollY; show(view); } };
 paintDev();
 document.getElementById('gear').onclick = () => { ui.profileMode = ui.profileMode === 'settings' ? 'view' : 'settings'; show('profile'); };
+
+function renderStudy() {
+  // Blockout only: shows where each Study card will go. Nothing here is wired up yet.
+  const chips = a => `<div class="chips">${a.map(t => `<span class="chip">${t}</span>`).join('')}</div>`;
+  app.innerHTML = `<div class="study">
+    <div class="col">
+      <div class="card"><div class="lbl">Build a study session</div><h2 style="margin:0">What are we revising?</h2>
+        <div class="soon">Pick topics and a length, and Numiq mixes review, weak spots and new questions.</div>
+        ${chips(['Topic', 'Topic', '+ Add topic'])}${chips(['10 min', '20 min', '40 min', 'Exam style'])}
+        <div class="ph">Start session</div></div>
+      <div class="card"><div class="lbl">Quick starts</div>
+        <div class="qs"><div class="ph">Review</div><div class="ph">Formula cards</div><div class="ph">Daily challenge</div></div></div>
+    </div>
+    <div class="col">
+      <div class="card"><div class="lbl">School test countdown</div>
+        <div class="soon">Days until your test, and today's chunk of revision.</div>
+        <div class="days">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Test'].map(d => `<div class="ph" style="padding:8px 0">${d}</div>`).join('')}</div></div>
+      <div class="card"><div class="lbl">Weak spots</div>
+        ${['Topic', 'Topic', 'Topic'].map(t => `<div class="soon">${t}</div><div class="bar"></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
 
 function renderSoon() {
   app.innerHTML = `<div class="card"><h2 style="margin:0">Coming soon</h2>
