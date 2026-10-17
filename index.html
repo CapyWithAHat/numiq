@@ -3,8 +3,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Numiq</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: one centred column. Path view (units + lesson nodes) swaps with a lesson view. Bare bones on purpose. */
@@ -543,28 +541,30 @@ button:disabled:not(.node) { box-shadow: none; }
 .play .side { width: 290px; }
 .play .calc { border-radius: 18px; box-shadow: var(--elev-1), 0 4px 0 var(--line); padding: 12px; }
 .play .calc .keys button { border-radius: 10px; }
-/* ---- Notepad: a little spiral-bound paper pad with ruled lines, a red margin and handwriting ---- */
-:root { --paper: #fff8d8; --paper-edge: #eadfae; --paper-rule: rgb(70 110 190 / .22); --paper-margin: rgb(220 80 80 / .45); --paper-ink: #2a3557; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #2c2a20; --paper-edge: #1f1d15; --paper-rule: rgb(140 170 230 / .16); --paper-margin: rgb(240 110 110 / .35); --paper-ink: #e9e3c8; } }
-:root[data-theme="dark"] { --paper: #2c2a20; --paper-edge: #1f1d15; --paper-rule: rgb(140 170 230 / .16); --paper-margin: rgb(240 110 110 / .35); --paper-ink: #e9e3c8; }
-.play .paper { position: relative; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 6px 6px 12px 12px; padding: 20px 0 8px; gap: 2px; color: var(--paper-ink); rotate: -.4deg;
-  box-shadow: 0 2px 0 -1px var(--paper), 0 3px 0 -1px var(--paper-edge), 0 5px 0 -2px var(--paper), 0 6px 0 -2px var(--paper-edge), var(--elev-1); backdrop-filter: none; }
-.paper-rings { position: absolute; left: 14px; right: 14px; top: -7px; height: 16px; pointer-events: none;
-  background: radial-gradient(circle at 50% 11px, color-mix(in srgb, var(--fg) 55%, var(--paper)) 2.6px, transparent 3px) 0 0 / 22px 100% repeat-x,
-    repeating-linear-gradient(90deg, transparent 0 8.5px, #9ba3b6 8.5px 9.5px, #d6dbe6 9.5px 11.5px, #8c93a7 11.5px 13px, transparent 13px 22px); border-radius: 4px; }
-.paper-head { display: flex; align-items: center; justify-content: space-between; padding: 0 10px 4px 14px; }
+/* ---- Notepad: Apple Notes feel. Clean page, small toolbar, Notes-yellow accents, round checklist bubbles ---- */
+:root { --notes-y: #e2a400; }
+.anotes { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--elev-1), 0 4px 0 var(--line); padding: 8px 14px 14px; gap: 0 !important; }
+.an-bar { display: flex; align-items: center; gap: 2px; padding-bottom: 6px; margin: 0 -6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.an-bar > span { flex: 1; }
+.an-btn { width: 32px; height: 30px; padding: 0 !important; border-radius: 8px; display: grid; place-items: center; color: var(--notes-y); font-size: 16px; font-family: Georgia, serif; transition: background-color var(--t-fast), color var(--t-fast), scale var(--t-fast) var(--ease-spring); }
+.an-btn:hover { background: color-mix(in srgb, var(--notes-y) 14%, transparent); }
+.an-btn.on { background: color-mix(in srgb, var(--notes-y) 22%, transparent); }
+.an-btn:active { scale: .9; }
+.an-btn .ic { width: 18px; height: 18px; }
+.an-date { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 0 4px; }
+.an-body { min-height: 250px; max-height: 420px; overflow-y: auto; outline: none; font-size: 16px; line-height: 1.5; padding: 2px 2px 4px; caret-color: var(--notes-y); word-break: break-word; }
+.an-body { position: relative; }
+.an-body.blank::before { content: attr(data-ph); position: absolute; left: 2px; top: 2px; font-size: 20px; font-weight: 700; color: color-mix(in srgb, var(--muted) 55%, transparent); pointer-events: none; }
+.an-body > :first-child:not(.chk):not(ul) { font-size: 20px; font-weight: 700; } /* first line reads as the title, like Notes */
+.an-body ul { margin: 2px 0; padding-left: 22px; }
+.an-body li::marker { color: var(--notes-y); }
+.an-body .chk { position: relative; padding-left: 28px; min-height: 1.5em; font-size: 16px !important; font-weight: 400 !important; }
+.an-body .chk::before { content: ''; position: absolute; left: 2px; top: .2em; width: 16px; height: 16px; border-radius: 50%; border: 1.6px solid color-mix(in srgb, var(--muted) 70%, transparent); cursor: pointer; transition: background-color var(--t-fast), border-color var(--t-fast); }
+.an-body .chk.done { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.an-body .chk.done::before { background: var(--notes-y) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 12px no-repeat; border-color: var(--notes-y); }
+.an-body.fresh { animation: in-rise var(--t-med) var(--ease-out); }
+.paper-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 4px; }
 .paper-head b { display: flex; align-items: center; gap: 6px; font-size: 14px; }
-.paper .paper-head b { font-family: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive; font-size: 19px; font-weight: 400; }
-.play .paper textarea { min-height: 252px; resize: vertical; border: none; border-radius: 0; outline: none; color: var(--paper-ink); caret-color: var(--accent);
-  font-family: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive; font-size: 20px; line-height: 28px; padding: 0 12px 0 42px;
-  background: linear-gradient(90deg, transparent 32px, var(--paper-margin) 32px 33.5px, transparent 33.5px), linear-gradient(transparent 27px, var(--paper-rule) 27px) 0 0 / 100% 28px;
-  background-attachment: local; }
-.play .paper textarea::placeholder { color: color-mix(in srgb, var(--paper-ink) 40%, transparent); }
-.paper .sk-tool { color: color-mix(in srgb, var(--paper-ink) 60%, transparent); }
-.paper .sk-tool:hover { color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); }
-.paper.tear textarea { animation: tear .26s var(--ease-in) forwards; }
-.paper.fresh textarea { animation: in-rise var(--t-med) var(--ease-out); }
-@keyframes tear { to { translate: 30px -40px; rotate: 8deg; opacity: 0; } }
 /* ---- Sketchpad: its own card, dots or grid paper, with grow and paper buttons tucked in the corner ---- */
 .sketchpad { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--elev-1), 0 4px 0 var(--line); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .sketchpad .paper-head { padding: 0 2px; }
@@ -616,6 +616,8 @@ const ICONS = {
   eraser: '<path d="M8.5 20H20M4.6 15.4l9.8-9.8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11.6 18.4a2 2 0 0 1-1.4.6H8.3a2 2 0 0 1-1.4-.6l-2.3-2.3a.8.8 0 0 1 0-.7z"/><path d="M9.5 10.5l5 5"/>',
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+  bullets: '<path d="M10 6h10M10 12h10M10 18h10"/><circle cx="5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="18" r="1.3" fill="currentColor" stroke="none"/>',
+  checklist: '<circle cx="5.5" cy="7" r="2.5"/><path d="M4.3 17l1.2 1.2 2.3-2.6"/><circle cx="5.5" cy="17" r="2.5"/><path d="M11 7h9M11 17h9"/>',
   expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
   shrink: '<path d="M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7"/>',
   grid: '<path d="M4 4h16v16H4zM4 9.3h16M4 14.6h16M9.3 4v16M14.6 4v16" stroke-width="1.6"/>',
@@ -2524,7 +2526,9 @@ function renderCard() {
     <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
     <div class="bar lesson-bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>${ic('bulb')} Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
-      ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad paper"><div class="paper-rings" aria-hidden="true"></div><div class="paper-head"><b>${ic('pencil')} Notepad</b><button class="sk-tool linkish" id="notesClear" aria-label="Tear off page" title="Tear off page">${ic('trash')}</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here" spellcheck="false"></textarea></div>
+      ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad anotes"><div class="an-bar"><button class="an-btn linkish" data-fmt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button class="an-btn linkish" data-fmt="italic" title="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button><button class="an-btn linkish" data-fmt="list" title="Bulleted list" aria-label="Bulleted list">${ic('bullets')}</button><button class="an-btn linkish" data-fmt="check" title="Checklist" aria-label="Checklist">${ic('checklist')}</button><span></span><button class="an-btn linkish" id="notesClear" title="Clear note" aria-label="Clear note">${ic('trash')}</button></div>
+        <div class="an-date">${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' })} at ${new Date().toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</div>
+        <div id="notes" class="an-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notepad" data-ph="Write your working here" spellcheck="false"></div></div>
         <div class="sketchpad${skGrid ? ' grid' : ''}" id="skPanel"><div class="paper-head"><b>${ic('sketch')} Sketchpad</b></div><div class="sk-wrap"><canvas id="sketch" aria-label="Sketchpad: draw your working here"></canvas><div class="sk-corner"><button class="sk-tool linkish" id="skPaper" aria-label="Switch dots / grid" title="Dots / grid">${ic(skGrid ? 'dots' : 'grid')}</button><button class="sk-tool linkish" id="skBig" aria-label="Make sketchpad bigger" title="Bigger (Esc to shrink)">${ic('expand')}</button></div></div><div class="sk-bar">${SK_INKS.map((c, i) => `<button class="sk-ink linkish" data-ink="${i}" style="--ink:${c}" aria-label="Pen colour ${i + 1}"></button>`).join('')}<button class="sk-tool linkish" data-ink="e" aria-label="Eraser" title="Eraser">${ic('eraser')}</button><span></span><button class="sk-tool linkish" id="skUndo" aria-label="Undo" title="Undo (Ctrl+Z)">${ic('undo')}</button><button class="sk-tool linkish" id="skClear" aria-label="Clear sketch" title="Clear">${ic('trash')}</button></div></div></div>` : ''}</div>
 </div>`;
   const barFill = app.querySelector('.bar > div'); run.shownPct = pct;
@@ -2550,16 +2554,7 @@ function renderCard() {
       hint.classList.add('closing');
       hint.addEventListener('animationend', () => { if (hint.classList.contains('closing')) { hint.classList.remove('closing'); hint.hidden = true; } }, { once: true });
     };
-    const notes = document.getElementById('notes');
-    notes.value = run.notes;
-    notes.oninput = () => { run.notes = notes.value; };
-    notes.addEventListener('keydown', e => { if (e.key === 'Enter') e.stopPropagation(); });
-    document.getElementById('notesClear').onclick = () => {
-      if (!notes.value) return;
-      const page = notes.closest('.paper'); run.notes = '';
-      if (calm.matches) { notes.value = ''; return; }
-      page.classList.add('tear'); setTimeout(() => { notes.value = ''; page.classList.remove('tear'); replay(page, 'fresh'); }, 260);
-    };
+    wireNotes();
     wireTools();
   }
   const input = document.getElementById('ans'); if (input) input.focus();
@@ -2591,6 +2586,50 @@ function renderCard() {
   };
 }
 // ---------- notepad / sketchpad (side panel in a lesson) ----------
+// Notepad, Apple Notes style: rich text with bold, italic, bullets and a tappable checklist. Kept on the run as HTML.
+function wireNotes() {
+  const notes = document.getElementById('notes'), pad = notes.closest('.notepad');
+  // Every line is its own <div> (starting with one empty line), so the first line can always read as the title.
+  const blankHTML = '<div><br></div>';
+  notes.innerHTML = run.notes || blankHTML;
+  const save = () => {
+    [...notes.childNodes].forEach(n => { if (n.nodeType === 3 && n.textContent) { const d = document.createElement('div'); n.replaceWith(d); d.appendChild(n); const r = document.createRange(); r.setStart(n, n.length); r.collapse(true); const sel = document.getSelection(); sel.removeAllRanges(); sel.addRange(r); } });
+    if (!notes.firstChild) notes.innerHTML = blankHTML;
+    const empty = !notes.textContent.trim() && !notes.querySelector('.chk, li');
+    notes.classList.toggle('blank', empty); run.notes = empty ? '' : notes.innerHTML; sync();
+  };
+  const sync = () => pad.querySelectorAll('[data-fmt]').forEach(b => {
+    const f = b.dataset.fmt; let on = false;
+    try { on = f === 'bold' || f === 'italic' ? document.queryCommandState(f) : f === 'list' ? document.queryCommandState('insertUnorderedList') : !!curLine()?.classList?.contains('chk'); } catch (e) {}
+    b.classList.toggle('on', on && notes.contains(document.getSelection().anchorNode));
+  });
+  // The block (line) the caret is in, as a direct child of the note.
+  const curLine = () => { let n = document.getSelection().anchorNode; if (!n || !notes.contains(n) || n === notes) return null; while (n.parentNode !== notes) n = n.parentNode; return n.nodeType === 1 ? n : null; };
+  const toLine = () => { let ln = curLine(); if (!ln) { document.execCommand('formatBlock', false, 'div'); ln = curLine(); } return ln; };
+  notes.oninput = save;
+  notes.onpaste = e => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); };
+  notes.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.stopPropagation();
+    // Enter on an empty checklist line ends the checklist, like in Notes.
+    const ln = curLine(); if (ln && ln.classList.contains('chk') && !ln.textContent.trim()) { e.preventDefault(); ln.className = ''; ln.innerHTML = '<br>'; save(); }
+  });
+  notes.addEventListener('keyup', sync); notes.addEventListener('mouseup', sync);
+  notes.onclick = e => { const ln = e.target.closest?.('.chk'); if (ln && e.target === ln && e.offsetX < 26) { ln.classList.toggle('done'); replay(ln, 'nudge'); save(); } };
+  pad.querySelectorAll('[data-fmt]').forEach(b => {
+    b.onmousedown = e => e.preventDefault(); // keep the caret in the note
+    b.onclick = () => {
+      notes.focus(); const f = b.dataset.fmt;
+      if (f === 'bold' || f === 'italic') document.execCommand(f);
+      else if (f === 'list') document.execCommand('insertUnorderedList');
+      else { const ln = toLine(); if (ln) { if (ln.tagName === 'UL' || ln.tagName === 'OL') document.execCommand(ln.tagName === 'UL' ? 'insertUnorderedList' : 'insertOrderedList'); const l2 = toLine(); if (l2) { l2.classList.toggle('chk'); l2.classList.remove('done'); } } }
+      replay(b, 'nudge'); save();
+    };
+  });
+  const clr = document.getElementById('notesClear'); clr.onmousedown = e => e.preventDefault();
+  clr.onclick = () => { if (!run.notes) return; notes.innerHTML = blankHTML; save(); replay(notes, 'fresh'); };
+  save();
+}
 // The sketch is kept as a list of strokes on the run, so it survives moving to the next question and redraws crisply.
 const SK_INKS = ['var(--fg)', 'var(--accent)', 'var(--bad)', 'var(--done)'];
 let skInk = 0, skGrid = false;
