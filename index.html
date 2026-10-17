@@ -1763,6 +1763,7 @@ function finishItem(id, xp) {
 // Global order of every node on the path: each lesson, then the unit test.
 const ORDER = UNITS.flatMap(u => [...u.lessons.map(l => l.id), u.id + 'test']);
 // Developer mode (temporary): everything counts as unlocked. Kept apart from progress so Reset doesn't touch it.
+let keepScroll = null;
 let devMode = false; try { devMode = localStorage.getItem('numiq-dev') === '1'; } catch (e) {}
 function status(id) {
   if (state.done[id]) return 'done';
@@ -2106,7 +2107,7 @@ function renderProfile() {
 function escapeHtml(t) { return t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 const devBtn = document.getElementById('dev');
 const paintDev = () => { devBtn.classList.toggle('on', devMode); devBtn.innerHTML = ic(devMode ? 'unlock' : 'lock') + (devMode ? ' Dev: ON' : ' Dev'); };
-devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-dev', devMode ? '1' : '0'); } catch (e) {} paintDev(); if (!run) show(view); };
+devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-dev', devMode ? '1' : '0'); } catch (e) {} paintDev(); if (!run) { keepScroll = scrollY; show(view); } };
 paintDev();
 document.getElementById('gear').onclick = () => { ui.profileMode = ui.profileMode === 'settings' ? 'view' : 'settings'; show('profile'); };
 
@@ -2165,7 +2166,9 @@ function renderPath() {
   app.querySelectorAll('[data-to]').forEach(b => b.onclick = () => startTest(b.dataset.to, true));
   document.getElementById('reviewBtn').onclick = startReview;
   document.getElementById('dailyBtn').onclick = startDaily;
-  const cur = app.querySelector('.node.current'); if (cur) cur.scrollIntoView({ block: 'center' });
+  // A plain refresh (like toggling Dev) stays where you were; otherwise jump to the lesson you're on.
+  const cur = app.querySelector('.node.current');
+  if (keepScroll != null) { scrollTo(0, keepScroll); keepScroll = null; } else if (cur) cur.scrollIntoView({ block: 'center' });
   drawPathLines(); fisheye(); watchReveals(); initFloaters();
 }
 
