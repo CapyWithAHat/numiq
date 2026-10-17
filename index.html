@@ -74,10 +74,15 @@ button:disabled { opacity: .5; cursor: default; }
 .bump { display: inline-block; animation: pop .6s var(--ease-spring) .3s both; }
 @keyframes pop { 0% { scale: .4; opacity: 0; } 70% { scale: 1.15; opacity: 1; } 100% { scale: 1; } }
 .node { width: 64px; height: 64px; border-radius: 50%; border: none; color: #fff; font-weight: 700; padding: 0; }
-.node.done { background: var(--done); }
-.node.current { background: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent); }
-.node.locked { background: var(--locked); cursor: default; }
+.node.done { background-color: var(--done); }
+.node.current { background-color: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent); }
+.node.locked { background-color: var(--locked); cursor: default; }
 .node.test { border-radius: 14px; }
+/* Lessons away from the middle of the screen fade a little (--fade, set by fisheye()). A wash of the page colour is
+   painted over the node instead of making it see-through, so the path line still hides behind it. */
+.node { background-image: linear-gradient(color-mix(in srgb, var(--bg) calc(var(--fade, 0) * 100%), transparent) 0 0); }
+.node:not(.locked) { color: color-mix(in srgb, #fff, var(--bg) calc(var(--fade, 0) * 100%)); }
+.node-row span { opacity: calc(1 - var(--fade, 0)); }
 .node-row { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .node-row span { font-size: 13px; color: var(--muted); }
 /* The winding line that links a unit's nodes. Grey track, green fill up to the last finished node. */
@@ -92,7 +97,7 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row.lbl-l span { transform-origin: right center; }
 .node-row span { will-change: auto; } /* moved by floatStep() in script, never by a CSS animation (those turn text into a blurry picture) */
 .node-row:hover span { color: var(--fg); }
-.node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
+.node.locked:disabled { opacity: 1; background-color: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
 .path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
 .path-line .track { stroke: var(--line); }
@@ -1905,6 +1910,8 @@ function fisheye() {
       }
       if (shift || row._shift) moved = true;
       row._shift = shift; row.style.translate = shift ? `0 ${shift}px` : '';
+      // Fade: none near the centre, up to about a third at the top and bottom edges.
+      row.style.setProperty('--fade', lens && row._by !== undefined ? (.34 * Math.min(1, Math.pow((row._by - sy - half) / half, 2))).toFixed(3) : 0);
       row.style.setProperty('--lens', sc.toFixed(3)); row.style.setProperty('--push', Math.round((sc - 1) * 32) + 'px');
       pts.push([row._bx - sec._ox, row._by + shift - sec._oy]);
     });
