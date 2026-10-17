@@ -358,6 +358,17 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 .avatar.big { width: 180px; height: 180px; }
 .av-svg { width: 100%; height: 100%; display: block; }
 .prof-top .avatar { width: 176px; height: 176px; } /* the big, living profile character (see avLive) */
+/* Profile hero: the character big in the middle, your name on the left, account on the right. */
+.prof-hero { display: grid !important; grid-template-columns: 1fr auto 1fr; gap: 36px !important; align-items: center; text-align: left; }
+.prof-hero .avatar { width: 260px; height: 260px; }
+.ph-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ph-l { align-items: flex-end; text-align: right; }
+.ph-r { align-items: flex-start; }
+.prof-hero .prof-sync { max-width: 100%; }
+.prof-hero .prof-sync { border-radius: var(--r-md); align-items: flex-start; line-height: 1.45; }
+.prof-hero .prof-sync .sync-dot { margin-top: 6px; }
+.prof-hero .prof-sync b { display: block; overflow-wrap: anywhere; }
+.prof-top.prof-hero .prof-btns { justify-content: flex-start; margin-top: 2px; }
 .prof-top .av-btn:not(:disabled):hover { translate: none; scale: 1.02; }
 .av-edit { display: flex; gap: 28px; align-items: flex-start; align-self: stretch; text-align: left; }
 .av-left { display: flex; flex-direction: column; align-items: center; gap: 12px; position: sticky; top: 12px; }
@@ -1764,10 +1775,10 @@ function renderProfile() {
       <div class="cap">${cloud.status === 'synced' ? 'Settings are saved to your account.' : 'Settings are saved in this browser.'}</div></div>`;
   } else {
     const joined = P.joined ? new Date(P.joined).toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' }) : '---';
-    top = `<div class="card prof-top"><button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
-      <h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'} · joined ${joined}</div>
-      <div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : '💾 Saved in this browser only'}</div>
-      <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div>`;
+    top = `<div class="card prof-top prof-hero"><div class="ph-side ph-l"><h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'}</div><div class="cap">Joined ${joined}</div></div>
+      <button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
+      <div class="ph-side ph-r"><div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : '💾 Saved in this browser only'}</div>
+      <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div></div>`;
   }
   // Calendar, weeks start on Monday. Days with XP are ticked; days that hit the daily goal are filled.
   const now = new Date(), view = new Date(now.getFullYear(), now.getMonth() + (ui.calOffset || 0), 1);
