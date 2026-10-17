@@ -83,7 +83,8 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row span { position: absolute; top: 32px; translate: 0 -50%; white-space: nowrap; } /* name sits beside the node, clear of the line */
 .node-row.lbl-r span { left: calc(100% + 16px); }
 .node-row.lbl-l span { right: calc(100% + 16px); }
-.node-row { transition: scale .2s var(--ease-out); }
+.node-row span { animation: float 3.6s ease-in-out infinite; animation-delay: var(--fd, 0s); } /* names gently drift, each out of step */
+@keyframes float { 0%, 100% { translate: 0 -50%; } 33% { translate: 2px calc(-50% - 5px); } 66% { translate: -1px calc(-50% - 2px); } }
 .node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
 .path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
@@ -1524,10 +1525,10 @@ function renderPath() {
     u.lessons.forEach((l, li) => {
       const st = status(l.id);
       const dx = Math.round(Math.sin(li * 1.1) * 70); // labels go on the outer side, away from the line
-      html += `<div class="node-row ${dx < 0 ? 'lbl-l' : 'lbl-r'}" style="transform:translateX(${dx}px)"><button class="node ${st}${pop(l.id, st)}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
+      html += `<div class="node-row ${dx < 0 ? 'lbl-l' : 'lbl-r'}" style="transform:translateX(${dx}px);--fd:-${(li * 1.3).toFixed(1)}s"><button class="node ${st}${pop(l.id, st)}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
     });
     const tst = status(u.id + 'test');
-    html += `<div class="node-row lbl-r"><button class="node test ${tst}${pop(u.id + 'test', tst)}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
+    html += `<div class="node-row lbl-r" style="--fd:-${(u.lessons.length * 1.3).toFixed(1)}s"><button class="node test ${tst}${pop(u.id + 'test', tst)}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
   });
   COMING.forEach((t, i) => { html += `<section class="unit"><div class="unit-head"><b>Unit ${UNITS.length + i + 1}: ${t}</b><small>Coming soon</small></div></section>`; });
   app.innerHTML = html;
@@ -1537,53 +1538,79 @@ function renderPath() {
   document.getElementById('reviewBtn').onclick = startReview;
   document.getElementById('dailyBtn').onclick = startDaily;
   const cur = app.querySelector('.node.current'); if (cur) cur.scrollIntoView({ block: 'center' });
-  drawPathLines(); scaleNodes();
+  drawPathLines(); fisheye();
 }
 
-// Draw each unit's line through its node centres (S-curves), with the done part filled in.
-// A node finished a moment ago (.just): the fill grows from it on to the next node.
+// Each unit gets a winding line through its nodes (S-curves): grey track, green fill up to where you are.
+// The line is built once per render; fisheye() reshapes it every frame from cached node positions, so it follows the nodes.
 function drawPathLines() {
   app.querySelectorAll('.unit').forEach(sec => {
-    sec.querySelector('.path-line')?.remove();
-    const nodes = [...sec.querySelectorAll('.node')];
-    if (nodes.length < 2) return;
-    const box = sec.getBoundingClientRect();
-    const pts = nodes.map(n => { const r = n.getBoundingClientRect(); return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]; });
-    const ds = []; let d = `M${pts[0][0]},${pts[0][1]}`;
-    for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], h = (y1 - y0) / 2; d += ` C${x0},${y0 + h} ${x1},${y1 - h} ${x1},${y1}`; ds.push(d); }
-    sec.insertAdjacentHTML('afterbegin', `<svg class="path-line" aria-hidden="true"><path class="track" d="${d}"/><path class="fill" d="${d}"/></svg>`);
-    const svg = sec.firstElementChild, fill = svg.querySelector('.fill'), total = fill.getTotalLength();
-    // Length along the line to node i (0 at the first node).
-    const tmp = svg.querySelector('.track').cloneNode();
-    svg.appendChild(tmp);
-    const lenTo = i => i <= 0 ? 0 : (tmp.setAttribute('d', ds[i - 1]), tmp.getTotalLength());
-    // Filled up to where you are: the current node, or the last finished one.
+    sec.querySelector('.path-line')?.remove(); sec._line = null;
+    const rows = [...sec.querySelectorAll('.node-row')];
+    if (rows.length < 2) return;
+    sec.insertAdjacentHTML('afterbegin', '<svg class="path-line" aria-hidden="true"><path class="track"/><path class="fill"/><path class="m" style="stroke:none"/></svg>');
+    const nodes = rows.map(r => r.firstElementChild);
     const cur = nodes.findIndex(n => n.classList.contains('current'));
-    const last = cur >= 0 ? cur : nodes.reduce((k, n, i) => n.classList.contains('done') ? i : k, -1);
+    const fillTo = cur >= 0 ? cur : nodes.reduce((k, n, i) => n.classList.contains('done') ? i : k, -1);
+    // A node finished a moment ago (.just): the fill starts at it and grows on to the next node.
     const justIdx = nodes.findIndex(n => n.classList.contains('just'));
-    const target = lenTo(last), from = justIdx >= 0 && !calm.matches ? lenTo(justIdx) : target;
-    tmp.remove();
-    fill.style.strokeDasharray = `${total} ${total}`;
-    fill.style.transition = 'none'; fill.style.strokeDashoffset = total - from;
-    fill.style.opacity = target > 0 ? 1 : 0;
-    if (from !== target) setTimeout(() => { fill.style.transition = ''; fill.style.strokeDashoffset = total - target; }, 150);
+    sec._line = { svg: sec.firstElementChild, rows, fillTo, shown: justIdx >= 0 && !calm.matches ? justIdx : fillTo, fresh: true };
+    if (sec._line.shown !== fillTo) setTimeout(() => { const L = sec._line; if (L) { L.shown = L.fillTo; shapeLine(L); } }, 150);
+  });
+  measurePath();
+}
+// Remember where every node sits on the page without any fisheye shift (layout only, read once per render/resize).
+function measurePath() {
+  app.querySelectorAll('.unit').forEach(sec => {
+    const box = sec.getBoundingClientRect(); sec._ox = box.left + scrollX; sec._oy = box.top + scrollY;
+    sec.querySelectorAll('.node-row').forEach(row => {
+      const r = row.firstElementChild.getBoundingClientRect();
+      row._bx = r.left + r.width / 2 + scrollX; row._by = r.top + r.height / 2 + scrollY - (row._shift || 0);
+    });
   });
 }
-// Nodes near the top and bottom of the screen shrink; they grow to full size as they reach the middle.
-function scaleNodes() {
-  if (view !== 'learn' || run) return;
-  const top = 0, bottom = innerHeight - (document.getElementById('tabbar').offsetHeight || 0), mid = (top + bottom) / 2, half = (bottom - top) / 2;
-  app.querySelectorAll('.node-row').forEach(row => {
-    if (calm.matches) { row.style.scale = ''; return; }
-    const n = row.firstElementChild.getBoundingClientRect(), y = n.top + n.height / 2;
-    const dist = Math.abs(y - mid) / half; // 0 = middle, 1 = screen edge
-    const t = Math.min(1, Math.max(0, (dist - .5) / .55)), k = t * t * (3 - 2 * t); // smoothstep: full size through the middle half, eases off towards the edges
-    row.style.scale = (1 - k * .3).toFixed(3);
+function shapeLine(L) {
+  const pts = L.pts; if (!pts) return;
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`, upTo = '';
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], h = (y1 - y0) / 2;
+    d += ` C${x0.toFixed(1)},${(y0 + h).toFixed(1)} ${x1.toFixed(1)},${(y1 - h).toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+    if (i === L.shown) upTo = d;
+  }
+  const [track, fill, m] = L.svg.children;
+  track.setAttribute('d', d); fill.setAttribute('d', d);
+  const total = fill.getTotalLength();
+  let len = 0; if (upTo) { m.setAttribute('d', upTo); len = m.getTotalLength(); }
+  if (L.fresh) fill.style.transition = 'none';
+  fill.style.strokeDasharray = `${total} ${total}`; fill.style.strokeDashoffset = total - len;
+  fill.style.opacity = L.fillTo > 0 ? 1 : 0;
+  if (L.fresh) { void fill.getBoundingClientRect(); fill.style.transition = ''; L.fresh = false; }
+}
+// Fisheye: the node at the centre of the screen is biggest, and nodes shrink smoothly the further they are from it
+// (no flat zone). Spacing bulges out a little in the middle and squeezes towards the edges, like looking through a lens.
+function fisheye() {
+  if (view !== 'learn' || run || !app.querySelector('.unit')) return;
+  const half = (innerHeight - (document.getElementById('tabbar').offsetHeight || 0)) / 2, sy = scrollY, lens = !calm.matches;
+  app.querySelectorAll('.unit').forEach(sec => {
+    const L = sec._line, rows = L ? L.rows : [...sec.querySelectorAll('.node-row')], pts = [];
+    let moved = false;
+    rows.forEach(row => {
+      let shift = 0, sc = 1;
+      if (lens && row._by !== undefined) {
+        const dd = (row._by - sy - half) / half, a = Math.abs(dd); // -1 top edge, 0 centre, 1 bottom edge
+        sc = .7 + .4 * Math.exp(-2.6 * dd * dd);                  // 1.1 in the centre, ~.73 at the edges
+        if (a < 1) shift = Math.sign(dd) * half * (1.3 * a / (.3 * a + 1) - a); // lens bulge, 0 at centre and edges
+      }
+      if (shift || row._shift) moved = true;
+      row._shift = shift; row.style.translate = shift ? `0 ${shift.toFixed(1)}px` : ''; row.style.scale = sc === 1 ? '' : sc.toFixed(3);
+      pts.push([row._bx - sec._ox, row._by + shift - sec._oy]);
+    });
+    if (L && (moved || !L.pts)) { L.pts = pts; shapeLine(L); }
   });
 }
-let scaleQueued = false;
-addEventListener('scroll', () => { if (scaleQueued) return; scaleQueued = true; requestAnimationFrame(() => { scaleQueued = false; scaleNodes(); }); }, { passive: true });
-addEventListener('resize', () => { if (view === 'learn' && !run && app.querySelector('.unit')) { drawPathLines(); scaleNodes(); } });
+let lensQueued = false;
+addEventListener('scroll', () => { if (lensQueued) return; lensQueued = true; requestAnimationFrame(() => { lensQueued = false; fisheye(); }); }, { passive: true });
+addEventListener('resize', () => { if (view === 'learn' && !run && app.querySelector('.unit')) { measurePath(); fisheye(); } });
 
 // Confetti burst from both bottom corners, in the site's own colours. Cleans itself up.
 function confetti() {
