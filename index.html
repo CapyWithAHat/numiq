@@ -627,6 +627,15 @@ button:disabled:not(.node) { box-shadow: none; }
 .play-top > :last-child { justify-self: end; color: var(--muted); font-size: 14px; }
 .play-top #quit { justify-self: start; border-radius: var(--r-pill); padding: 7px 14px; }
 .play-top b { font-size: 16px; }
+.timer { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--line);
+  color: var(--fg); font-variant-numeric: tabular-nums; transition: color .3s, background .3s, border-color .3s; }
+.timer b { font-size: 15px; min-width: 4.2ch; text-align: right; }
+.timer .ic .hand { transform-origin: 50% 100%; animation: hand-spin 4s linear infinite; }
+.timer.up .ic .hand { animation: none; }
+@keyframes hand-spin { to { rotate: 360deg; } }
+.timer.low { color: #d97706; border-color: color-mix(in srgb, #d97706 45%, var(--line)); background: color-mix(in srgb, #d97706 10%, var(--surface)); }
+.timer.up { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); background: color-mix(in srgb, var(--bad) 10%, var(--surface)); animation: pop .4s var(--ease-spring); }
+@media (prefers-reduced-motion: reduce) { .timer .ic .hand, .timer.up { animation: none; } }
 .lesson-bar { height: 16px; border-radius: var(--r-pill); background: var(--line); box-shadow: inset 0 2px 0 color-mix(in srgb, var(--line), var(--fg) 10%); overflow: hidden; }
 .lesson-bar > div { height: 100%; border-radius: inherit; background: var(--done); min-width: 16px; position: relative;
   box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--done), #000 18%); transition: width .7s var(--ease-spring) !important; }
@@ -2257,6 +2266,17 @@ const weakSpots = () => Object.keys(state.acc).filter(id => findLesson(id) && st
 
 // One question card for a lesson. rev: counts as a spaced review.
 const qCard = (id, kind, lv, rev) => { const l = findLesson(id); return { kind: `${kind} · ${topicName(id)}`, lid: id, rev, item: Object.assign(l.gen(lv), { hint: l.idea }) }; };
+// Session clock: counts down for timed sessions (20 min etc.), counts up for test revision. When time runs out you finish the question you're on.
+function clockText() {
+  const ms = run.ends ? Math.max(0, run.ends - Date.now()) : Date.now() - run.started, t = Math.round(ms / 1000);
+  return run.ends && !t ? "Time's up" : `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+}
+setInterval(() => {
+  const el = run && run.session && $('timer'); if (!el) return;
+  el.querySelector('b').textContent = clockText();
+  const left = run.ends ? run.ends - Date.now() : Infinity;
+  el.classList.toggle('low', left <= 60000 && left > 0); el.classList.toggle('up', left <= 0);
+}, 250);
 function startSession(ids, opts) {
   if (!ids.length) return;
   const n = opts.count, lv = opts.exam ? 1 : 0, cards = [];
@@ -2269,7 +2289,7 @@ function startSession(ids, opts) {
     while (cards.length < n) cards.push(qCard(pick(ids), 'Mixed', lv));
   }
   run = { notes: '', cards: shuffle(cards.slice(0, Math.max(n, cards.length))), i: 0, isTest: false, session: true, exam: opts.exam, chunk: opts.chunk ? ids : null, back: 'study', id: null,
-    title: opts.chunk ? 'Test revision' : opts.exam ? 'Study session · exam style' : 'Study session', xp: 0, correct: 0, misses: 0, answered: 0, total: cards.length };
+    title: opts.chunk ? 'Test revision' : opts.exam ? 'Study session · exam style' : 'Study session', started: Date.now(), ends: opts.mins ? Date.now() + opts.mins * 60000 : null, xp: 0, correct: 0, misses: 0, answered: 0, total: cards.length };
   swap('zoom', renderCard);
 }
 
@@ -2370,7 +2390,7 @@ function renderStudy() {
   app.querySelector('[data-exam]').onclick = e => { sb.exam = !sb.exam; flip(e.currentTarget, sb.exam); $('sbSub').textContent = sbLine(sb); };
   $('sGo').onclick = () => {
     const pool = (sb.units.length ? units.filter(u => sb.units.includes(u.id)) : units).flatMap(u => u.lessons.map(l => l.id)).filter(id => status(id) !== 'locked');
-    startSession(pool, { count: SESSION_LEN[sb.len], exam: sb.exam });
+    startSession(pool, { count: SESSION_LEN[sb.len], exam: sb.exam, mins: sb.len });
   };
   $('qReview').onclick = startReview;
   $('qDaily').onclick = startDaily;
@@ -2900,7 +2920,7 @@ function renderCard() {
   } else body += `<div class="q">${c.html}</div>`;
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
-    <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
+    <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : run.session ? `<span class="timer" id="timer" title="${run.ends ? 'Time left' : 'Time so far'}">${ic('clock')}<b>${clockText()}</b></span>` : ''}</span></div>
     <div class="bar lesson-bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>${ic('bulb')} Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
       ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad anotes"><div class="an-bar"><button class="an-btn linkish" data-fmt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button class="an-btn linkish" data-fmt="list" title="Bulleted list" aria-label="Bulleted list">${ic('bullets')}</button><button class="an-btn linkish" data-fmt="check" title="Checklist" aria-label="Checklist">${ic('checklist')}</button><span></span><button class="an-btn linkish" id="notesClear" title="Clear note" aria-label="Clear note">${ic('trash')}</button></div>
@@ -3118,7 +3138,7 @@ function wireCalc() {
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); run(); } });
 }
 
-function next() { if (run.practice) addPracticeCard(); run.i++; run.i >= run.cards.length ? swap('zoom', finish) : swap('next', renderCard); }
+function next() { if (run.practice) addPracticeCard(); run.i++; if (run.session && run.ends && Date.now() >= run.ends) return swap('zoom', finish); run.i >= run.cards.length ? swap('zoom', finish) : swap('next', renderCard); }
 
 function finish() {
   if (run.practice) { run.xp = run.correct; state.bestLevel = Math.max(state.bestLevel, practiceLevel() + 1); } // 1 XP per right answer
