@@ -629,7 +629,15 @@ button:disabled:not(.node) { box-shadow: none; }
 .play-top b { font-size: 16px; }
 .timer { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--line);
   color: var(--fg); font-variant-numeric: tabular-nums; transition: color .3s, background .3s, border-color .3s; }
-.timer b { font-size: 15px; min-width: 4.2ch; text-align: right; }
+.timer b { font-size: 15px; min-width: 4.2ch; text-align: right; display: inline-flex; justify-content: flex-end; }
+.timer .dg { position: relative; display: inline-block; height: 1.25em; line-height: 1.25em; overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent); }
+.timer .dg i { display: block; font-style: normal; }
+.timer .dg i.out { position: absolute; inset: 0; animation: dg-out .42s cubic-bezier(.5, 0, .3, 1) forwards; }
+.timer .dg i.in { animation: dg-in .42s cubic-bezier(.3, 0, .2, 1) both; }
+.timer .sep { line-height: 1.25em; }
+@keyframes dg-out { to { translate: 0 -100%; opacity: 0; filter: blur(1.5px); } }
+@keyframes dg-in { from { translate: 0 100%; opacity: 0; filter: blur(1.5px); } }
 .timer .ic .hand { transform-origin: 50% 100%; animation: hand-spin 4s linear infinite; }
 .timer.up .ic .hand { animation: none; }
 @keyframes hand-spin { to { rotate: 360deg; } }
@@ -2273,9 +2281,26 @@ function clockText() {
 }
 setInterval(() => {
   const el = run && run.session && $('timer'); if (!el) return;
-  el.querySelector('b').textContent = clockText();
+  roll(el.querySelector('b'), clockText());
   const c = clockClass(); el.classList.toggle('low', c === ' low'); el.classList.toggle('up', c === ' up');
 }, 250);
+// Each digit sits in its own little window: when it changes, the old one rolls up and out while the new one rolls up from below.
+const rollHTML = t => /\d/.test(t) ? [...t].map(ch => /\d/.test(ch) ? `<span class="dg"><i>${ch}</i></span>` : `<span class="sep">${ch}</span>`).join('') : t;
+function roll(box, t) {
+  const shape = t.replace(/\d/g, '#');
+  if (!/\d/.test(t) || box.dataset.shape !== shape) { if (box.dataset.t !== t) { box.innerHTML = rollHTML(t); box.dataset.t = t; box.dataset.shape = shape; } return; }
+  if (box.dataset.t === t) return;
+  box.dataset.t = t;
+  const digits = t.replace(/\D/g, '');
+  box.querySelectorAll('.dg').forEach((slot, k) => {
+    const cur = slot.querySelector('i:not(.out)');
+    if (cur.textContent === digits[k]) return;
+    if (calm.matches) { cur.textContent = digits[k]; return; }
+    slot.querySelectorAll('i.out').forEach(o => o.remove());
+    cur.className = 'out'; cur.addEventListener('animationend', () => cur.remove());
+    const nu = document.createElement('i'); nu.className = 'in'; nu.textContent = digits[k]; slot.appendChild(nu);
+  });
+}
 function clockClass() { const left = run.ends ? run.ends - Date.now() : Infinity; return left <= 0 ? ' up' : left <= 60000 ? ' low' : ''; }
 function startSession(ids, opts) {
   if (!ids.length) return;
@@ -2920,7 +2945,7 @@ function renderCard() {
   } else body += `<div class="q">${c.html}</div>`;
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
-    <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : run.session ? `<span class="timer${clockClass()}" id="timer" title="${run.ends ? 'Time left' : 'Time so far'}">${ic('clock')}<b>${clockText()}</b></span>` : ''}</span></div>
+    <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : run.session ? `<span class="timer${clockClass()}" id="timer" title="${run.ends ? 'Time left' : 'Time so far'}">${ic('clock')}<b data-t="${clockText()}" data-shape="${clockText().replace(/\d/g, '#')}">${rollHTML(clockText())}</b></span>` : ''}</span></div>
     <div class="bar lesson-bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>${ic('bulb')} Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
       ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad anotes"><div class="an-bar"><button class="an-btn linkish" data-fmt="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button class="an-btn linkish" data-fmt="list" title="Bulleted list" aria-label="Bulleted list">${ic('bullets')}</button><button class="an-btn linkish" data-fmt="check" title="Checklist" aria-label="Checklist">${ic('checklist')}</button><span></span><button class="an-btn linkish" id="notesClear" title="Clear note" aria-label="Clear note">${ic('trash')}</button></div>
