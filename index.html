@@ -191,7 +191,7 @@ button:disabled { opacity: .5; cursor: default; }
 .deck .under.u1 { translate: 0 8px; scale: .97; opacity: .7; }
 .deck .under.u2 { translate: 0 16px; scale: .94; opacity: .4; }
 /* The thrower moves the card off the deck; the card inside only turns over (opacity on a 3D card would flatten it and show the front mirrored). */
-.fc-throw { position: relative; perspective: 1400px; transition: translate .55s cubic-bezier(.4, 0, .6, 1), rotate .55s cubic-bezier(.4, 0, .6, 1), opacity .3s ease-in .25s; }
+.fc-throw { position: relative; z-index: 2; perspective: 1400px; }
 .fc3d { position: relative; transform-style: preserve-3d; transition: transform .6s var(--ease-spring); min-height: 300px; cursor: pointer; outline: none; }
 .fc3d.flipped { transform: rotateY(180deg); cursor: default; }
 .fc3d .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; background: var(--surface);
@@ -203,15 +203,22 @@ button:disabled { opacity: .5; cursor: default; }
 .fc3d .rule { font-size: 16px; line-height: 1.6; }
 .fc3d .ex { border-top: 1px dashed var(--line); padding-top: 10px; color: var(--muted); }
 .fc3d .kind { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.fc-throw.gone-r { translate: 130% -20px; rotate: 14deg; opacity: 0; }
-.fc-throw.gone-l { translate: -130% -20px; rotate: -14deg; opacity: 0; }
-.fc-throw.deal { animation: deal .5s var(--ease-spring) both; }
-@keyframes deal { from { translate: 0 16px; scale: .94; opacity: .4; } to { translate: 0; scale: 1; opacity: 1; } }
+.fc-throw.deal { animation: deal .45s var(--ease-out) .25s both; }
+@keyframes deal { from { translate: 0 8px; scale: .97; } to { translate: 0; scale: 1; } }
+/* The answered card slides out to the side, then tucks in behind the deck like a real shuffle. */
+.fc-ghost { position: absolute; inset: 0; z-index: 3; perspective: 1400px; pointer-events: none; }
+.fc-ghost .fc3d { height: 100% !important; transition: none; }
+.fc-ghost.tuck-r { animation: tuck-r .75s cubic-bezier(.45, 0, .25, 1) both; }
+.fc-ghost.tuck-l { animation: tuck-l .75s cubic-bezier(.45, 0, .25, 1) both; }
+@keyframes tuck-r { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: 78% -14px; rotate: 9deg; z-index: 3; }
+  49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
+@keyframes tuck-l { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: -78% -14px; rotate: -9deg; z-index: 3; }
+  49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
 .flash-btns { display: flex; justify-content: center; gap: 10px; }
 .flash-btns button { min-width: 140px; }
 .flash-btns .no { color: var(--bad); }
 .flash-hint { text-align: center; color: var(--muted); font-size: 13px; }
-@media (prefers-reduced-motion: reduce) { .fc3d, .fc-throw { transition: none; } .fc-throw.deal, .study .cal-d.today { animation: none; } .study .bar i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .fc3d { transition: none; } .fc-ghost { display: none; } .fc-throw.deal, .study .cal-d.today { animation: none; } .study .bar i { transition: none; } }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar > div { height: 100%; background: var(--done); width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
@@ -2436,14 +2443,15 @@ function renderFlash(dealt) {
     if (knew) { r.step = Math.min(r.step + 1, FC_GAPS.length - 1); r.due = addDays(FC_GAPS[r.step]); f.got++; }
     else { r.step = -1; r.due = addDays(1); if (!f.again[id]) { f.again[id] = 1; f.ids.push(id); } }
     state.fc[id] = r; save(); beep(knew);
-    $('fcBtns').querySelectorAll('button').forEach(x => x.disabled = true);
-    // Deal the next card only once the thrown one has fully left the screen.
-    const thrower = $('fcThrow');
-    const next = () => { if (ui.fc !== f || !thrower.isConnected) return; f.i++; f.flip = false; renderFlash(true); };
-    if (calm.matches) return next();
-    thrower.addEventListener('transitionend', e => { if (e.target === thrower && e.propertyName === 'translate') next(); });
-    setTimeout(next, 800);
-    thrower.classList.remove('deal'); thrower.classList.add(knew ? 'gone-r' : 'gone-l');
+    // Copy the answered card, deal the next one, then let the copy slide out and tuck in behind it.
+    const ghost = $('fcThrow').cloneNode(true);
+    f.i++; f.flip = false; renderFlash(true);
+    const deck = app.querySelector('.deck');
+    if (!deck || calm.matches) return;
+    ghost.removeAttribute('id'); ghost.querySelectorAll('[id]').forEach(x => x.removeAttribute('id'));
+    ghost.className = 'fc-ghost ' + (knew ? 'tuck-r' : 'tuck-l');
+    ghost.addEventListener('animationend', () => ghost.remove());
+    deck.appendChild(ghost);
   };
   card.onclick = turn;
   ui.fcKey = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); f.flip ? null : turn(); } else if (f.flip && e.key === 'ArrowRight') answer(true); else if (f.flip && e.key === 'ArrowLeft') answer(false); };
