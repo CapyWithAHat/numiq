@@ -153,9 +153,7 @@ textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-he
 .cal-d.active { border-style: solid; border-color: var(--done); }
 .cal-d.goal { border-style: solid; border-color: var(--done); background: color-mix(in srgb, var(--done) 22%, transparent); }
 .goal-row { display: flex; align-items: center; gap: 12px; }
-.av-pick { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 420px; }
-.av-pick button { font-size: 22px; padding: 4px 8px; }
-.av-pick button.sel, .prof-btns button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
+.prof-btns button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
 .prof-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .login .prof-btns { justify-content: center; margin-bottom: 4px; }
 .field { display: flex; flex-direction: column; gap: 4px; text-align: left; width: 260px; font-size: 13px; color: var(--muted); }
@@ -326,11 +324,40 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 @keyframes in-zoom { from { opacity: 0; scale: .95; } to { opacity: 1; scale: 1; } }
 @keyframes fade-in { from { opacity: 0; } }
 
+.av-btn { padding: 0; border: none; overflow: hidden; }
+.av-btn:not(:disabled):hover { translate: 0 -2px; scale: 1.03; }
+.avatar { overflow: hidden; flex: none; }
+.avatar.big { width: 180px; height: 180px; }
+.av-svg { width: 100%; height: 100%; display: block; }
+.av-edit { display: flex; gap: 28px; align-items: flex-start; align-self: stretch; text-align: left; }
+.av-left { display: flex; flex-direction: column; align-items: center; gap: 12px; position: sticky; top: 12px; }
+.av-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.av-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.av-tabs button { padding: 6px 12px; font-size: 14px; }
+.av-tabs button.sel, .av-opts button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
+.av-panel { display: flex; flex-direction: column; gap: 14px; }
+.av-row { display: flex; flex-direction: column; gap: 6px; }
+.av-row b { font-size: 13px; color: var(--muted); font-weight: 600; }
+.av-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.av-tile { width: 84px; padding: 4px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.av-tile .av-svg { width: 64px; height: 64px; border-radius: 50%; }
+.av-tile span { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.av-swatch { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: var(--sw); }
+/* Avatar motion: the changed part springs in, the whole face bounces, and the eyes blink now and then. */
+.av-pop { animation: av-pop .38s var(--ease-spring) both; transform-box: fill-box; transform-origin: center; }
+@keyframes av-pop { from { scale: .7; opacity: .4; } }
+.av-bump { animation: av-bump .36s var(--ease-spring); }
+@keyframes av-bump { 0% { scale: 1; } 35% { scale: .95; } 70% { scale: 1.03; } 100% { scale: 1; } }
+.av-chose { animation: sel-pop var(--t-med) var(--ease-spring); }
+.av-blink { animation: av-blink 4.6s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes av-blink { 0%, 94%, 100% { scale: 1 1; } 96% { scale: 1 .1; } }
+.av-tile .av-blink { animation: none; }
+
 /* Reduced motion: everything still changes, it just doesn't move. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
     transition-duration: 1ms !important; transition-delay: 0ms !important; }
-  button:not(:disabled):hover, button:not(:disabled):active, .node:not(:disabled):hover, .node:not(:disabled):active { translate: none; scale: none; }
+  button:not(:disabled):hover, button:not(:disabled):active, .av-btn:not(:disabled):hover, .node:not(:disabled):hover, .node:not(:disabled):active { translate: none; scale: none; }
 }
 </style>
 
@@ -1051,6 +1078,116 @@ const TOPIC = { u1l1: 'powers', u1l2: 'multiplying powers', u1l3: 'dividing powe
 
 const PRACTICE_COUNT = 6, TEST_COUNT = 10, TEST_PASS = 8, XP_LESSON = 10, XP_TEST = 20, XP_PRACTICE = 5;
 
+// ---------- avatar maker ----------
+// The avatar is a list of picked parts (state.profile.look), drawn as one SVG. Parts are stored by name, so new parts can be added later.
+const AV = {
+  face: { round: 'Round', oval: 'Oval', square: 'Square', wide: 'Wide' },
+  skin: ['#fbe0c8', '#f3c597', '#dfa070', '#b97a4c', '#8d5533', '#5f3920', '#9ad18b', '#a9c4f5'],
+  hair: { none: 'None', short: 'Short', spiky: 'Spiky', swoop: 'Swoop', long: 'Long', bun: 'Bun', pony: 'Ponytail', curly: 'Curly', mohawk: 'Mohawk' },
+  hairCol: ['#2b2420', '#6b4226', '#a8703c', '#e8c26a', '#c8622d', '#b9b9b9', '#4a7bd9', '#e57bb4', '#4fb07a'],
+  eyes: { dots: 'Dots', big: 'Big', happy: 'Happy', sleepy: 'Sleepy', wink: 'Wink', lashes: 'Lashes' },
+  brows: { none: 'None', soft: 'Soft', bold: 'Bold', cross: 'Cross', worried: 'Worried' },
+  mouth: { smile: 'Smile', grin: 'Grin', tongue: 'Tongue', flat: 'Flat', open: 'Wow', smirk: 'Smirk' },
+  acc: { none: 'None', round: 'Glasses', square: 'Specs', shades: 'Sunglasses', phones: 'Headphones', blush: 'Blush', freckles: 'Freckles', crown: 'Crown' },
+  top: { tee: 'T-shirt', pi: 'π shirt', hoodie: 'Hoodie', collar: 'Shirt', stripes: 'Stripes' },
+  topCol: ['#3b6cf6', '#2fa66a', '#d64545', '#f2a93b', '#8b5cf6', '#1d2233', '#e8eaf2', '#e57bb4'],
+  bg: ['', '#cfe0ff', '#cdeedd', '#ffe1b8', '#f7cfe0', '#e0d4ff', '#fff3b0', '#2c3140'],
+};
+const LOOK0 = { face: 'round', skin: '#f3c597', hair: 'short', hairCol: '#6b4226', eyes: 'big', brows: 'soft', mouth: 'smile', acc: 'none', top: 'tee', topCol: '#3b6cf6', bg: '' };
+const lookOk = (k, v) => Array.isArray(AV[k]) ? AV[k].includes(v) : AV[k] && Object.prototype.hasOwnProperty.call(AV[k], v);
+function cleanLook(l) { const o = {}; for (const k in LOOK0) o[k] = l && lookOk(k, l[k]) ? l[k] : LOOK0[k]; return o; }
+let avN = 0;
+function avatarSvg(look, pop, box = '0 0 200 200') {
+  const L = cleanLook(look), id = 'av' + (++avN), ink = '#2a2230', sk = L.skin, hc = L.hairCol;
+  const g = (part, s) => `<g data-part="${part}"${pop === part ? ' class="av-pop"' : ''}>${s}</g>`;
+  // Head shapes; hair is stretched to fit each head's width and top.
+  const H = { round: [46, 48, 92], oval: [40, 52, 92], square: [46, 46, 92], wide: [52, 44, 94] }[L.face];
+  const [rx, ry, cy] = H, top = cy - ry, fit = `transform="translate(100 ${top}) scale(${(rx / 46).toFixed(3)} 1) translate(-100 -44)"`;
+  const head = L.face === 'square' ? `<rect x="${100 - rx}" y="${top}" width="${rx * 2}" height="${ry * 2}" rx="26" fill="${sk}"/>` : `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="${ry}" fill="${sk}"/>`;
+  const ears = `<circle cx="${100 - rx}" cy="98" r="9" fill="${sk}"/><circle cx="${100 + rx}" cy="98" r="9" fill="${sk}"/>`;
+  const capShape = 'M53 86C50 52 76 36 100 36C126 36 152 50 147 86C138 66 120 58 100 60C80 58 62 66 53 86Z';
+  const hairBack = { long: `<path d="M50 90C44 50 76 32 100 32C124 32 156 50 150 90L158 172L42 172Z" fill="${hc}"/>`,
+    curly: `<ellipse cx="100" cy="80" rx="64" ry="56" fill="${hc}"/>`,
+    pony: `<path d="M138 66C176 72 178 128 156 146C162 116 154 92 132 82Z" fill="${hc}"/>`,
+    bun: `<circle cx="100" cy="30" r="17" fill="${hc}"/>` }[L.hair] || '';
+  const hairFront = { none: '', short: `<path d="${capShape}" fill="${hc}"/>`, bun: `<path d="${capShape}" fill="${hc}"/>`, pony: `<path d="${capShape}" fill="${hc}"/>`,
+    spiky: `<path d="M54 84L56 50L66 58L72 34L84 50L94 26L104 48L116 30L124 50L136 38L138 58L148 52L146 84C136 66 118 60 100 60C82 60 64 66 54 84Z" fill="${hc}"/>`,
+    swoop: `<path d="M52 90C48 50 76 34 102 36C130 38 152 54 148 90C144 74 138 66 130 62C112 72 82 76 60 70C56 76 54 82 52 90Z" fill="${hc}"/>`,
+    long: `<path d="M54 94C50 50 76 36 100 36C124 36 150 50 146 94C140 70 124 60 104 58L100 66L96 58C76 60 60 70 54 94Z" fill="${hc}"/>`,
+    curly: [[60, 70], [70, 52], [86, 42], [104, 40], [122, 44], [136, 56], [142, 72]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="15" fill="${hc}"/>`).join(''),
+    mohawk: `<path d="M88 64L84 30L94 14L100 24L106 12L116 30L112 64Z" fill="${hc}"/>` }[L.hair];
+  const eye = (x, kind) => ({
+    dots: `<circle cx="${x}" cy="96" r="6" fill="${ink}"/>`,
+    big: `<circle cx="${x}" cy="96" r="10" fill="#fff"/><circle cx="${x + 2}" cy="97" r="6" fill="${ink}"/><circle cx="${x + 4}" cy="94" r="2" fill="#fff"/>`,
+    happy: `<path d="M${x - 8} 99Q${x} 88 ${x + 8} 99" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`,
+    sleepy: `<path d="M${x - 8} 95Q${x} 103 ${x + 8} 95" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`,
+    lashes: `<circle cx="${x}" cy="96" r="9" fill="#fff"/><circle cx="${x + 1}" cy="97" r="5.5" fill="${ink}"/><path d="M${x - 9} 90l-4 -4M${x - 4} 87l-2 -5M${x + 2} 86l0 -5" stroke="${ink}" stroke-width="2.5" stroke-linecap="round" transform="${x > 100 ? `translate(${2 * x} 0) scale(-1 1)` : ''}"/>`,
+  }[kind]);
+  const eyes = L.eyes === 'wink' ? eye(82, 'big') + eye(118, 'happy') : eye(82, L.eyes) + eye(118, L.eyes);
+  const bc = L.hair === 'none' || L.hairCol === '#e8c26a' || L.hairCol === '#b9b9b9' ? '#6b4226' : hc;
+  const brow = (x, s) => `<path d="${s}" transform="translate(${x} 0)${x > 100 ? ' scale(-1 1)' : ''}" fill="none" stroke="${bc}" stroke-width="${L.brows === 'bold' ? 6 : 4}" stroke-linecap="round"/>`;
+  const bs = { soft: 'M-8 82Q0 77 8 81', bold: 'M-9 82Q0 76 9 81', cross: 'M-9 78L8 84', worried: 'M-8 84L8 78' }[L.brows];
+  const brows = bs ? brow(82, bs) + brow(118, bs) : '';
+  const mouth = {
+    smile: `<path d="M88 114Q100 126 112 114" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`,
+    grin: `<path d="M86 112Q100 134 114 112Z" fill="#5a1e2a"/><path d="M88 113L112 113L110 118L90 118Z" fill="#fff"/>`,
+    tongue: `<path d="M86 112Q100 134 114 112Z" fill="#5a1e2a"/><ellipse cx="100" cy="122" rx="7" ry="5" fill="#ef7a8c"/>`,
+    flat: `<path d="M90 118L110 118" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`,
+    open: `<ellipse cx="100" cy="119" rx="7" ry="9" fill="#5a1e2a"/>`,
+    smirk: `<path d="M89 119Q104 123 113 112" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`,
+  }[L.mouth];
+  const frame = s => `<g fill="none" stroke="${ink}" stroke-width="3.5">${s}<path d="M94 95Q100 91 106 95"/></g>`;
+  const acc = {
+    none: '', round: frame('<circle cx="82" cy="96" r="13"/><circle cx="118" cy="96" r="13"/>'),
+    square: frame('<rect x="68" y="85" width="28" height="22" rx="5"/><rect x="104" y="85" width="28" height="22" rx="5"/>'),
+    shades: `<path d="M66 86H134V94C134 108 108 110 106 96H94C92 110 66 108 66 94Z" fill="${ink}"/><path d="M72 90l8 0" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>`,
+    phones: `<path d="M${100 - rx - 4} 100C${100 - rx - 8} ${top - 18} ${100 + rx + 8} ${top - 18} ${100 + rx + 4} 100" fill="none" stroke="${ink}" stroke-width="7"/><rect x="${100 - rx - 14}" y="84" width="18" height="30" rx="7" fill="${ink}"/><rect x="${100 + rx - 4}" y="84" width="18" height="30" rx="7" fill="${ink}"/>`,
+    blush: `<ellipse cx="74" cy="112" rx="9" ry="5" fill="#f08a9a" opacity=".55"/><ellipse cx="126" cy="112" rx="9" ry="5" fill="#f08a9a" opacity=".55"/>`,
+    freckles: [[70, 108], [76, 112], [78, 106], [122, 106], [124, 112], [130, 108]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#9a5a34" opacity=".7"/>`).join(''),
+    crown: `<path d="M78 ${top - 2}L72 ${top - 30}L88 ${top - 16}L100 ${top - 36}L112 ${top - 16}L128 ${top - 30}L122 ${top - 2}Z" fill="#f5c542" stroke="#c9961c" stroke-width="2.5" stroke-linejoin="round"/>`,
+  }[L.acc];
+  const tc = L.topCol, body = 'M34 204C34 162 62 148 100 148C138 148 166 162 166 204Z';
+  const top_ = {
+    tee: `<path d="M86 148Q100 164 114 148Z" fill="${sk}"/>`,
+    pi: `<path d="M86 148Q100 164 114 148Z" fill="${sk}"/><text x="100" y="190" font-size="28" font-weight="700" text-anchor="middle" fill="${tc === '#e8eaf2' ? ink : '#fff'}" font-family="Georgia, serif">π</text>`,
+    hoodie: `<path d="M64 156C66 138 134 138 136 156C122 166 78 166 64 156Z" fill="#000" opacity=".18"/><path d="M93 160V184M107 160V184" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+    collar: `<path d="M90 148L100 168L110 148Z" fill="${sk}"/><path d="M86 146L100 166L92 172L78 154Z M114 146L100 166L108 172L122 154Z" fill="#fff"/>`,
+    stripes: `<path d="M86 148Q100 164 114 148Z" fill="${sk}"/><g clip-path="url(#${id}b)" fill="#fff" opacity=".55"><rect x="0" y="170" width="200" height="7"/><rect x="0" y="186" width="200" height="7"/></g>`,
+  }[L.top];
+  return `<svg class="av-svg" viewBox="${box}" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="100" cy="100" r="100"/></clipPath><clipPath id="${id}b"><path d="${body}"/></clipPath></defs>
+    <g clip-path="url(#${id})"><rect width="200" height="200" fill="${L.bg || 'var(--line)'}"/>
+    ${g('hair', `<g ${fit}>${hairBack}</g>`)}
+    ${g('top', `<path d="${body}" fill="${tc}"/><rect x="88" y="124" width="24" height="30" fill="${sk}"/><rect x="88" y="128" width="24" height="10" fill="#000" opacity=".1"/>${top_}`)}
+    ${g('face', ears + head)}
+    ${g('hair', `<g ${fit}>${hairFront}</g>`)}
+    ${g('eyes', `<g class="av-blink">${eyes}</g>${brows}`)}
+    ${g('mouth', mouth)}
+    ${g('acc', acc)}</g></svg>`;
+}
+// The editor: one tab per body area, each with one or two rows of options. Tiles show the whole avatar wearing that option.
+const AV_TABS = [
+  ['Face', [['face', 'Shape'], ['skin', 'Skin']]], ['Hair', [['hair', 'Style'], ['hairCol', 'Colour']]], ['Eyes', [['eyes', 'Eyes'], ['brows', 'Eyebrows']]],
+  ['Mouth', [['mouth', 'Mouth']]], ['Extras', [['acc', 'Extras']]], ['Clothes', [['top', 'Style'], ['topCol', 'Colour']]], ['Background', [['bg', 'Colour']]],
+];
+// Option tiles zoom in on the part they change.
+const AV_ZOOM = { face: '24 14 152 152', hair: '24 6 152 152', eyes: '44 50 112 112', brows: '44 50 112 112', mouth: '44 62 112 112', acc: '26 2 148 148' };
+const AV_PART = { face: 'face', skin: 'face', hair: 'hair', hairCol: 'hair', eyes: 'eyes', brows: 'eyes', mouth: 'mouth', acc: 'acc', top: 'top', topCol: 'top', bg: '' };
+function avatarEditorHtml(look) {
+  const tab = AV_TABS[ui.avTab || 0];
+  const rows = tab[1].map(([k, label]) => {
+    const opts = Array.isArray(AV[k])
+      ? AV[k].map(c => `<button class="av-swatch${look[k] === c ? ' sel' : ''}" data-k="${k}" data-v="${c}" style="--sw:${c || 'var(--line)'}" aria-label="${label} ${c || 'plain'}"></button>`).join('')
+      : Object.entries(AV[k]).map(([v, name]) => `<button class="av-tile${look[k] === v ? ' sel' : ''}" data-k="${k}" data-v="${v}" title="${name}">${avatarSvg(Object.assign({}, look, { [k]: v }), '', AV_ZOOM[k])}<span>${name}</span></button>`).join('');
+    return `<div class="av-row"><b>${label}</b><div class="av-opts">${opts}</div></div>`;
+  }).join('');
+  return `<div class="av-tabs">${AV_TABS.map((t, i) => `<button data-avtab="${i}" class="${i === (ui.avTab || 0) ? 'sel' : ''}">${t[0]}</button>`).join('')}</div><div class="av-panel" id="avPanel">${rows}</div>`;
+}
+function randomLook() {
+  const pick = a => a[Math.floor(Math.random() * a.length)], o = {};
+  for (const k in LOOK0) o[k] = pick(Array.isArray(AV[k]) ? AV[k] : Object.keys(AV[k]));
+  if (Math.random() < .5) o.acc = 'none';
+  return o;
+}
 // ---------- saved progress ----------
 const KEY = 'numiq-progress-v1';
 const freshProgress = () => ({ done: {}, xp: 0, streak: 0, lastDay: null, seen: {}, days: {}, xpBy: {}, bestLevel: 0, review: {}, daily: {} });
@@ -1059,6 +1196,7 @@ try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.ass
 // Profile and settings survive a progress reset.
 function fixState() {
   state.profile = Object.assign({ name: '', user: '', avatar: '👤', joined: null }, state.profile);
+  state.profile.look = cleanLook(state.profile.look);
   state.settings = Object.assign({ theme: 'system', goal: 20, sound: true }, state.settings);
   for (const k of ['done', 'seen', 'days', 'review', 'daily']) if (!state[k]) state[k] = {};
   if (!state.bestLevel) state.bestLevel = 0;
@@ -1520,7 +1658,6 @@ function wireDiagram(l) {
 }
 
 // ---------- profile ----------
-const AVATARS = ['👤', '🦊', '🐸', '🐙', '🦉', '🐢', '🚀', '🧠', '🎮', '⭐', '🐉', '🌙'];
 const lessonsDone = () => UNITS.reduce((n, u) => n + u.lessons.filter(l => state.done[l.id]).length, 0);
 function applyTheme() {
   const t = state.settings.theme;
@@ -1543,8 +1680,8 @@ function renderProfile() {
   const stat = (label, val) => `<div class="stat"><b>${val}</b><span>${label}</span></div>`;
   let top;
   if (mode === 'edit') {
-    top = `<div class="card prof-top"><div class="avatar" id="avPreview">${P.avatar}</div>
-      <div class="av-pick">${AVATARS.map(a => `<button data-av="${a}" class="${a === P.avatar ? 'sel' : ''}" aria-label="Avatar ${a}">${a}</button>`).join('')}</div>
+    top = `<div class="card prof-top"><div class="av-edit"><div class="av-left"><div class="avatar big" id="avPreview">${avatarSvg(ui.pickLook)}</div>
+        <button id="avRand" title="Make a random avatar">🎲 Surprise me</button></div><div class="av-right" id="avEd">${avatarEditorHtml(ui.pickLook)}</div></div>
       <label class="field">Name <input type="text" id="pfName" maxlength="30" value="${P.name.replace(/"/g, '&quot;')}" placeholder="Your name"></label>
       <label class="field">Username <input type="text" id="pfUser" maxlength="20" value="${P.user.replace(/"/g, '&quot;')}" placeholder="username"></label>
       <div class="prof-btns"><button id="pfCancel">Cancel</button><button class="primary" id="pfSave">Save</button></div></div>`;
@@ -1563,7 +1700,7 @@ function renderProfile() {
       <div class="cap">${cloud.status === 'synced' ? 'Settings are saved to your account.' : 'Settings are saved in this browser.'}</div></div>`;
   } else {
     const joined = P.joined ? new Date(P.joined).toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' }) : '---';
-    top = `<div class="card prof-top"><div class="avatar">${P.avatar}</div>
+    top = `<div class="card prof-top"><button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
       <h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'} · joined ${joined}</div>
       <div class="cap">${cloud.status === 'synced' ? `☁️ Signed in ${cloud.kind === 'email' ? 'as ' + escapeHtml(cloud.email) : 'with Claude' + (cloud.name ? ' as ' + escapeHtml(cloud.name) : '')}. Your progress follows you to any computer.` : '💾 Not signed in, so progress is saved in this browser only.'}</div>
       <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div>`;
@@ -1594,16 +1731,36 @@ function renderProfile() {
   $('calNext').onclick = () => { ui.calOffset = (ui.calOffset || 0) + 1; renderProfile(); };
   if ($('pfOut')) $('pfOut').onclick = () => cloud.logOut();
   if ($('pfIn')) $('pfIn').onclick = () => { ui.loginMode = 'login'; show('login'); };
-  if ($('pfEdit')) $('pfEdit').onclick = () => { ui.profileMode = 'edit'; ui.pickAvatar = P.avatar; renderProfile(); };
+  const openEditor = () => { ui.profileMode = 'edit'; ui.pickLook = Object.assign({}, P.look); ui.avTab = 0; renderProfile(); };
+  if ($('pfEdit')) $('pfEdit').onclick = openEditor;
+  if ($('avOpen')) $('avOpen').onclick = openEditor;
   if (mode === 'edit') {
-    app.querySelectorAll('[data-av]').forEach(b => b.onclick = () => {
-      ui.pickAvatar = b.dataset.av; $('avPreview').textContent = b.dataset.av; replay($('avPreview'), 'tick');
-      app.querySelectorAll('[data-av]').forEach(x => x.classList.toggle('sel', x === b));
-    });
+    const look = ui.pickLook, ed = $('avEd');
+    const redraw = part => { $('avPreview').innerHTML = avatarSvg(look, part); replay($('avPreview'), 'av-bump'); };
+    $('avRand').onclick = () => {
+      Object.assign(look, randomLook()); redraw('');
+      ed.innerHTML = avatarEditorHtml(look); replay($('avPanel'), 'soft-in');
+    };
+    ed.onclick = e => {
+      const t = e.target.closest('button'); if (!t) return;
+      if (t.dataset.avtab !== undefined) {
+        const i = Number(t.dataset.avtab), dir = i - (ui.avTab || 0); if (!dir) return;
+        ui.avTab = i; ed.innerHTML = avatarEditorHtml(look); replay($('avPanel'), dir > 0 ? 'slide-r' : 'slide-l');
+        return;
+      }
+      const k = t.dataset.k; if (!k || look[k] === t.dataset.v) return;
+      look[k] = t.dataset.v; redraw(AV_PART[k]);
+      // Keep the buttons in place (so they can animate); just re-dress the other tiles in the new look.
+      ed.querySelectorAll('[data-k]').forEach(b => {
+        if (b.dataset.k === k) b.classList.toggle('sel', b === t);
+        else if (b.classList.contains('av-tile')) b.firstElementChild.outerHTML = avatarSvg(Object.assign({}, look, { [b.dataset.k]: b.dataset.v }), '', AV_ZOOM[b.dataset.k]);
+      });
+      replay(t, 'av-chose');
+    };
     $('pfCancel').onclick = () => { ui.profileMode = 'view'; renderProfile(); };
     $('pfSave').onclick = () => {
       P.name = $('pfName').value.trim(); P.user = $('pfUser').value.trim().replace(/^@/, '').replace(/\s+/g, '_');
-      P.avatar = ui.pickAvatar || P.avatar; save(); ui.profileMode = 'view'; renderProfile();
+      P.look = cleanLook(ui.pickLook); save(); ui.profileMode = 'view'; renderProfile();
     };
   }
   if (mode === 'settings') {
