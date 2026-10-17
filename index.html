@@ -3,13 +3,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Numiq</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 126'%3E%3Crect x='4' y='10' width='112' height='112' rx='30' fill='%232a52c9'/%3E%3Crect x='4' y='4' width='112' height='112' rx='30' fill='%233b6cf6'/%3E%3Crect x='14' y='10' width='92' height='10' rx='5' fill='%23fff' opacity='.14'/%3E%3Cpath d='M22 66 L34 60 L48 90 L68 30 H88' fill='none' stroke='%23fff' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='94' cy='33' r='12' fill='%2322814f'/%3E%3Ccircle cx='94' cy='30' r='12' fill='%232fa66a'/%3E%3Ccircle cx='90' cy='26' r='3.5' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 126'%3E%3Crect x='4' y='10' width='112' height='112' rx='30' fill='%230f5532'/%3E%3Crect x='4' y='4' width='112' height='112' rx='30' fill='%2315703f'/%3E%3Crect x='14' y='10' width='92' height='10' rx='5' fill='%23fff' opacity='.14'/%3E%3Cpath d='M22 66 L34 60 L48 90 L68 30 H88' fill='none' stroke='%23fff' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='94' cy='33' r='12' fill='%2325a356'/%3E%3Ccircle cx='94' cy='30' r='12' fill='%233fd17a'/%3E%3Ccircle cx='90' cy='26' r='3.5' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: one centred column. Path view (units + lesson nodes) swaps with a lesson view. Bare bones on purpose. */
 :root {
   --bg: #f6f7fb; --fg: #1d2233; --muted: #6b7285; --line: #d9dce6;
-  --accent: #3b6cf6; --done: #2fa66a; --locked: #c4c8d4; --bad: #d64545;
+  --logo: #15703f; --accent: #3b6cf6; --done: #2fa66a; --locked: #c4c8d4; --bad: #d64545;
   --card: #ffffff;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   /* Motion. Snappy = things react at once and land with a tiny overshoot; smooth = nothing ever jumps. */
@@ -26,22 +26,22 @@
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #14171f; --fg: #e8eaf2; --muted: #9aa1b5; --line: #2c3140;
-  --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark } }
+  --logo: #5cc98f; --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #14171f; --fg: #e8eaf2; --muted: #9aa1b5; --line: #2c3140;
-  --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark }
+  --logo: #5cc98f; --accent: #6d93ff; --done: #43c283; --locked: #3a4050; --bad: #ff6b6b; --card: #1c2029; color-scheme: dark }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; }
 .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; /* name left, pills centred on the page */ border-bottom: 1px solid var(--line); padding-bottom: 12px; }
 header h1 { margin: 0; font-size: 24px; }
-/* Logo: the word sits under a √ whose bar ends in a green "finished" circle; "iq" is blue. Colours follow the theme. */
+/* Logo: the word sits under a √ whose bar ends in a green "finished" circle; "iq" is dark green. Colours follow the theme. */
 .brand { display: flex; align-items: center; line-height: 0; }
 .brand svg { height: 40px; width: auto; overflow: visible; }
-.brand .lg-root { fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
-.brand .lg-ledge { stroke: color-mix(in srgb, var(--accent), #000 25%); }
+.brand .lg-root { fill: none; stroke: var(--logo); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.brand .lg-ledge { stroke: color-mix(in srgb, var(--logo), #000 30%); }
 .brand text { font-family: var(--font); font-weight: 800; font-size: 84px; letter-spacing: -3px; }
-.brand .lg-num { fill: var(--fg); } .brand .lg-iq { fill: var(--accent); }
+.brand .lg-num { fill: var(--fg); } .brand .lg-iq { fill: var(--logo); }
 .stats { display: flex; gap: 16px; font-variant-numeric: tabular-nums; color: var(--muted); }
 .stats b { color: var(--fg); }
 button { font: inherit; cursor: pointer; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 8px 14px; }
@@ -791,7 +791,7 @@ button:disabled:not(.node) { box-shadow: none; }
 <canvas id="sea" aria-hidden="true"></canvas>
 <div class="wrap">
   <header>
-    <h1 class="brand" aria-label="Numiq"><svg viewBox="0 0 392 130" aria-hidden="true"><path class="lg-root lg-ledge" d="M14 80 L30 72 L50 112 L76 20 H350" transform="translate(0 4)"/><path class="lg-root" d="M14 80 L30 72 L50 112 L76 20 H350"/><circle cx="358" cy="24" r="15" fill="#22814f"/><circle cx="358" cy="20" r="15" fill="#2fa66a"/><circle cx="353" cy="15" r="4.2" fill="#fff" opacity=".5"/><text x="92" y="104" textLength="256" lengthAdjust="spacingAndGlyphs"><tspan class="lg-num">Num</tspan><tspan class="lg-iq">iq</tspan></text></svg></h1>
+    <h1 class="brand" aria-label="Numiq"><svg viewBox="0 0 392 130" aria-hidden="true"><path class="lg-root lg-ledge" d="M14 80 L30 72 L50 112 L76 20 H350" transform="translate(0 4)"/><path class="lg-root" d="M14 80 L30 72 L50 112 L76 20 H350"/><circle cx="358" cy="24" r="15" fill="#25a356"/><circle cx="358" cy="20" r="15" fill="#3fd17a"/><circle cx="353" cy="15" r="4.2" fill="#fff" opacity=".5"/><text x="92" y="104" textLength="256" lengthAdjust="spacingAndGlyphs"><tspan class="lg-num">Num</tspan><tspan class="lg-iq">iq</tspan></text></svg></h1>
     <div class="stats"><span><i data-ic="fire"></i> <b id="streak">0</b> day streak</span><span><i data-ic="star"></i> <b id="xp">0</b> XP</span><span id="acct" class="acct" title="Where your progress is saved"><i data-ic="screen"></i> This browser</span><button id="dev" class="dev" title="Developer mode: unlocks everything"><i data-ic="unlock"></i> Dev</button><button id="gear" class="gear" aria-label="Settings" title="Settings" hidden><i data-ic="gear"></i></button></div>
   </header>
   <main id="app"></main>
