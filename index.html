@@ -130,11 +130,14 @@ button:disabled { opacity: .5; cursor: default; }
 .study .sess h2 { margin: 0; font-size: 26px; }
 .study .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .study .chip .ic { width: 1em; height: 1em; vertical-align: -.12em; }
-.study .chip { border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.14); border-radius: 10px; padding: 7px 14px; font-weight: 600; font-size: 15px; }
+.study .chip { border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 7px 14px; font-weight: 600; font-size: 15px; box-shadow: none; cursor: pointer; }
+.study .chips.plain .chip { border-color: var(--line); background: transparent; color: var(--fg); font-size: 13px; padding: 5px 10px; }
+.study .chips.plain .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .study .chip.on { background: #fff; color: var(--accent); border-color: #fff; }
-.study .go { align-self: flex-start; background: var(--done); color: #fff; font-weight: 800; letter-spacing: .03em; border-radius: 12px; padding: 12px 26px; box-shadow: 0 4px 0 color-mix(in srgb, var(--done) 70%, #000); }
+.study .go { align-self: flex-start; border: none; cursor: pointer; background: var(--done); color: #fff; font-weight: 800; letter-spacing: .03em; border-radius: 12px; padding: 12px 26px; box-shadow: 0 4px 0 color-mix(in srgb, var(--done) 70%, #000); }
 .study .qs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.study .q { border: 1px solid var(--line); border-radius: 12px; padding: 14px 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.study .q { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 12px; padding: 14px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+.study .q:disabled { opacity: .55; cursor: default; }
 .study .q .em { font-size: 26px; color: var(--accent); line-height: 1; }
 .study .q small { color: var(--muted); font-size: 13px; }
 .study .q b { font-size: 15px; }
@@ -145,6 +148,16 @@ button:disabled { opacity: .5; cursor: default; }
 .study .day { border-radius: 8px; padding: 10px 0; text-align: center; font-size: 13px; font-weight: 700; background: var(--line); color: var(--muted); }
 .study .day.done { background: var(--done); color: #fff; }
 .study .day.now { background: var(--accent); color: #fff; }
+.study .day.miss { opacity: .5; }
+.study .ws .drill { align-self: flex-start; font-size: 13px; }
+.study .row-btns, .flash .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.study input[type=date] { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-size: 15px; }
+.flash-wrap { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; width: 100%; }
+.flash-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.flash-top span { color: var(--muted); }
+.flash { min-height: 260px; }
+.flash .rule { font-size: 16px; line-height: 1.6; }
+.flash.back { border-color: var(--accent); }
 .study .day.test { background: var(--amber); color: #fff; }
 .study .ws { display: flex; flex-direction: column; gap: 6px; }
 .study .ws .row { display: flex; justify-content: space-between; font-weight: 600; }
@@ -1567,7 +1580,7 @@ function fixState() {
   state.profile = Object.assign({ name: '', user: '', avatar: '👤', joined: null }, state.profile);
   state.profile.look = cleanLook(state.profile.look);
   state.settings = Object.assign({ theme: 'system', goal: 20, sound: true }, state.settings);
-  for (const k of ['done', 'seen', 'days', 'review', 'daily']) if (!state[k]) state[k] = {};
+  for (const k of ['done', 'seen', 'days', 'review', 'daily', 'acc', 'fc']) if (!state[k]) state[k] = {};
   if (!state.bestLevel) state.bestLevel = 0;
   withXpBy(state); deriveXp(state);
 }
@@ -1602,6 +1615,8 @@ function mergeStates(a, b) {
   deriveXp(m);
   m.daily = {}; keys('daily').forEach(d => m.daily[d] = !!((a.daily || {})[d] || (b.daily || {})[d]));
   m.review = Object.assign({}, newer.review); // the newer copy knows which topics have left the pile
+  m.fc = Object.assign({}, newer.fc); // same for formula cards
+  m.acc = {}; keys('acc').forEach(id => { const x = (a.acc || {})[id], y = (b.acc || {})[id]; m.acc[id] = !x ? y : !y ? x : (y.n > x.n ? y : x); }); // per-topic tally: keep the fuller one
   m.bestLevel = Math.max(a.bestLevel || 0, b.bestLevel || 0);
   const la = a.lastDay || '', lb = b.lastDay || '';
   m.lastDay = (la > lb ? la : lb) || null; m.streak = la === lb ? Math.max(a.streak || 0, b.streak || 0) : la > lb ? a.streak : b.streak;
@@ -1786,7 +1801,7 @@ const GAPS = [0, 1, 3, 7], REVIEW_MAX = 10, XP_DAILY = 15;
 const dueReviews = () => Object.keys(state.review).filter(id => findLesson(id) && state.review[id].due <= today());
 function noteResult(c, ok) {
   const lid = c.lid; if (!lid) return;
-  if (run.review) {
+  if (run.review || c.rev) {
     const r = state.review[lid]; if (!r) return;
     if (ok) { r.step++; if (r.step >= GAPS.length) delete state.review[lid]; else r.due = addDays(GAPS[r.step]); }
     else { r.step = 0; r.due = addDays(1); }
@@ -2153,33 +2168,158 @@ devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-d
 paintDev();
 document.getElementById('gear').onclick = () => { ui.profileMode = ui.profileMode === 'settings' ? 'view' : 'settings'; show('profile'); };
 
+// ---------- Study page ----------
+const $ = id => document.getElementById(id);
+// Four cards: build a mixed session, a school test countdown, weak spots, and quick starts (review, formula cards, daily challenge).
+const SESSION_LEN = { 10: 8, 20: 15, 40: 30 }; // minutes → questions (about a minute and a bit each)
+const FC_GAPS = [1, 3, 7, 14, 30]; // formula cards you know come back after these many days
+const dayDate = t => { const [y, m, d] = t.split('-').map(Number); return new Date(y, m - 1, d); };
+const dayDiff = (a, b) => Math.round((dayDate(b) - dayDate(a)) / 864e5);
+const dayAfter = (t, n) => { const d = dayDate(t); d.setDate(d.getDate() + n); return dayStr(d); };
+const unitOf = id => UNITS.find(u => u.lessons.some(l => l.id === id));
+const topicName = id => findLesson(id).title;
+const accPct = id => { const t = state.acc[id]; return t && t.n ? Math.round(t.r / t.n * 100) : null; };
+const openUnits = () => UNITS.filter(u => u.lessons.some(l => status(l.id) !== 'locked'));
+const chapterOf = u => u.desc.split(':')[0].replace('Book chapters', 'Ch').replace('Book chapter', 'Ch');
+const fcDue = () => ORDER.filter(id => findLesson(id) && (state.done[id] || devMode) && (!state.fc[id] || state.fc[id].due <= today()));
+// Weakest topics first, once you've answered at least 3 questions on them.
+const weakSpots = () => Object.keys(state.acc).filter(id => findLesson(id) && state.acc[id].n >= 3).sort((x, y) => accPct(x) - accPct(y));
+
+// One question card for a lesson. rev: counts as a spaced review.
+const qCard = (id, kind, lv, rev) => { const l = findLesson(id); return { kind: `${kind} · ${topicName(id)}`, lid: id, rev, item: Object.assign(l.gen(lv), { hint: l.idea }) }; };
+function startSession(ids, opts) {
+  if (!ids.length) return;
+  const n = opts.count, lv = opts.exam ? 1 : 0, cards = [];
+  if (opts.chunk) ids.forEach(id => { for (let i = 0; i < Math.max(2, Math.floor(n / ids.length)); i++) cards.push(qCard(id, 'Test revision', lv)); });
+  else {
+    const due = shuffle(dueReviews().filter(id => ids.includes(id))).slice(0, Math.ceil(n * .3));
+    const weak = weakSpots().filter(id => ids.includes(id) && accPct(id) < 75).slice(0, Math.ceil(n * .3));
+    due.forEach(id => cards.push(qCard(id, 'Review', 1, true)));
+    weak.forEach(id => cards.push(qCard(id, 'Weak spot', lv)));
+    while (cards.length < n) cards.push(qCard(pick(ids), 'Mixed', lv));
+  }
+  run = { notes: '', cards: shuffle(cards.slice(0, Math.max(n, cards.length))), i: 0, isTest: false, session: true, exam: opts.exam, chunk: opts.chunk ? ids : null, back: 'study', id: null,
+    title: opts.chunk ? 'Test revision' : opts.exam ? 'Study session · exam style' : 'Study session', xp: 0, correct: 0, misses: 0, answered: 0, total: cards.length };
+  swap('zoom', renderCard);
+}
+
+// Today's slice of revision: the topics not done yet, spread evenly over the days left before the test.
+function testPlan() {
+  const t = state.test; if (!t) return null;
+  const left = dayDiff(today(), t.date);
+  const all = t.units.flatMap(uid => (UNITS.find(u => u.id === uid) || { lessons: [] }).lessons.map(l => l.id));
+  const todo = all.filter(id => !t.covered[id]);
+  const chunk = left > 0 && !t.doneDays[today()] ? todo.slice(0, Math.ceil(todo.length / left)) : [];
+  return { left, all, todo, chunk };
+}
+
 function renderStudy() {
-  // Looks like the finished page, but uses sample data and nothing is wired up yet.
-  const chips = a => `<div class="chips">${a.map(([t, on]) => `<span class="chip${on ? ' on' : ''}">${t}</span>`).join('')}</div>`;
-  const days = [['Mon', 'done'], ['Tue', 'done'], ['Wed', 'now'], ['Thu', ''], ['Fri', ''], ['Sat', ''], ['TEST', 'test']];
-  const weak = [['Negative indices', 48, 'var(--bad)'], ['Expanding brackets', 63, 'var(--amber)'], ['Order of operations', 91, 'var(--done)']];
+  if (ui.fc) return renderFlash();
+  const sb = ui.sb = ui.sb || { units: [], len: 20, exam: false };
+  const units = openUnits();
+  sb.units = sb.units.filter(id => units.some(u => u.id === id));
+  const chip = (attr, label, on) => `<button class="chip${on ? ' on' : ''}" ${attr}>${label}</button>`;
+  const topicChips = units.map(u => chip(`data-su="${u.id}"`, (sb.units.includes(u.id) ? ic('check') : ic('plus')) + ' ' + u.title, sb.units.includes(u.id))).join('');
+  const lenChips = [10, 20, 40].map(m => chip(`data-len="${m}"`, `${ic('clock')} ${m} min`, sb.len === m)).join('') + chip('data-exam', `${ic('target')} Exam style`, sb.exam);
+
+  // School test countdown
+  const plan = testPlan(), t = state.test, DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let testCard;
+  if (!t || ui.testEdit) {
+    const sel = ui.tsel = ui.tsel || (t ? [...t.units] : []);
+    const book = UNITS.filter(u => u.stage === 'book');
+    testCard = `<div class="card"><div class="lbl">School test countdown</div>
+      <div class="soon">When's your next maths test, and which chapters are on it? Numiq splits the revision into a bit each day.</div>
+      <label class="field" style="width:auto">Test date <input type="date" id="tDate" min="${addDays(1)}" value="${ui.tdate || (t ? t.date : '')}"></label>
+      <div class="chips plain">${book.map(u => chip(`data-tu="${u.id}"`, `${chapterOf(u)} · ${u.title}`, sel.includes(u.id))).join('')}</div>
+      <div class="row-btns"><button class="primary" id="tSave">Save test</button>${t ? '<button id="tCancel">Cancel</button>' : ''}</div><small id="tMsg" class="soon"></small></div>`;
+  } else {
+    const days = [];
+    for (let d = dayAfter(today(), -Math.min(2, Math.max(0, dayDiff(t.start, today())))); d < t.date && days.length < 6; d = dayAfter(d, 1)) days.push(d);
+    const tile = d => `<div class="day ${d < today() ? (t.doneDays[d] ? 'done' : 'miss') : d === today() ? (t.doneDays[d] ? 'done' : 'now') : ''}" title="${d}">${DAYN[dayDate(d).getDay()]}</div>`;
+    const line = plan.left < 0 ? 'Your test has been and gone. How did it go?' : plan.left === 0 ? 'Your test is today. Good luck!'
+      : t.doneDays[today()] ? "Today's revision is done ✓" : plan.todo.length ? `Today: ${plan.chunk.map(topicName).join(', ')}` : 'Everything is revised. Do a mixed session to stay sharp.';
+    testCard = `<div class="card"><div class="lbl">School test countdown</div>
+      <div class="count"><span class="big">${Math.max(0, plan.left)}</span><div><b>${plan.left === 1 ? 'day' : 'days'} until your ${t.units.map(id => chapterOf(UNITS.find(u => u.id === id))).join(', ')} test</b><small>${line}</small></div></div>
+      <div class="days" style="grid-template-columns:repeat(${days.length + 1},1fr)">${days.map(tile).join('')}<div class="day test">TEST</div></div>
+      <div class="mini"><div style="width:${plan.all.length ? Math.round((plan.all.length - plan.todo.length) / plan.all.length * 100) : 0}%"></div></div>
+      <div class="row-btns">${plan.chunk.length ? `<button class="primary" id="tGo">Start today's revision</button>` : plan.left === 0 ? `<button class="primary" id="tLast">Last warm-up</button>` : ''}<button class="linkish" id="tEdit">${plan.left < 0 ? 'Set up your next test' : 'Change test'}</button></div></div>`;
+  }
+
+  const weak = weakSpots().slice(0, 4), col = p => p < 60 ? 'var(--bad)' : p < 80 ? 'var(--amber)' : 'var(--done)';
+  const due = dueReviews().length, fc = fcDue().length, dc = state.daily[today()];
+  const qs = (id, icon, name, sub, off) => `<button class="q" id="${id}" ${off ? 'disabled' : ''}><span class="em">${ic(icon)}</span><b>${name}</b><small>${sub}</small></button>`;
+
   app.innerHTML = `<div class="study">
     <div class="col">
       <div class="card sess"><div class="lbl">Build a study session</div><h2>What are we revising?</h2>
-        <div class="sub">Pick topics and a length, and Numiq mixes review, weak spots and new questions.</div>
-        ${chips([[ic('check') + ' Indices'], [ic('check') + ' Algebra basics'], [ic('plus') + ' Fractions'], [ic('plus') + ' Add topic']])}
-        ${chips([[ic('clock') + ' 10 min'], [ic('clock') + ' 20 min', 1], [ic('clock') + ' 40 min'], [ic('target') + ' Exam style']])}
-        <span class="go">START SESSION</span></div>
+        <div class="sub">Pick topics and a length, and Numiq mixes review, weak spots and new questions.${sb.units.length ? '' : ' No topics picked means a mix of everything you\'ve unlocked.'}</div>
+        <div class="chips">${topicChips}</div><div class="chips">${lenChips}</div>
+        <button class="go" id="sGo">START SESSION</button></div>
       <div class="card"><div class="lbl">Quick starts</div>
-        <div class="qs">
-          <div class="q"><span class="em">${ic('retry')}</span><b>Review</b><small>12 due</small></div>
-          <div class="q"><span class="em">${ic('cards')}</span><b>Formula cards</b><small>8 due</small></div>
-          <div class="q"><span class="em">${ic('star')}</span><b>Daily challenge</b><small>not done</small></div></div></div>
+        <div class="qs">${qs('qReview', 'retry', 'Review', due ? `${due} due` : 'nothing due', !due)}${qs('qCards', 'cards', 'Formula cards', fc ? `${fc} due` : lessonsDone() ? 'all caught up' : 'finish a lesson first', !fc)}${qs('qDaily', 'star', 'Daily challenge', dc === undefined ? 'not done' : dc ? 'done ✓' : 'missed today', dc !== undefined)}</div></div>
     </div>
     <div class="col">
-      <div class="card"><div class="lbl">School test countdown</div>
-        <div class="count"><span class="big">5</span><div><b>days until Ch 4–6 test</b><small>Today: 15 min of Indices</small></div></div>
-        <div class="days">${days.map(([d, c]) => `<div class="day ${c}">${d}</div>`).join('')}</div></div>
+      ${testCard}
       <div class="card"><div class="lbl">Weak spots</div>
-        ${weak.map(([t, n, c]) => `<div class="ws"><div class="row">${t}<span>${n}%</span></div><div class="bar"><i style="width:${n}%;background:${c}"></i></div></div>`).join('')}</div>
+        ${weak.length ? weak.map(id => { const p = accPct(id); return `<div class="ws"><div class="row">${topicName(id)}<span>${p}%</span></div><div class="bar"><i style="width:${p}%;background:${col(p)}"></i></div><button class="linkish drill" data-drill="${id}">${ic('target')} Drill this</button></div>`; }).join('')
+          : '<div class="soon">Answer a few questions on a topic and your weakest ones show up here, with a button to drill them.</div>'}</div>
     </div>
-    <div class="preview">Preview with example numbers. These cards don't work yet.</div>
   </div>`;
+
+  const redraw = () => { keepScroll = scrollY; renderStudy(); scrollTo(0, keepScroll); keepScroll = null; };
+  app.querySelectorAll('[data-su]').forEach(b => b.onclick = () => { const id = b.dataset.su; sb.units = sb.units.includes(id) ? sb.units.filter(x => x !== id) : [...sb.units, id]; redraw(); });
+  app.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { sb.len = +b.dataset.len; redraw(); });
+  app.querySelector('[data-exam]').onclick = () => { sb.exam = !sb.exam; redraw(); };
+  $('sGo').onclick = () => {
+    const pool = (sb.units.length ? units.filter(u => sb.units.includes(u.id)) : units).flatMap(u => u.lessons.map(l => l.id)).filter(id => status(id) !== 'locked');
+    startSession(pool, { count: SESSION_LEN[sb.len], exam: sb.exam });
+  };
+  $('qReview').onclick = startReview;
+  $('qDaily').onclick = startDaily;
+  $('qCards').onclick = () => { ui.fc = { ids: shuffle(fcDue()).slice(0, 10), i: 0, flip: false, got: 0, again: {} }; swap('zoom', renderStudy); };
+  app.querySelectorAll('[data-drill]').forEach(b => b.onclick = () => startPractice(b.dataset.drill, 'study'));
+  if (!t || ui.testEdit) {
+    $('tDate').onchange = e => { ui.tdate = e.target.value; };
+    app.querySelectorAll('[data-tu]').forEach(b => b.onclick = () => { const id = b.dataset.tu; ui.tsel = ui.tsel.includes(id) ? ui.tsel.filter(x => x !== id) : [...ui.tsel, id]; redraw(); });
+    $('tSave').onclick = () => {
+      const date = $('tDate').value;
+      if (!date || date <= today()) return $('tMsg').textContent = 'Pick a date after today.';
+      if (!ui.tsel.length) return $('tMsg').textContent = 'Pick at least one chapter.';
+      const same = t && t.date === date;
+      state.test = { date, units: ui.tsel, start: same ? t.start : today(), covered: same ? t.covered : {}, doneDays: same ? t.doneDays : {} };
+      ui.testEdit = false; ui.tsel = ui.tdate = null; save(); redraw();
+    };
+    if ($('tCancel')) $('tCancel').onclick = () => { ui.testEdit = false; ui.tsel = ui.tdate = null; redraw(); };
+  } else {
+    $('tEdit').onclick = () => { ui.testEdit = true; ui.tsel = plan.left < 0 ? [] : null; if (plan.left < 0) state.test = null; redraw(); };
+    if ($('tGo')) $('tGo').onclick = () => startSession(plan.chunk, { count: Math.min(15, plan.chunk.length * 3), chunk: true });
+    if ($('tLast')) $('tLast').onclick = () => startSession(plan.all, { count: 10, exam: true });
+  }
+}
+
+// Formula cards: the rule on the back, you say if you knew it. Ones you knew come back later and later.
+function renderFlash() {
+  const f = ui.fc, id = f.ids[f.i];
+  const done = () => { if (f.got) finishItem(null, f.got); ui.fc = null; renderStats(); swap('zoom', renderStudy); };
+  if (!id) {
+    app.innerHTML = `<div class="card finish"><div class="big">${ic('cards', 'ic-big')}</div><h2>Cards done</h2><div>You knew ${f.got} of them. The ones you knew come back later, the rest tomorrow.</div><button class="primary" id="go">Back to Study</button></div>`;
+    $('go').onclick = done; $('go').focus(); return;
+  }
+  const l = findLesson(id), u = unitOf(id);
+  app.innerHTML = `<div class="flash-wrap"><div class="flash-top"><button id="fcQuit">✕ Quit</button><b>Formula cards</b><span>${f.i + 1} / ${f.ids.length}</span></div>
+    <div class="card flash ${f.flip ? 'back' : ''}"><div class="kind">${u.title}</div><h2 style="margin:0">${l.title}</h2>
+      ${f.flip ? `<div class="rule">${l.idea}</div><div class="soon">Example</div><div>${l.example}</div>` : '<div class="soon">What\'s the rule? Say it in your head, then flip the card.</div>'}
+      <div class="row-btns">${f.flip ? '<button id="fcNo">Not yet</button><button class="primary" id="fcYes">Got it</button>' : '<button class="primary" id="fcFlip">Flip (Space)</button>'}</div></div></div>`;
+  const step = knew => {
+    const r = state.fc[id] || { step: -1 };
+    if (knew) { r.step = Math.min(r.step + 1, FC_GAPS.length - 1); r.due = addDays(FC_GAPS[r.step]); f.got++; }
+    else { r.step = -1; r.due = addDays(1); if (!f.again[id]) { f.again[id] = 1; f.ids.push(id); } }
+    state.fc[id] = r; save(); f.i++; f.flip = false; swap('next', renderFlash);
+  };
+  $('fcQuit').onclick = done;
+  if (f.flip) { $('fcNo').onclick = () => step(false); $('fcYes').onclick = () => step(true); $('fcYes').focus(); }
+  else { $('fcFlip').onclick = () => { f.flip = true; renderFlash(); }; $('fcFlip').focus(); }
 }
 
 function renderSoon() {
@@ -2201,19 +2341,12 @@ function progressStrip() {
   const item = (label, pct) => `<div class="ps-item"><b>${label}</b><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
   return `<div class="progress-strip">${ic('chart')}${item('Stage 0', stageProgress('book'))}${item('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>`;
 }
-function todayPanel() {
-  const due = dueReviews().length, waiting = Object.keys(state.review).length - due, dc = state.daily[today()];
-  return `<div class="today stagger">
-    <div class="tile"><b>${ic('note')} Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
-    <div class="tile"><b>${ic('star')} Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
-  </div>`;
-}
 function renderPath() {
   renderStats();
   // Coming back from a finished lesson: its node pops to ✓, then the next one pops awake.
   const just = ui.justDone; ui.justDone = null;
   const pop = (id, st) => !just ? '' : id === just && st === 'done' ? ' just' : st === 'current' ? ' arrive' : '';
-  let html = progressStrip() + todayPanel();
+  let html = progressStrip();
   let stage = null;
   UNITS.forEach((u, ui) => {
     if (u.stage !== stage) { stage = u.stage; html += `<div class="stage reveal">${STAGES[stage]}</div>`; }
@@ -2235,8 +2368,6 @@ function renderPath() {
   app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(b.dataset.l));
   app.querySelectorAll('[data-t]').forEach(b => b.onclick = () => startTest(b.dataset.t));
   app.querySelectorAll('[data-to]').forEach(b => b.onclick = () => startTest(b.dataset.to, true));
-  document.getElementById('reviewBtn').onclick = startReview;
-  document.getElementById('dailyBtn').onclick = startDaily;
   // A plain refresh (like toggling Dev) stays where you were; otherwise jump to the lesson you're on.
   const cur = app.querySelector('.node.current');
   if (keepScroll != null) { scrollTo(0, keepScroll); keepScroll = null; } else if (cur) cur.scrollIntoView({ block: 'center' });
@@ -2524,9 +2655,9 @@ function startLesson(id) {
 // Endless practice: one new question at a time until Stop. Every PER_LEVEL right answers, the level goes up.
 const PER_LEVEL = 3;
 const practiceLevel = () => Math.floor(run.correct / PER_LEVEL);
-function startPractice(id) {
+function startPractice(id, back = 'notes') {
   const l = findLesson(id);
-  run = { notes: '', cards: [], i: 0, isTest: false, practice: true, lesson: l, back: 'notes', id: null, title: `Practice ${TOPIC[id]}`, xp: 0, correct: 0, answered: 0 };
+  run = { notes: '', cards: [], i: 0, isTest: false, practice: true, lesson: l, back, id: null, title: `Practice ${TOPIC[id]}`, xp: 0, correct: 0, answered: 0 };
   addPracticeCard();
   swap('zoom', renderCard);
 }
@@ -2546,7 +2677,7 @@ function startReview() {
   const due = shuffle(dueReviews()).slice(0, REVIEW_MAX);
   if (!due.length) return;
   const cards = due.map(id => { const l = findLesson(id); return { kind: `Review · ${TOPIC[id]}`, lid: id, item: Object.assign(l.gen(1), { hint: l.idea }) }; });
-  run = { notes: '', cards, i: 0, isTest: false, review: true, id: null, title: 'Review mistakes', xp: 0, correct: 0, misses: 0, total: cards.length };
+  run = { notes: '', cards, i: 0, isTest: false, review: true, back: 'study', id: null, title: 'Review mistakes', xp: 0, correct: 0, misses: 0, total: cards.length };
   swap('zoom', renderCard);
 }
 // Same question for everyone all day: Math.random is swapped for a generator seeded by the date.
@@ -2557,7 +2688,7 @@ function startDaily() {
   const seed = Number(today().replace(/-/g, '')), rand = seeded(seed), real = Math.random;
   Math.random = rand; let l, item;
   try { l = findLesson(pool[Math.floor(rand() * pool.length)]); item = l.gen(3); } finally { Math.random = real; }
-  run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, id: null, title: ic('star') + ' Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
+  run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, back: 'study', id: null, title: ic('star') + ' Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
   swap('zoom', renderCard);
 }
 
@@ -2612,7 +2743,7 @@ function renderCard() {
     body += it.choices
       ? `<div class="choices">${shuffle(it.choices).map((ch, i) => `<button class="choice"><span class="kn">${i + 1}</span><span class="ct">${ch}</span></button>`).join('')}</div>`
       : `<div class="answer-row"><input type="text" id="ans" autocomplete="off" aria-label="Your answer">${it.suffix ? `<span class="q">${it.suffix}</span>` : ''}</div>`;
-    body += `<div><button id="hintBtn" aria-expanded="false" title="Shortcut: H">${ic('bulb')} Hint</button></div><div id="fb"></div>`;
+    body += `${run.exam ? '' : `<div><button id="hintBtn" aria-expanded="false" title="Shortcut: H">${ic('bulb')} Hint</button></div>`}<div id="fb"></div>`;
   } else body += `<div class="q">${c.html}</div>`;
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
@@ -2627,7 +2758,7 @@ function renderCard() {
 </div>`;
   const barFill = app.querySelector('.bar > div'); run.shownPct = pct;
   requestAnimationFrame(() => requestAnimationFrame(() => { barFill.style.width = pct + '%'; }));
-  document.getElementById('quit').onclick = () => (run.practice || run.review || run.daily) && run.answered ? swap('zoom', finish) : show(run.back || 'learn');
+  document.getElementById('quit').onclick = () => (run.practice || run.review || run.daily || run.session) && run.answered ? swap('zoom', finish) : show(run.back || 'learn');
 
   const go = document.getElementById('go');
   let selected = null, checked = false;
@@ -2640,7 +2771,7 @@ function renderCard() {
   if (c.item && c.item.calc) wireCalc();
   if (c.item) {
     const hb = document.getElementById('hintBtn'), hint = document.getElementById('hint');
-    hb.onclick = () => {
+    if (hb) hb.onclick = () => {
       const opening = hint.hidden || hint.classList.contains('closing');
       hb.setAttribute('aria-expanded', String(opening));
       if (opening) { hint.classList.remove('closing'); hint.hidden = false; return; }
@@ -2662,6 +2793,7 @@ function renderCard() {
     const ok = devMode || isRight(c.item, given), fb = document.getElementById('fb');
     run.answered = (run.answered || 0) + 1;
     if (!ok && !c.retry) run.misses++;
+    if (c.lid && !c.retry) { const t = state.acc[c.lid] = state.acc[c.lid] || { r: 0, n: 0 }; t.n++; if (ok) t.r++; } // first tries only, for Weak spots
     noteResult(c, ok);
     if (run.daily) { state.daily[today()] = ok; save(); }
     beep(ok);
@@ -2674,7 +2806,7 @@ function renderCard() {
       fb.className = 'fb bad';
       fb.innerHTML = `${ic('cross')} ${notSimplest(c.item, given) ? 'That\'s equal, but not in its simplest form.' : 'Not quite.'} The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
       // Duolingo style: a missed practice question comes back at the end (not in tests).
-      if (!run.isTest && !run.practice && !run.review && !run.daily) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
+      if (!run.isTest && !run.practice && !run.review && !run.daily && !run.session) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
     }
     go.textContent = 'Continue'; replay(go, 'ready');
   };
@@ -2837,7 +2969,8 @@ function next() { if (run.practice) addPracticeCard(); run.i++; run.i >= run.car
 
 function finish() {
   if (run.practice) { run.xp = run.correct; state.bestLevel = Math.max(state.bestLevel, practiceLevel() + 1); } // 1 XP per right answer
-  if (run.review) run.xp = run.correct * 2;
+  if (run.review || run.session) run.xp = run.correct * 2;
+  if (run.chunk && run.answered) { run.chunk.forEach(id => state.test.covered[id] = true); state.test.doneDays[today()] = true; } // today's test revision is done
   if (run.daily) { run.xp = run.correct ? XP_DAILY : 0; state.daily[today()] = run.correct > 0; }
   const passed = !run.isTest || run.correct >= TEST_PASS;
   const streakBefore = shownStreak();
@@ -2846,10 +2979,12 @@ function finish() {
     finishItem(run.id, run.xp);
   } else save();
   renderStats();
-  const answered = run.practice || run.review || run.daily ? run.answered || 0 : run.total;
-  const right = run.practice || run.isTest || run.review || run.daily ? run.correct : run.total - run.misses;
+  const answered = run.practice || run.review || run.daily || run.session ? run.answered || 0 : run.total;
+  const right = run.practice || run.isTest || run.review || run.daily || run.session ? run.correct : run.total - run.misses;
   const acc = answered ? Math.round(right / answered * 100) : 0;
   const [icon, head, sub] = run.daily ? (run.correct ? [ic('star', 'ic-big'), 'Challenge beaten!', 'Come back tomorrow for a new one.'] : [ic('moon', 'ic-big'), 'Not this time', "It's been added to your review pile. New challenge tomorrow."])
+    : run.chunk ? [ic('target', 'ic-big'), "Today's revision done", 'Those topics are ticked off your test plan. See you tomorrow.']
+    : run.session ? [ic('target', 'ic-big'), 'Session done', run.misses ? 'Anything you missed went to your review pile.' : 'Not a single mistake. Brilliant.']
     : run.review ? [ic('note', 'ic-big'), 'Review done', Object.keys(state.review).length ? 'Topics you got right come back later, spaced out, until they stick.' : 'Your review pile is empty!']
     : run.isTest ? (passed ? [ic('trophy', 'ic-big'), run.testOut ? 'Tested out!' : 'Unit passed!', run.testOut ? `You skipped "${run.unit.title}". All its notes are unlocked.` : 'Next unit unlocked.'] : [ic('retry', 'ic-big'), 'Not quite', `You need ${TEST_PASS}/${TEST_COUNT} to pass. Your mistakes went to the review pile.`])
     : run.practice ? [ic('target', 'ic-big'), 'Practice stopped', `You reached level ${practiceLevel() + 1}.`]
@@ -2865,9 +3000,9 @@ function finish() {
       <div><b class="${streakNow > streakBefore ? 'bump' : ''}">${ic('fire')} ${streakNow}</b><small>${streakNow > streakBefore ? 'streak up!' : 'day streak'}</small></div>
     </div>
     <div class="goalbar"><small>Daily goal: ${Math.min(todayXp, goal)} / ${goal} XP ${todayXp >= goal ? '✓' : ''}</small><div class="mini"><div id="goalFill" style="width:${Math.min(100, (calm.matches ? todayXp : xpBefore) / goal * 100)}%"></div></div></div>
-    <button class="primary" id="go">${run.back === 'notes' ? 'Back to notes' : 'Back to path'}</button></div>`;
+    <button class="primary" id="go">${{ notes: 'Back to notes', study: 'Back to Study' }[run.back] || 'Back to path'}</button></div>`;
   if (passed && run.xp) beep(true);
-  if (passed && (!run.daily || run.correct) && !run.practice && !run.review) setTimeout(confetti, 200);
+  if (passed && (!run.daily || run.correct) && !run.practice && !run.review && !run.session) setTimeout(confetti, 200);
   countUp(document.getElementById('xpWon'), earned, '+');
   const gf = document.getElementById('goalFill'); setTimeout(() => { gf.style.width = Math.min(100, todayXp / goal * 100) + '%'; }, 450);
   const go = document.getElementById('go'); go.focus();
