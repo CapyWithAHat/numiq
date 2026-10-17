@@ -11,6 +11,17 @@
   --accent: #3b6cf6; --done: #2fa66a; --locked: #c4c8d4; --bad: #d64545;
   --card: #ffffff;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Motion. Snappy = things react at once and land with a tiny overshoot; smooth = nothing ever jumps. */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);       /* fast start, soft landing: screens, bars */
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* small overshoot: buttons, pops, the tab pill */
+  --ease-in: cubic-bezier(.5, 0, .75, 0);         /* things leaving */
+  --t-press: 70ms; --t-fast: 140ms; --t-med: 240ms; --t-slow: 420ms; --t-out: 90ms;
+  /* Surfaces. Everything that sits "on top" (cards, tiles, bars, buttons) reads these,
+     so a later liquid-glass pass only has to change values here: a see-through --surface,
+     --glass-filter: blur(..) saturate(..), and soft --elev-* shadows. */
+  --surface: var(--card); --glass-filter: none;
+  --elev-1: none; --elev-2: none; --elev-btn: none;
+  --r-sm: 8px; --r-md: 10px; --r-lg: 12px; --r-pill: 999px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #14171f; --fg: #e8eaf2; --muted: #9aa1b5; --line: #2c3140;
@@ -25,12 +36,12 @@ header { display: flex; justify-content: space-between; align-items: center; bor
 header h1 { margin: 0; font-size: 24px; }
 .stats { display: flex; gap: 16px; font-variant-numeric: tabular-nums; color: var(--muted); }
 .stats b { color: var(--fg); }
-button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); padding: 8px 14px; }
+button { font: inherit; cursor: pointer; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 8px 14px; }
 button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button:disabled { opacity: .5; cursor: default; }
 .unit { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 8px; }
-.unit-head { align-self: stretch; padding: 10px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+.unit-head { align-self: stretch; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); }
 .unit-head small { color: var(--muted); display: block; }
 .unit-head { display: flex; align-items: center; gap: 12px; }
 .unit-head .uh-text { flex: 1; }
@@ -39,23 +50,23 @@ button:disabled { opacity: .5; cursor: default; }
 .mini > div { height: 100%; background: var(--done); }
 .unit-head .testout { font-size: 13px; padding: 4px 10px; }
 .today { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 12px; margin-bottom: 6px; }
-.tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .tile small { color: var(--muted); }
 .tile button { align-self: flex-start; margin-top: auto; }
 .tile .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .tile .row .mini { flex: 1; width: auto; }
 .kn { display: inline-block; min-width: 20px; margin-right: 10px; padding: 0 5px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; text-align: center; }
 .finish { align-items: center; text-align: center; gap: 18px; padding: 32px; }
-.finish .big { font-size: 44px; animation: pop .5s ease-out; }
+.finish .big { font-size: 44px; animation: pop .5s var(--ease-spring); }
 .finish h2 { margin: 0; }
 .finish .stats3 { display: flex; gap: 14px; }
-.finish .stats3 div { min-width: 120px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.finish .stats3 div { min-width: 120px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); }
 .finish .stats3 b { display: block; font-size: 24px; }
 .finish .stats3 small { color: var(--muted); }
 .finish .goalbar { width: 320px; }
 .finish .goalbar .mini { width: 100%; height: 10px; border-radius: 5px; }
-.bump { display: inline-block; animation: pop .6s ease-out .3s both; }
-@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+.bump { display: inline-block; animation: pop .6s var(--ease-spring) .3s both; }
+@keyframes pop { 0% { scale: .4; opacity: 0; } 70% { scale: 1.15; opacity: 1; } 100% { scale: 1; } }
 .node { width: 64px; height: 64px; border-radius: 50%; border: none; color: #fff; font-weight: 700; padding: 0; }
 .node.done { background: var(--done); }
 .node.current { background: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent); }
@@ -65,15 +76,15 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row span { font-size: 13px; color: var(--muted); }
 .soon { color: var(--muted); font-size: 14px; }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
-.bar > div { height: 100%; background: var(--done); width: 0; transition: width .2s; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
+.bar > div { height: 100%; background: var(--done); width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
 .card .kind { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .q { font-size: 22px; }
 .answer-row { display: flex; gap: 8px; align-items: center; }
-input[type=text] { font: inherit; font-size: 20px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 180px; }
+input[type=text] { font: inherit; font-size: 20px; padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--fg); width: 180px; }
 .choices { display: flex; flex-direction: column; gap: 8px; }
 .choices button.sel { border-color: var(--accent); outline: 2px solid var(--accent); }
-.fb { padding: 12px; border-radius: 8px; }
+.fb { padding: 12px; border-radius: var(--r-sm); }
 .fb.good { background: color-mix(in srgb, var(--done) 18%, transparent); }
 .fb.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); }
 .actions { display: flex; justify-content: space-between; }
@@ -84,13 +95,13 @@ input[type=text] { font: inherit; font-size: 20px; padding: 8px 10px; border-rad
 .play .left > .actions:last-child button { padding: 10px 40px; }
 .play .side { width: 240px; display: flex; flex-direction: column; gap: 12px; }
 .play .calc { width: auto; }
-.hint { background: var(--card); border: 1px solid var(--line); border-top: none; border-radius: 0 0 12px 12px; margin: 0 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; animation: drop .2s ease-out; }
-@keyframes drop { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
-.notepad { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.hint { background: var(--surface); border: 1px solid var(--line); border-top: none; border-radius: 0 0 var(--r-lg) var(--r-lg); margin: 0 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+@keyframes drop { from { translate: 0 -8px; opacity: 0; } to { translate: 0; opacity: 1; } }
+.notepad { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .notepad .actions { align-items: center; }
 .notepad button { padding: 4px 10px; font-size: 13px; }
-textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-height: 140px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
-.calc { width: 220px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-height: 140px; resize: vertical; padding: 8px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.calc { width: 220px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .calc input { width: 100%; box-sizing: border-box; font-size: 18px; text-align: right; }
 .calc .res { text-align: right; color: var(--muted); min-height: 1.2em; font-variant-numeric: tabular-nums; }
 .calc .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -104,12 +115,12 @@ textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-he
 .prof-top { align-items: center; text-align: center; min-height: 0 !important; gap: 10px !important; padding-block: 28px !important; }
 .avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--line); display: flex; align-items: center; justify-content: center; font-size: 40px; }
 .prof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.block { border: 2px dashed var(--line); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
+.block { border: 2px dashed var(--line); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; font-variant-numeric: tabular-nums; }
 .cal-h { text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding-bottom: 4px; }
-.cal-d { border: 1px dashed var(--line); border-radius: 8px; min-height: 52px; padding: 6px; font-size: 14px; }
+.cal-d { border: 1px dashed var(--line); border-radius: var(--r-sm); min-height: 52px; padding: 6px; font-size: 14px; }
 .cal-d.today { border: 2px solid var(--accent); color: var(--accent); font-weight: 700; }
-.stat { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-md); padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .stat b { font-size: 24px; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: 13px; }
 .cal-d { display: flex; flex-direction: column; gap: 2px; }
@@ -126,14 +137,14 @@ textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-he
 .field { display: flex; flex-direction: column; gap: 4px; text-align: left; width: 260px; font-size: 13px; color: var(--muted); }
 .field input { width: auto; font-size: 16px; }
 .set-row { display: flex; flex-direction: column; gap: 8px; }
-.stage { margin-top: 18px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; text-align: center; }
+.stage { margin-top: 18px; padding: 10px 14px; border-radius: var(--r-md); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; text-align: center; }
 .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: .85em; line-height: 1.15; margin: 0 2px; }
 .fr > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 3px; }
 .acct { font-size: 12px; color: var(--muted); align-self: center; cursor: default; }
 .acct[onclick], .acct.click { cursor: pointer; text-decoration: underline dotted; }
 .login { max-width: 420px; margin: 40px auto; align-items: center; text-align: center; }
 .login .field { width: 300px; }
-.login input { padding: 9px 10px; font-size: 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.login input { padding: 9px 10px; font-size: 16px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .login .primary { width: 300px; padding: 10px; }
 .linkish { border: none; background: none; color: var(--accent); padding: 2px; font-size: 13px; }
 .code-box { width: 100%; height: 70px; font: 12px monospace; resize: vertical; }
@@ -141,7 +152,7 @@ textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-he
 .dev { font-size: 12px; padding: 2px 8px; }
 .dev.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .gear { border: none; background: transparent; font-size: 20px; padding: 2px 6px; }
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 8px; background: var(--card); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); z-index: 5; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 8px; background: var(--surface); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); z-index: 5; }
 .tabbar button { min-width: 160px; border: none; background: transparent; color: var(--muted); font-weight: 600; }
 .tabbar button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 body { padding-bottom: 90px; }
@@ -154,9 +165,9 @@ body { padding-bottom: 90px; }
 .pda-list .entry.sel { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); }
 .pda-list .entry:disabled { color: var(--muted); cursor: default; }
 .new { background: var(--accent); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-.pda-entry { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 24px; min-height: 300px; line-height: 1.6; }
+.pda-entry { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px; display: flex; flex-direction: column; gap: 24px; min-height: 300px; line-height: 1.6; }
 .pda-entry section { display: flex; flex-direction: column; gap: 8px; }
-.diag-box { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 20px; gap: 14px !important; }
+.diag-box { border: 1px solid var(--line); background: var(--bg); border-radius: var(--r-lg); padding: 20px; gap: 14px !important; }
 .dg-controls { display: flex; gap: 20px; flex-wrap: wrap; }
 .stepper { display: flex; align-items: center; gap: 8px; }
 .stepper button { width: 34px; height: 34px; padding: 0; font-size: 18px; }
@@ -176,9 +187,100 @@ body { padding-bottom: 90px; }
 .dg .ln { stroke: var(--fg); stroke-width: 1.5; fill: none; }
 .dg .acc { stroke: var(--accent); stroke-width: 2; fill: none; }
 .cap { color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } .hint { animation: none; } }
+/* ---------- surfaces (glass-ready) ---------- */
+.scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; } /* empty for now: the backdrop glass will blur */
+.card, .tile, .unit-head, .calc, .notepad, .pda-entry, .stat, .hint, .tabbar { backdrop-filter: var(--glass-filter); -webkit-backdrop-filter: var(--glass-filter); box-shadow: var(--elev-1); }
+.tabbar { box-shadow: var(--elev-2); }
+
+/* ---------- motion: controls ---------- */
+button { box-shadow: var(--elev-btn);
+  transition: translate var(--t-fast) var(--ease-spring), scale var(--t-fast) var(--ease-spring),
+    background-color var(--t-med) var(--ease-out), border-color var(--t-med) var(--ease-out), color var(--t-med) var(--ease-out),
+    box-shadow var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out); }
+button:not(:disabled):hover { translate: 0 -1px; }
+button:not(:disabled):active { translate: 0 1px; scale: .96; transition-duration: var(--t-press); }
+.tabbar button:not(:disabled):hover, .linkish:not(:disabled):hover { translate: none; }
+.choice:not(:disabled):hover { translate: 2px 0; }
+.choice.sel { animation: sel-pop var(--t-med) var(--ease-spring); }
+#go.ready { animation: sel-pop var(--t-med) var(--ease-spring); }
+input[type=text], textarea { transition: border-color var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out); }
+.stats b { display: inline-block; }
+.tick { animation: tick var(--t-med) var(--ease-spring); }
+@keyframes sel-pop { 0% { scale: .97; } 60% { scale: 1.02; } 100% { scale: 1; } }
+@keyframes tick { 0% { scale: 1; } 40% { scale: 1.3; } 100% { scale: 1; } }
+
+/* path nodes: bouncy press, the current one breathes, a just-finished one pops in */
+.node { transition: translate var(--t-fast) var(--ease-spring), scale var(--t-fast) var(--ease-spring), background-color var(--t-med) var(--ease-out); }
+.node:not(:disabled):hover { translate: 0 -2px; scale: 1.06; }
+.node:not(:disabled):active { translate: 0 1px; scale: .9; }
+.node.current { animation: ring 2.4s ease-in-out infinite; }
+.node.just { animation: node-in var(--t-slow) var(--ease-spring) .25s both; }
+.node.current.arrive { animation: node-in var(--t-slow) var(--ease-spring) .55s both, ring 2.4s ease-in-out 1s infinite; }
+@keyframes ring { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent); } }
+@keyframes node-in { 0% { scale: .5; } 100% { scale: 1; } }
+
+/* tab bar: one pill slides to the active tab */
+.tab-pill { position: absolute; left: 0; top: 0; z-index: -1; opacity: 0; pointer-events: none; border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  transition: translate var(--t-slow) var(--ease-spring), width var(--t-med) var(--ease-out), opacity var(--t-fast) linear; }
+.tabbar button[aria-current="page"] { background: transparent; }
+
+/* ---------- motion: answers ---------- */
+.play .card.is-good { animation: good-pop var(--t-slow) var(--ease-spring); }
+.play .card.is-bad { animation: shake 380ms var(--ease-out); }
+.fb:not(:empty) { animation: fb-in var(--t-med) var(--ease-spring) both; }
+@keyframes good-pop { 35% { scale: 1.015; } 100% { scale: 1; } }
+@keyframes shake { 15% { translate: -7px 0; } 35% { translate: 6px 0; } 55% { translate: -4px 0; } 75% { translate: 2px 0; } 100% { translate: 0; } }
+@keyframes fb-in { from { opacity: 0; translate: 0 10px; scale: .98; } to { opacity: 1; translate: 0; scale: 1; } }
+.hint { animation: drop var(--t-med) var(--ease-spring); }
+.hint.closing { animation: drop-out var(--t-fast) var(--ease-in) forwards; }
+@keyframes drop-out { to { translate: 0 -8px; opacity: 0; } }
+.bar > div, .mini > div { transition: width var(--t-slow) var(--ease-out); }
+
+/* ---------- motion: screens ----------
+   #app gets data-out while the old screen leaves (short), then data-in while the new one arrives.
+   "next" moves only the question area so the top bar stays put; left/right follow the tab order. */
+#app[data-out] { pointer-events: none; }
+#app[data-out] > * { animation: out-fade var(--t-out) var(--ease-in) forwards; }
+#app[data-out="right"] > * { animation-name: out-left; }
+#app[data-out="left"] > * { animation-name: out-right; }
+#app[data-out="zoom"] > * { animation-name: out-shrink; }
+#app[data-out="next"] > * { animation: none; }
+#app[data-out="next"] .play { animation: out-left var(--t-out) var(--ease-in) forwards; }
+#app[data-in] > * { animation: in-rise var(--t-med) var(--ease-out) both; }
+#app[data-in="right"] > * { animation-name: in-right; }
+#app[data-in="left"] > * { animation-name: in-left; }
+#app[data-in="zoom"] > * { animation: in-zoom var(--t-slow) var(--ease-out) both; }
+#app[data-in="next"] > * { animation: none; }
+#app[data-in="next"] .play { animation: in-right var(--t-med) var(--ease-out) both; }
+#app[data-in] .stagger > * { animation: in-rise var(--t-med) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 50ms + 60ms); }
+#app[data-in] .finish.stagger > .big { animation: pop .5s var(--ease-spring) both; }
+.stagger > :nth-child(2) { --i: 1; } .stagger > :nth-child(3) { --i: 2; } .stagger > :nth-child(4) { --i: 3; }
+.stagger > :nth-child(5) { --i: 4; } .stagger > :nth-child(6) { --i: 5; } .stagger > :nth-child(7) { --i: 6; } .stagger > :nth-child(8) { --i: 7; }
+.soft-in { animation: in-rise var(--t-med) var(--ease-out) both; }
+.slide-l { animation: in-left var(--t-med) var(--ease-out) both; }
+.slide-r { animation: in-right var(--t-med) var(--ease-out) both; }
+.pda-list .items.opening { animation: drop var(--t-med) var(--ease-out); }
+#dg > svg { animation: fade-in var(--t-fast) var(--ease-out); }
+@keyframes out-fade { to { opacity: 0; } }
+@keyframes out-left { to { opacity: 0; translate: -18px 0; } }
+@keyframes out-right { to { opacity: 0; translate: 18px 0; } }
+@keyframes out-shrink { to { opacity: 0; scale: .97; } }
+@keyframes in-rise { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0; } }
+@keyframes in-right { from { opacity: 0; translate: 26px 0; } to { opacity: 1; translate: 0; } }
+@keyframes in-left { from { opacity: 0; translate: -26px 0; } to { opacity: 1; translate: 0; } }
+@keyframes in-zoom { from { opacity: 0; scale: .95; } to { opacity: 1; scale: 1; } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Reduced motion: everything still changes, it just doesn't move. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  button:not(:disabled):hover, button:not(:disabled):active, .node:not(:disabled):hover, .node:not(:disabled):active { translate: none; scale: none; }
+}
 </style>
 
+<div class="scene" aria-hidden="true"></div>
 <div class="wrap">
   <header>
     <h1>Numiq</h1>
@@ -188,6 +290,7 @@ body { padding-bottom: 90px; }
   <div class="footer"><button id="reset">Reset progress</button> <span id="resetMsg"></span></div>
 </div>
 <nav class="tabbar" id="tabbar" aria-label="Sections">
+  <span class="tab-pill" aria-hidden="true"></span>
   <button data-view="learn">📘 Learn</button>
   <button data-view="notes">🗂️ Notes <span id="notesNew"></span></button>
   <button data-view="profile">👤 Profile</button>
@@ -1151,10 +1254,57 @@ function status(id) {
 
 // ---------- path view ----------
 const app = document.getElementById('app');
-function renderStats() { document.getElementById('xp').textContent = state.xp; document.getElementById('streak').textContent = shownStreak(); }
+function renderStats() { setNum('xp', state.xp); setNum('streak', shownStreak()); }
+// Header numbers give a little tick when they go up.
+function setNum(id, n) { const el = document.getElementById(id), was = Number(el.textContent); el.textContent = n; if (n > was) replay(el, 'tick'); }
+
+// ---------- motion ----------
+// Screen changes go through swap(): the old screen leaves quickly (data-out), then the new one is drawn and arrives (data-in).
+// The CSS under "motion: screens" decides what each kind looks like. Everything else is plain CSS transitions.
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+const OUT_MS = 90;
+let swapTimer = 0, inTimer = 0, inSwap = false; // inSwap: true while swap() is drawing a screen that will animate in as a whole
+function swap(how, render) {
+  clearTimeout(swapTimer); clearTimeout(inTimer);
+  const draw = () => {
+    swapTimer = 0; delete app.dataset.out; delete app.dataset.in;
+    inSwap = !!how && !calm.matches; render(); inSwap = false;
+    if (!how || calm.matches) return;
+    void app.offsetWidth; app.dataset.in = how;
+    inTimer = setTimeout(() => delete app.dataset.in, 900);
+  };
+  if (!how || calm.matches || !app.firstElementChild || app.dataset.out) return draw();
+  app.dataset.out = how;
+  swapTimer = setTimeout(draw, OUT_MS);
+}
+// Clicking anything ends the arrival, so re-drawing part of a screen doesn't replay it.
+app.addEventListener('pointerdown', () => { if (app.dataset.in) { clearTimeout(inTimer); delete app.dataset.in; } }, true);
+// Restart a one-off CSS animation class on an element.
+function replay(el, cls) { if (!el || calm.matches) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+// Count a number up (the XP on the finish screen).
+function countUp(el, to, prefix = '', ms = 700, delay = 300) {
+  if (!el || calm.matches || to <= 0) return;
+  const t0 = performance.now() + delay; el.textContent = prefix + 0;
+  const step = t => { const k = Math.min(1, Math.max(0, (t - t0) / ms)); el.textContent = prefix + Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+// Slide the tab bar's pill under the active tab. instant = no slide (e.g. the bar just reappeared).
+function placePill(instant) {
+  const bar = document.getElementById('tabbar'), pill = bar.querySelector('.tab-pill'), b = bar.querySelector('[aria-current="page"]');
+  if (bar.hidden) return;
+  if (!b) { pill.style.opacity = 0; return; }
+  if (instant || pill.style.opacity !== '1') pill.style.transition = 'none';
+  Object.assign(pill.style, { opacity: 1, width: b.offsetWidth + 'px', height: b.offsetHeight + 'px', translate: `${b.offsetLeft}px ${b.offsetTop}px` });
+  void pill.offsetWidth; pill.style.transition = '';
+}
+addEventListener('resize', () => placePill(true));
+const TAB_ORDER = ['learn', 'notes', 'profile', 'soon'];
 
 let view = 'learn', ui = { closed: {}, entry: null };
-function show(v) {
+function show(v, how) {
+  // Pick how the screen changes: out of a lesson, between tabs (left/right by tab order), or nothing for a plain refresh.
+  const from = view, wasRun = !!run, barHidden = document.getElementById('tabbar').hidden;
+  if (how === undefined) how = wasRun ? 'fade' : v && v !== from ? (TAB_ORDER.includes(v) && TAB_ORDER.includes(from) ? (TAB_ORDER.indexOf(v) > TAB_ORDER.indexOf(from) ? 'right' : 'left') : 'fade') : null;
   view = v || view; run = null; renderStats();
   document.getElementById('tabbar').hidden = false;
   document.querySelectorAll('#tabbar [data-view]').forEach(b => { if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
@@ -1162,8 +1312,9 @@ function show(v) {
   document.getElementById('notesNew').innerHTML = unseen ? `<span class="new">+</span>` : '';
   document.querySelector('.footer').hidden = view !== 'learn';
   document.getElementById('gear').hidden = view !== 'profile';
-  if (view === 'login') { document.getElementById('tabbar').hidden = true; document.querySelector('.footer').hidden = true; return renderLogin(); }
-  if (view === 'learn') renderPath(); else if (view === 'notes') renderNotes(); else if (view === 'profile') renderProfile(); else renderSoon();
+  placePill(barHidden);
+  if (view === 'login') { document.getElementById('tabbar').hidden = true; document.querySelector('.footer').hidden = true; return swap(how, renderLogin); }
+  swap(how, view === 'learn' ? renderPath : view === 'notes' ? renderNotes : view === 'profile' ? renderProfile : renderSoon);
 }
 document.querySelectorAll('#tabbar [data-view]').forEach(b => b.onclick = () => { ui.profileMode = 'view'; show(b.dataset.view); });
 
@@ -1191,8 +1342,10 @@ function renderNotes() {
   } else entry = ORDER.some(id => findLesson(id) && unlocked(id))
     ? `<h2>Notes</h2><div class="cap">Pick a topic on the left.</div>`
     : `<h2>Notes</h2><div class="cap">Your notes are empty for now. Each lesson you finish adds an entry here, with an explanation, an example, a diagram and a practice button.</div>`;
-  app.innerHTML = `<div class="pda"><nav class="pda-list" aria-label="Topics">${list}</nav><article class="pda-entry">${entry}</article></div>`;
-  app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { ui.closed[b.dataset.cat] = !ui.closed[b.dataset.cat]; renderNotes(); });
+  const fresh = ui.entry !== ui.shownEntry; ui.shownEntry = ui.entry;
+  app.innerHTML = `<div class="pda"><nav class="pda-list" aria-label="Topics">${list}</nav><article class="pda-entry${fresh && !inSwap ? ' soft-in' : ''}">${entry}</article></div>`;
+  if (ui.opened) { const c = app.querySelector(`[data-cat="${ui.opened}"]`); if (c && c.nextElementSibling) c.nextElementSibling.classList.add('opening'); ui.opened = null; }
+  app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { ui.closed[b.dataset.cat] = !ui.closed[b.dataset.cat]; if (!ui.closed[b.dataset.cat]) ui.opened = b.dataset.cat; renderNotes(); });
   app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { ui.entry = b.dataset.e; state.seen[ui.entry] = true; save(); show('notes'); });
   const pb = document.getElementById('practice'); if (pb) pb.onclick = () => startPractice(l.id);
   if (l && DIAGRAMS[l.id]) {
@@ -1201,8 +1354,9 @@ function renderNotes() {
     const draw = () => { const [svg, cap] = DIAGRAMS[l.id](params); document.getElementById('dg').innerHTML = svg; document.getElementById('dgCap').innerHTML = cap;
       Object.keys(params).forEach(k => document.getElementById('dv-' + k).textContent = params[k]); };
     app.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
-      const [, min, max] = ctl[b.dataset.k];
+      const [, min, max] = ctl[b.dataset.k], was = params[b.dataset.k];
       params[b.dataset.k] = Math.min(max, Math.max(min, params[b.dataset.k] + Number(b.dataset.d) * (ctl[b.dataset.k][4] || 1))); draw();
+      if (params[b.dataset.k] !== was) replay(document.getElementById('dv-' + b.dataset.k), 'tick');
     });
     draw();
   }
@@ -1269,11 +1423,14 @@ function renderProfile() {
     cells += `<div class="cal-d ${cls}"><span>${d} ${fire ? '<span class="fire">🔥</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
   }
   const todayXp = state.days[today()] || 0;
+  const modeChanged = ui.shownMode !== undefined && ui.shownMode !== mode, calDir = (ui.calOffset || 0) - (ui.shownCal ?? (ui.calOffset || 0));
+  ui.shownMode = mode; ui.shownCal = ui.calOffset || 0;
+  if (modeChanged && !inSwap) top = top.replace('<div class="card', '<div class="soft-in card');
   app.innerHTML = `<div class="profile">${top}
-    <div class="prof-grid">${stat('day streak 🔥', shownStreak())}${stat('total XP ⭐', state.xp)}${stat('lessons done', `${lessonsDone()} / ${UNITS.reduce((n, u) => n + u.lessons.length, 0)}`)}${stat('best practice level', state.bestLevel || '–')}</div>
+    <div class="prof-grid stagger">${stat('day streak 🔥', shownStreak())}${stat('total XP ⭐', state.xp)}${stat('lessons done', `${lessonsDone()} / ${UNITS.reduce((n, u) => n + u.lessons.length, 0)}`)}${stat('best practice level', state.bestLevel || '–')}</div>
     <div class="card"><div class="goal-row"><span>Today: <b>${todayXp} / ${state.settings.goal} XP</b></span><div class="bar" style="flex:1"><div style="width:${Math.min(100, todayXp / state.settings.goal * 100)}%"></div></div></div>
       <div class="actions" style="align-items:center"><button id="calPrev" aria-label="Previous month">‹</button><b>${view.toLocaleString('en-IE', { month: 'long', year: 'numeric' })}</b><button id="calNext" aria-label="Next month">›</button></div>
-      <div class="cal">${cells}</div></div>
+      <div class="cal${calDir > 0 ? ' slide-r' : calDir < 0 ? ' slide-l' : ''}">${cells}</div></div>
   </div>`;
   const $ = id => document.getElementById(id);
   $('calPrev').onclick = () => { ui.calOffset = (ui.calOffset || 0) - 1; renderProfile(); };
@@ -1283,7 +1440,7 @@ function renderProfile() {
   if ($('pfEdit')) $('pfEdit').onclick = () => { ui.profileMode = 'edit'; ui.pickAvatar = P.avatar; renderProfile(); };
   if (mode === 'edit') {
     app.querySelectorAll('[data-av]').forEach(b => b.onclick = () => {
-      ui.pickAvatar = b.dataset.av; $('avPreview').textContent = b.dataset.av;
+      ui.pickAvatar = b.dataset.av; $('avPreview').textContent = b.dataset.av; replay($('avPreview'), 'tick');
       app.querySelectorAll('[data-av]').forEach(x => x.classList.toggle('sel', x === b));
     });
     $('pfCancel').onclick = () => { ui.profileMode = 'view'; renderProfile(); };
@@ -1328,7 +1485,7 @@ function stageProgress(stage) {
 function todayPanel() {
   const due = dueReviews().length, waiting = Object.keys(state.review).length - due, dc = state.daily[today()];
   const bar = (label, pct) => `<div class="row"><span style="min-width:62px">${label}</span><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
-  return `<div class="today">
+  return `<div class="today stagger">
     <div class="tile"><b>📝 Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
     <div class="tile"><b>⭐ Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
     <div class="tile"><b>📈 Your progress</b>${bar('Stage 0', stageProgress('book'))}${bar('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>
@@ -1336,6 +1493,9 @@ function todayPanel() {
 }
 function renderPath() {
   renderStats();
+  // Coming back from a finished lesson: its node pops to ✓, then the next one pops awake.
+  const just = ui.justDone; ui.justDone = null;
+  const pop = (id, st) => !just ? '' : id === just && st === 'done' ? ' just' : st === 'current' ? ' arrive' : '';
   let html = todayPanel();
   let stage = null;
   UNITS.forEach((u, ui) => {
@@ -1347,10 +1507,10 @@ function renderPath() {
       ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">⏩ Test out</button>` : ''}</div>`;
     u.lessons.forEach((l, li) => {
       const st = status(l.id);
-      html += `<div class="node-row" style="transform:translateX(${Math.round(Math.sin(li * 1.1) * 70)}px)"><button class="node ${st}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
+      html += `<div class="node-row" style="transform:translateX(${Math.round(Math.sin(li * 1.1) * 70)}px)"><button class="node ${st}${pop(l.id, st)}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
     });
     const tst = status(u.id + 'test');
-    html += `<div class="node-row"><button class="node test ${tst}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
+    html += `<div class="node-row"><button class="node test ${tst}${pop(u.id + 'test', tst)}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
   });
   COMING.forEach((t, i) => { html += `<section class="unit"><div class="unit-head"><b>Unit ${UNITS.length + i + 1}: ${t}</b><small>Coming soon</small></div></section>`; });
   app.innerHTML = html;
@@ -1372,7 +1532,7 @@ function startLesson(id) {
   const cards = [{ kind: 'Idea', html: l.idea }, { kind: 'Example', html: l.example }];
   for (let i = 0; i < PRACTICE_COUNT; i++) cards.push({ kind: 'Practice', lid: id, item: Object.assign(l.gen(), { hint: l.idea }) });
   run = { notes: '', cards, baseLen: cards.length, i: 0, isTest: false, id, title: l.title, xp: XP_LESSON, correct: 0, misses: 0, total: PRACTICE_COUNT };
-  renderCard();
+  swap('zoom', renderCard);
 }
 // Endless practice: one new question at a time until Stop. Every PER_LEVEL right answers, the level goes up.
 const PER_LEVEL = 3;
@@ -1381,7 +1541,7 @@ function startPractice(id) {
   const l = findLesson(id);
   run = { notes: '', cards: [], i: 0, isTest: false, practice: true, lesson: l, back: 'notes', id: null, title: `Practice ${TOPIC[id]}`, xp: 0, correct: 0, answered: 0 };
   addPracticeCard();
-  renderCard();
+  swap('zoom', renderCard);
 }
 function addPracticeCard() {
   const lv = practiceLevel();
@@ -1393,14 +1553,14 @@ function startTest(uid, testOut = false) {
   const cards = [];
   for (let i = 0; i < TEST_COUNT; i++) { const l = u.lessons[i % u.lessons.length]; cards.push({ kind: testOut ? 'Test out' : 'Test question', lid: l.id, item: Object.assign(l.gen(testOut ? 1 : 0), { hint: l.idea }) }); }
   run = { notes: '', cards: shuffle(cards), i: 0, isTest: true, testOut, unit: u, id: uid + 'test', title: `${testOut ? 'Test out' : 'Unit test'}: ${u.title}`, xp: testOut ? XP_TEST + 10 : XP_TEST, correct: 0, misses: 0, total: TEST_COUNT };
-  renderCard();
+  swap('zoom', renderCard);
 }
 function startReview() {
   const due = shuffle(dueReviews()).slice(0, REVIEW_MAX);
   if (!due.length) return;
   const cards = due.map(id => { const l = findLesson(id); return { kind: `Review · ${TOPIC[id]}`, lid: id, item: Object.assign(l.gen(1), { hint: l.idea }) }; });
   run = { notes: '', cards, i: 0, isTest: false, review: true, id: null, title: 'Review mistakes', xp: 0, correct: 0, misses: 0, total: cards.length };
-  renderCard();
+  swap('zoom', renderCard);
 }
 // Same question for everyone all day: Math.random is swapped for a generator seeded by the date.
 function seeded(seed) { return () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }; }
@@ -1411,7 +1571,7 @@ function startDaily() {
   Math.random = rand; let l, item;
   try { l = findLesson(pool[Math.floor(rand() * pool.length)]); item = l.gen(3); } finally { Math.random = real; }
   run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, id: null, title: '⭐ Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
-  renderCard();
+  swap('zoom', renderCard);
 }
 
 // Other ways people write a unit after their answer.
@@ -1469,24 +1629,33 @@ function renderCard() {
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
     <div class="actions"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
-    <div class="bar"><div style="width:${pct}%"></div></div>
+    <div class="bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>💡 Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
       ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad"><div class="actions"><b>Notepad</b><button id="notesClear">Clear</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea></div></div>` : ''}</div>
 </div>`;
-  document.getElementById('quit').onclick = () => (run.practice || run.review || run.daily) && run.answered ? finish() : show(run.back || 'learn');
+  const barFill = app.querySelector('.bar > div'); run.shownPct = pct;
+  requestAnimationFrame(() => requestAnimationFrame(() => { barFill.style.width = pct + '%'; }));
+  document.getElementById('quit').onclick = () => (run.practice || run.review || run.daily) && run.answered ? swap('zoom', finish) : show(run.back || 'learn');
 
   const go = document.getElementById('go');
   let selected = null, checked = false;
   if (c.item && c.item.choices) {
     app.querySelectorAll('.choice').forEach(b => b.onclick = () => {
       if (checked) return;
-      app.querySelectorAll('.choice').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); selected = b.querySelector('.ct').textContent;
+      app.querySelectorAll('.choice').forEach(x => x.classList.remove('sel')); replay(b, 'sel'); selected = b.querySelector('.ct').textContent;
     });
   }
   if (c.item && c.item.calc) wireCalc();
   if (c.item) {
     const hb = document.getElementById('hintBtn'), hint = document.getElementById('hint');
-    hb.onclick = () => { hint.hidden = !hint.hidden; hb.setAttribute('aria-expanded', String(!hint.hidden)); };
+    hb.onclick = () => {
+      const opening = hint.hidden || hint.classList.contains('closing');
+      hb.setAttribute('aria-expanded', String(opening));
+      if (opening) { hint.classList.remove('closing'); hint.hidden = false; return; }
+      if (calm.matches) { hint.hidden = true; return; }
+      hint.classList.add('closing');
+      hint.addEventListener('animationend', () => { if (hint.classList.contains('closing')) { hint.classList.remove('closing'); hint.hidden = true; } }, { once: true });
+    };
     const notes = document.getElementById('notes');
     notes.value = run.notes;
     notes.oninput = () => { run.notes = notes.value; };
@@ -1507,6 +1676,7 @@ function renderCard() {
     noteResult(c, ok);
     if (run.daily) { state.daily[today()] = ok; save(); }
     beep(ok);
+    replay(app.querySelector('.play .card'), ok ? 'is-good' : 'is-bad');
     if (ok) { run.correct++; fb.className = 'fb good'; fb.innerHTML = '✓ Correct!'; }
     else {
       fb.className = 'fb bad';
@@ -1514,7 +1684,7 @@ function renderCard() {
       // Duolingo style: a missed practice question comes back at the end (not in tests).
       if (!run.isTest && !run.practice && !run.review && !run.daily) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
     }
-    go.textContent = 'Continue';
+    go.textContent = 'Continue'; replay(go, 'ready');
   };
 }
 // ---------- calculator (only on harder questions) ----------
@@ -1547,7 +1717,7 @@ function wireCalc() {
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); run(); } });
 }
 
-function next() { if (run.practice) addPracticeCard(); run.i++; run.i >= run.cards.length ? finish() : renderCard(); }
+function next() { if (run.practice) addPracticeCard(); run.i++; run.i >= run.cards.length ? swap('zoom', finish) : swap('next', renderCard); }
 
 function finish() {
   if (run.practice) { run.xp = run.correct; state.bestLevel = Math.max(state.bestLevel, practiceLevel() + 1); } // 1 XP per right answer
@@ -1569,16 +1739,20 @@ function finish() {
     : run.practice ? ['🎯', 'Practice stopped', `You reached level ${practiceLevel() + 1}.`]
     : ['🎉', 'Lesson complete!', 'A new entry was added to your Notes.'];
   const streakNow = shownStreak(), goal = state.settings.goal, todayXp = state.days[today()] || 0;
-  app.innerHTML = `<div class="card finish">
+  const earned = passed ? run.xp : 0, xpBefore = Math.max(0, todayXp - earned);
+  if (passed && run.id) ui.justDone = run.id;
+  app.innerHTML = `<div class="card finish stagger">
     <div class="big">${icon}</div><h2>${head}</h2><div>${sub}</div>
     <div class="stats3">
-      <div><b class="bump">+${passed ? run.xp : 0}</b><small>XP earned</small></div>
+      <div><b class="bump" id="xpWon">+${earned}</b><small>XP earned</small></div>
       <div><b>${acc}%</b><small>accuracy (${right}/${answered})</small></div>
       <div><b class="${streakNow > streakBefore ? 'bump' : ''}">🔥 ${streakNow}</b><small>${streakNow > streakBefore ? 'streak up!' : 'day streak'}</small></div>
     </div>
-    <div class="goalbar"><small>Daily goal: ${Math.min(todayXp, goal)} / ${goal} XP ${todayXp >= goal ? '✓' : ''}</small><div class="mini"><div style="width:${Math.min(100, todayXp / goal * 100)}%"></div></div></div>
+    <div class="goalbar"><small>Daily goal: ${Math.min(todayXp, goal)} / ${goal} XP ${todayXp >= goal ? '✓' : ''}</small><div class="mini"><div id="goalFill" style="width:${Math.min(100, (calm.matches ? todayXp : xpBefore) / goal * 100)}%"></div></div></div>
     <button class="primary" id="go">${run.back === 'notes' ? 'Back to notes' : 'Back to path'}</button></div>`;
   if (passed && run.xp) beep(true);
+  countUp(document.getElementById('xpWon'), earned, '+');
+  const gf = document.getElementById('goalFill'); setTimeout(() => { gf.style.width = Math.min(100, todayXp / goal * 100) + '%'; }, 450);
   const go = document.getElementById('go'); go.focus();
   const back = run.back || 'learn'; go.onclick = () => show(back);
 }
@@ -1586,7 +1760,7 @@ function finish() {
 // Enter key = Check / Continue (desktop).
 // 1-9 = pick a multiple-choice answer, H = hint (not while typing in a box).
 document.addEventListener('keydown', e => {
-  if (!run) return;
+  if (!run || app.dataset.out) return;
   if (e.key === 'Enter') { const g = document.getElementById('go'); if (g) { e.preventDefault(); g.click(); } return; }
   if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const ch = app.querySelectorAll('.choice');
@@ -1605,6 +1779,6 @@ resetBtn.onclick = () => {
 
 if (!state.profile.joined) { state.profile.joined = Date.now(); save(); }
 applyTheme();
-show('learn');
+show('learn', 'fade');
 cloud.start();
 </script>
