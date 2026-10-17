@@ -208,11 +208,11 @@ button:disabled { opacity: .5; cursor: default; }
 /* The answered card slides out to the side, then tucks in behind the deck like a real shuffle. */
 .fc-ghost { position: absolute; inset: 0; z-index: 3; perspective: 1400px; pointer-events: none; }
 .fc-ghost .fc3d { height: 100% !important; transition: none; }
-.fc-ghost.tuck-r { animation: tuck-r .75s cubic-bezier(.45, 0, .25, 1) both; }
-.fc-ghost.tuck-l { animation: tuck-l .75s cubic-bezier(.45, 0, .25, 1) both; }
-@keyframes tuck-r { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: 78% -14px; rotate: 9deg; z-index: 3; }
+.fc-ghost.tuck-r { animation: tuck-r .85s cubic-bezier(.45, 0, .25, 1) both; }
+.fc-ghost.tuck-l { animation: tuck-l .85s cubic-bezier(.45, 0, .25, 1) both; }
+@keyframes tuck-r { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: 114% -14px; rotate: 9deg; z-index: 3; }
   49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
-@keyframes tuck-l { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: -78% -14px; rotate: -9deg; z-index: 3; }
+@keyframes tuck-l { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: -114% -14px; rotate: -9deg; z-index: 3; }
   49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
 .flash-btns { display: flex; justify-content: center; gap: 10px; }
 .flash-btns button { min-width: 140px; }
