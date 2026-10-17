@@ -350,8 +350,10 @@ button:not(.node):not(.linkish):not(.av-btn):not(.tabbar button):not(.stats > *)
 button:not(.node):not(.linkish):not(.av-btn):not(.tabbar button):not(.stats > *):not(:disabled):active {
   translate: 0 3px; scale: 1; box-shadow: 0 0 0 var(--line); transition-duration: 60ms; }
 button.primary:not(.node) { box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 70%, #000); }
-button.primary:not(.node):not(:disabled):hover { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #000); border-color: var(--accent);
-  background-color: color-mix(in srgb, var(--accent) 90%, #fff); }
+/* !important: the general button hover rule above is more specific and was washing primary buttons out to near-white. */
+button.primary:not(.node):not(:disabled):hover { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #000) !important; border-color: var(--accent) !important;
+  background-color: color-mix(in srgb, var(--accent) 90%, #fff) !important; }
+button.primary:not(.node):not(:disabled):active { box-shadow: 0 0 0 transparent !important; }
 button:disabled:not(.node) { box-shadow: none; }
 .stats b { display: inline-block; }
 .tick { animation: tick var(--t-med) var(--ease-spring); }
@@ -497,6 +499,69 @@ button:disabled:not(.node) { box-shadow: none; }
     transition-duration: 1ms !important; transition-delay: 0ms !important; }
   button:not(:disabled):hover, button:not(:disabled):active, .av-btn:not(:disabled):hover, .node:not(:disabled):hover, .node:not(:disabled):active { translate: none; scale: none; }
 }
+/* ---------- lesson screen: same chunky, glassy feel as the path ---------- */
+.play-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.play-top > :last-child { justify-self: end; color: var(--muted); font-size: 14px; }
+.play-top #quit { justify-self: start; border-radius: var(--r-pill); padding: 7px 14px; }
+.play-top b { font-size: 16px; }
+.lesson-bar { height: 16px; border-radius: var(--r-pill); background: var(--line); box-shadow: inset 0 2px 0 color-mix(in srgb, var(--line), var(--fg) 10%); overflow: hidden; }
+.lesson-bar > div { height: 100%; border-radius: inherit; background: var(--done); min-width: 16px; position: relative;
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--done), #000 18%); transition: width .7s var(--ease-spring) !important; }
+.lesson-bar > div::after { content: ''; position: absolute; left: 8px; right: 8px; top: 3px; height: 4px; border-radius: 2px; background: #fff; opacity: .35; }
+.lesson-bar > div[style*="width:0%"], .lesson-bar > div[style*="width: 0%"] { opacity: 0; }
+.play .card { border-radius: 18px; padding: 24px 26px; gap: 16px; box-shadow: var(--elev-1), 0 4px 0 var(--line); transition: box-shadow var(--t-med) var(--ease-out), border-color var(--t-med) var(--ease-out); }
+.play .card.is-good { border-color: color-mix(in srgb, var(--done) 55%, var(--line)); box-shadow: var(--elev-1), 0 4px 0 color-mix(in srgb, var(--done) 45%, var(--line)); }
+.play .card.is-bad { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); box-shadow: var(--elev-1), 0 4px 0 color-mix(in srgb, var(--bad) 35%, var(--line)); }
+.play .card > * { animation: in-rise var(--t-med) var(--ease-out) both; }
+.play .card > :nth-child(2) { animation-delay: 50ms; } .play .card > :nth-child(3) { animation-delay: 100ms; } .play .card > :nth-child(4) { animation-delay: 150ms; } .play .card > :nth-child(n+5) { animation-delay: 200ms; }
+.play .card .kind { display: inline-flex; align-self: flex-start; padding: 3px 10px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-weight: 700; letter-spacing: .06em; }
+.play .q { font-size: 24px; line-height: 1.4; }
+.play .choices { gap: 10px; }
+.play .choice { display: flex; align-items: center; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 14px; font-size: 17px; }
+.play .choice .kn { transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+.play .choices button.sel { outline: none; border-color: var(--accent) !important; background-color: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important; box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, var(--line)) !important; }
+.play .choices button.sel .kn { background: var(--accent); border-color: var(--accent); color: #fff; }
+.play .choices button.right { opacity: 1; border-color: var(--done) !important; background-color: color-mix(in srgb, var(--done) 14%, var(--surface)) !important; box-shadow: 0 3px 0 color-mix(in srgb, var(--done) 60%, var(--line)) !important; animation: sel-pop var(--t-med) var(--ease-spring); }
+.play .choices button.right .kn { background: var(--done); border-color: var(--done); color: #fff; }
+.play .choices button.wrong { opacity: 1; border-color: var(--bad) !important; background-color: color-mix(in srgb, var(--bad) 12%, var(--surface)) !important; box-shadow: 0 3px 0 color-mix(in srgb, var(--bad) 55%, var(--line)) !important; }
+.play .choices button.wrong .kn { background: var(--bad); border-color: var(--bad); color: #fff; }
+.play .choices button:disabled:not(.right):not(.wrong) { opacity: .55; }
+.play input[type=text] { width: 220px; font-size: 22px; padding: 10px 14px; border-radius: 14px; border-width: 1.5px; background: var(--surface); box-shadow: 0 3px 0 var(--line); }
+.play input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 55%, var(--line)), 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.play input[type=text].right { border-color: var(--done); color: var(--done); box-shadow: 0 3px 0 color-mix(in srgb, var(--done) 60%, var(--line)); opacity: 1; }
+.play input[type=text].wrong { border-color: var(--bad); color: var(--bad); box-shadow: 0 3px 0 color-mix(in srgb, var(--bad) 55%, var(--line)); opacity: 1; text-decoration: line-through; }
+.play .fb { padding: 14px 16px; border-radius: 14px; border: 1.5px solid transparent; line-height: 1.5; }
+.play .fb .ic { width: 1.3em; height: 1.3em; vertical-align: -.28em; margin-right: 2px; }
+.play .fb.good { border-color: color-mix(in srgb, var(--done) 45%, transparent); box-shadow: 0 3px 0 color-mix(in srgb, var(--done) 35%, transparent); color: color-mix(in srgb, var(--done), var(--fg) 35%); font-weight: 600; }
+.play .fb.good .ic { color: var(--done); }
+.play .fb.bad { border-color: color-mix(in srgb, var(--bad) 40%, transparent); box-shadow: 0 3px 0 color-mix(in srgb, var(--bad) 30%, transparent); }
+.play .fb.bad .ic { color: var(--bad); }
+.play .hint { border-radius: 0 0 16px 16px; border-width: 1.5px; box-shadow: var(--elev-1), 0 3px 0 var(--line); }
+.play .left > .actions:last-child button { padding: 13px 56px; font-size: 17px; border-radius: 14px; }
+.play .side { width: 290px; }
+.play .notepad, .play .calc { border-radius: 18px; box-shadow: var(--elev-1), 0 4px 0 var(--line); padding: 12px; }
+.play .calc .keys button { border-radius: 10px; }
+/* Notepad / Sketchpad switch: a pill slides between the two, like the bottom tab bar. */
+.seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--line) 60%, transparent); isolation: isolate; }
+.seg button { position: relative; z-index: 1; border: none; background: none; padding: 6px 8px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: none; transition: color var(--t-fast); }
+.seg button[aria-selected="true"] { color: var(--fg); }
+.seg button .ic { width: 1.05em; height: 1.05em; }
+.seg-pill { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; border-radius: var(--r-pill); background: var(--surface); box-shadow: 0 2px 0 var(--line), var(--elev-1); transition: translate var(--t-med) var(--ease-spring), width var(--t-med) var(--ease-spring); }
+.notepad[data-tool="notes"] .tool-sketch, .notepad[data-tool="sketch"] .tool-notes { display: none; }
+.tool-notes, .tool-sketch { display: flex; flex-direction: column; gap: 8px; animation: in-rise var(--t-med) var(--ease-out); }
+.play .notepad textarea { min-height: 260px; border-radius: 12px; border-width: 1.5px; font-size: 15px; line-height: 1.5; }
+.play .notepad textarea:focus { outline: none; border-color: var(--accent); }
+#sketch { width: 100%; height: 300px; display: block; border-radius: 12px; border: 1.5px solid var(--line); touch-action: none; cursor: crosshair;
+  background-color: var(--bg); background-image: radial-gradient(color-mix(in srgb, var(--fg) 14%, transparent) 1px, transparent 1.2px); background-size: 16px 16px; background-position: 8px 8px; }
+.sk-bar { display: flex; align-items: center; gap: 6px; }
+.sk-bar > span { flex: 1; }
+.sk-ink { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); background: var(--ink); box-shadow: 0 0 0 1.5px var(--line); transition: scale var(--t-fast) var(--ease-spring), box-shadow var(--t-fast); }
+.sk-ink.on { box-shadow: 0 0 0 2px var(--ink); scale: 1.12; }
+.sk-ink:hover { scale: 1.12; }
+.sk-tool { width: 30px; height: 30px; padding: 0; border-radius: 10px; border: 1.5px solid transparent; background: none; color: var(--muted); display: grid; place-items: center; transition: color var(--t-fast), background-color var(--t-fast), scale var(--t-fast) var(--ease-spring); }
+.sk-tool:hover { color: var(--fg); background: color-mix(in srgb, var(--line) 60%, transparent); }
+.sk-tool.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.sk-tool:active { scale: .9; }
 </style>
 
 <div class="scene" aria-hidden="true"></div>
@@ -519,6 +584,11 @@ button:disabled:not(.node) { box-shadow: none; }
 
 <script>
 const ICONS = {
+  cross: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke-width="3.2" stroke-linecap="square"/>',
+  eraser: '<path d="M8.5 20H20M4.6 15.4l9.8-9.8a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11.6 18.4a2 2 0 0 1-1.4.6H8.3a2 2 0 0 1-1.4-.6l-2.3-2.3a.8.8 0 0 1 0-.7z"/><path d="M9.5 10.5l5 5"/>',
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+  sketch: '<path d="M3 17c3-6 5-9 7-9s1 6 3 6 3-5 5-7 3 0 3 0"/><circle cx="6" cy="20" r="1.2" fill="currentColor" stroke="none"/>',
   check: '<path d="M5.5 12.5l4.2 4.2L18.5 7.5" stroke-width="3.4" stroke-linejoin="miter" stroke-linecap="square"/>',
   fire: '<g stroke="none"><path d="M12 1C12.9 4 14.3 8.8 14.3 11C14.9 9.4 16.6 9.2 17.2 8C18.7 11 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.3 11 6.8 8C7.4 9.2 9.1 9.4 9.7 11C9.7 8.8 11.1 4 12 1Z" fill="#ff5a2a"><animate attributeName="d" dur="1.4s" repeatCount="indefinite" values="M12 1C12.9 4 14.3 8.8 14.3 11C14.9 9.4 16.6 9.2 17.2 8C18.7 11 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.3 11 6.8 8C7.4 9.2 9.1 9.4 9.7 11C9.7 8.8 11.1 4 12 1Z;M14.2 2.2C15.1 5.2 14.3 7.8 14.3 10C14.9 8.4 17.2 6.8 17.8 5.6C19.3 8.6 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.1 13.5 6.6 10.5C7.2 11.7 9.1 10.2 9.7 11.8C9.7 9.6 13.3 5.2 14.2 2.2Z;M13 0.6C13.9 3.6 14.3 8.6 14.3 10.8C14.9 9.2 16.4 8.2 17 7C18.5 10 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.7 12.2 7.2 9.2C7.8 10.4 9.1 9.6 9.7 11.2C9.7 9 12.1 3.6 13 0.6Z;M9.8 2.2C10.7 5.2 14.3 9.6 14.3 11.8C14.9 10.2 16.8 11.7 17.4 10.5C18.9 13.5 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 4.7 8.6 6.2 5.6C6.8 6.8 9.1 8.4 9.7 10C9.7 7.8 8.9 5.2 9.8 2.2Z;M11 0.6C11.9 3.6 14.3 9 14.3 11.2C14.9 9.6 16.4 10.4 17 9.2C18.5 12.2 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.4 10 6.9 7C7.5 8.2 9.1 9.2 9.7 10.8C9.7 8.6 10.1 3.6 11 0.6Z;M12.6 1.6C13.5 4.6 14.3 8.4 14.3 10.6C14.9 9 16.8 8.8 17.4 7.6C18.9 10.6 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.1 12 6.6 9C7.2 10.2 9.1 9.8 9.7 11.4C9.7 9.2 11.7 4.6 12.6 1.6Z;M12 1C12.9 4 14.3 8.8 14.3 11C14.9 9.4 16.6 9.2 17.2 8C18.7 11 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.3 11 6.8 8C7.4 9.2 9.1 9.4 9.7 11C9.7 8.8 11.1 4 12 1Z" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></path><path d="M9.8 2.2C10.7 5.2 14.3 9.6 14.3 11.8C14.9 10.2 16.8 11.7 17.4 10.5C18.9 13.5 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 4.7 8.6 6.2 5.6C6.8 6.8 9.1 8.4 9.7 10C9.7 7.8 8.9 5.2 9.8 2.2Z" fill="#ff9a3c" style="transform-box:view-box;transform-origin:12px 22px;transform:scale(.72)"><animate attributeName="d" dur="1.1s" repeatCount="indefinite" values="M9.8 2.2C10.7 5.2 14.3 9.6 14.3 11.8C14.9 10.2 16.8 11.7 17.4 10.5C18.9 13.5 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 4.7 8.6 6.2 5.6C6.8 6.8 9.1 8.4 9.7 10C9.7 7.8 8.9 5.2 9.8 2.2Z;M11 0.6C11.9 3.6 14.3 9 14.3 11.2C14.9 9.6 16.4 10.4 17 9.2C18.5 12.2 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.4 10 6.9 7C7.5 8.2 9.1 9.2 9.7 10.8C9.7 8.6 10.1 3.6 11 0.6Z;M12.6 1.6C13.5 4.6 14.3 8.4 14.3 10.6C14.9 9 16.8 8.8 17.4 7.6C18.9 10.6 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.1 12 6.6 9C7.2 10.2 9.1 9.8 9.7 11.4C9.7 9.2 11.7 4.6 12.6 1.6Z;M12 1C12.9 4 14.3 8.8 14.3 11C14.9 9.4 16.6 9.2 17.2 8C18.7 11 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.3 11 6.8 8C7.4 9.2 9.1 9.4 9.7 11C9.7 8.8 11.1 4 12 1Z;M14.2 2.2C15.1 5.2 14.3 7.8 14.3 10C14.9 8.4 17.2 6.8 17.8 5.6C19.3 8.6 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.1 13.5 6.6 10.5C7.2 11.7 9.1 10.2 9.7 11.8C9.7 9.6 13.3 5.2 14.2 2.2Z;M13 0.6C13.9 3.6 14.3 8.6 14.3 10.8C14.9 9.2 16.4 8.2 17 7C18.5 10 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 5.7 12.2 7.2 9.2C7.8 10.4 9.1 9.6 9.7 11.2C9.7 9 12.1 3.6 13 0.6Z;M9.8 2.2C10.7 5.2 14.3 9.6 14.3 11.8C14.9 10.2 16.8 11.7 17.4 10.5C18.9 13.5 19.2 10.2 19.2 14.6C19.2 18.8 16 22 12 22C8 22 4.8 18.8 4.8 14.6C4.8 10.2 4.7 8.6 6.2 5.6C6.8 6.8 9.1 8.4 9.7 10C9.7 7.8 8.9 5.2 9.8 2.2Z" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></path><path d="M12 10C12.9 12.6 15.6 15 15.6 18.2C15.6 20.4 13.9 22 12 22C10.1 22 8.4 20.4 8.4 18.2C8.4 15 11.1 12.6 12 10Z" fill="#ffd166"><animate attributeName="d" dur=".8s" repeatCount="indefinite" values="M12 10C12.9 12.6 15.6 15 15.6 18.2C15.6 20.4 13.9 22 12 22C10.1 22 8.4 20.4 8.4 18.2C8.4 15 11.1 12.6 12 10Z;M13.6 11C14.5 13.6 16.2 15 16.2 18.2C16.2 20.4 13.9 22 12 22C10.1 22 9 20.4 9 18.2C9 15 12.7 13.6 13.6 11Z;M12.4 9.4C13.3 12 15.8 15 15.8 18.2C15.8 20.4 13.9 22 12 22C10.1 22 8.6 20.4 8.6 18.2C8.6 15 11.5 12 12.4 9.4Z;M10.4 11C11.3 13.6 15 15 15 18.2C15 20.4 13.9 22 12 22C10.1 22 7.8 20.4 7.8 18.2C7.8 15 9.5 13.6 10.4 11Z;M11.4 9.6C12.3 12.2 15.4 15 15.4 18.2C15.4 20.4 13.9 22 12 22C10.1 22 8.2 20.4 8.2 18.2C8.2 15 10.5 12.2 11.4 9.6Z;M12.8 10.4C13.7 13 15.9 15 15.9 18.2C15.9 20.4 13.9 22 12 22C10.1 22 8.7 20.4 8.7 18.2C8.7 15 11.9 13 12.8 10.4Z;M12 10C12.9 12.6 15.6 15 15.6 18.2C15.6 20.4 13.9 22 12 22C10.1 22 8.4 20.4 8.4 18.2C8.4 15 11.1 12.6 12 10Z" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></path><circle class="ember e1" cx="15" cy="7" r="1" fill="#ffb347"/><circle class="ember e2" cx="9" cy="8" r=".8" fill="#ff8a3d"/><circle class="ember e3" cx="12.5" cy="5" r=".7" fill="#ffd166"/></g>',
   star: '<path d="M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.2 9.6l1.4-.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
@@ -2417,10 +2487,12 @@ function renderCard() {
   } else body += `<div class="q">${c.html}</div>`;
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
-    <div class="actions"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
-    <div class="bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
+    <div class="actions play-top"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
+    <div class="bar lesson-bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
     <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>${ic('bulb')} Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
-      ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad"><div class="actions"><b>Notepad</b><button id="notesClear">Clear</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea></div></div>` : ''}</div>
+      ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad" data-tool="${run.tool || lastTool}"><div class="seg" role="tablist"><button class="linkish" data-tool-btn="notes" role="tab">${ic('pencil')} Notepad</button><button class="linkish" data-tool-btn="sketch" role="tab">${ic('sketch')} Sketchpad</button><i class="seg-pill"></i></div>
+        <div class="tool-notes"><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea><div class="actions"><span></span><button id="notesClear">${ic('trash')} Clear</button></div></div>
+        <div class="tool-sketch"><canvas id="sketch" aria-label="Sketchpad: draw your working here"></canvas><div class="sk-bar">${SK_INKS.map((c, i) => `<button class="sk-ink linkish" data-ink="${i}" style="--ink:${c}" aria-label="Pen colour ${i + 1}"></button>`).join('')}<button class="sk-tool linkish" data-ink="e" aria-label="Eraser" title="Eraser">${ic('eraser')}</button><span></span><button class="sk-tool linkish" id="skUndo" aria-label="Undo" title="Undo (Ctrl+Z)">${ic('undo')}</button><button class="sk-tool linkish" id="skClear" aria-label="Clear sketch" title="Clear">${ic('trash')}</button></div></div></div></div>` : ''}</div>
 </div>`;
   const barFill = app.querySelector('.bar > div'); run.shownPct = pct;
   requestAnimationFrame(() => requestAnimationFrame(() => { barFill.style.width = pct + '%'; }));
@@ -2450,6 +2522,7 @@ function renderCard() {
     notes.oninput = () => { run.notes = notes.value; };
     notes.addEventListener('keydown', e => { if (e.key === 'Enter') e.stopPropagation(); });
     document.getElementById('notesClear').onclick = () => { notes.value = ''; run.notes = ''; };
+    wireTools();
   }
   const input = document.getElementById('ans'); if (input) input.focus();
 
@@ -2465,17 +2538,70 @@ function renderCard() {
     noteResult(c, ok);
     if (run.daily) { state.daily[today()] = ok; save(); }
     beep(ok);
+    // Show which answer was right: the correct choice glows green, a wrong pick turns red.
+    if (c.item.choices) app.querySelectorAll('.choice').forEach(b => { b.disabled = true; const t = b.querySelector('.ct').textContent; if (isRight(c.item, t)) b.classList.add('right'); else if (b.classList.contains('sel')) b.classList.add('wrong'); });
+    else if (input) input.classList.add(ok ? 'right' : 'wrong');
     replay(app.querySelector('.play .card'), ok ? 'is-good' : 'is-bad');
-    if (ok) { run.correct++; fb.className = 'fb good'; fb.innerHTML = '✓ Correct!'; }
+    if (ok) { run.correct++; fb.className = 'fb good'; fb.innerHTML = ic('check') + ' Correct!'; }
     else {
       fb.className = 'fb bad';
-      fb.innerHTML = `✗ ${notSimplest(c.item, given) ? 'That\'s equal, but not in its simplest form.' : 'Not quite.'} The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
+      fb.innerHTML = `${ic('cross')} ${notSimplest(c.item, given) ? 'That\'s equal, but not in its simplest form.' : 'Not quite.'} The answer is <b>${String(c.item.a).includes('/') && !/[a-z]/i.test(c.item.a) ? fracHtml(...String(c.item.a).split('/').map(Number)) : c.item.a}</b>.<br>${c.item.explain}`;
       // Duolingo style: a missed practice question comes back at the end (not in tests).
       if (!run.isTest && !run.practice && !run.review && !run.daily) run.cards.push({ kind: 'Try again', lid: c.lid, item: c.item, retry: true });
     }
     go.textContent = 'Continue'; replay(go, 'ready');
   };
 }
+// ---------- notepad / sketchpad (side panel in a lesson) ----------
+// The sketch is kept as a list of strokes on the run, so it survives moving to the next question and redraws crisply.
+const SK_INKS = ['var(--fg)', 'var(--accent)', 'var(--bad)', 'var(--done)'];
+let lastTool = 'notes', skInk = 0;
+function wireTools() {
+  const pad = app.querySelector('.notepad'), pill = pad.querySelector('.seg-pill');
+  const place = (instant) => {
+    const b = pad.querySelector(`[data-tool-btn="${pad.dataset.tool}"]`);
+    if (instant) pill.style.transition = 'none';
+    pill.style.width = b.offsetWidth + 'px'; pill.style.translate = b.offsetLeft + 'px 0';
+    pad.querySelectorAll('[data-tool-btn]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    if (instant) { void pill.offsetWidth; pill.style.transition = ''; }
+  };
+  place(true);
+  pad.querySelectorAll('[data-tool-btn]').forEach(b => b.onclick = () => {
+    run.tool = lastTool = pad.dataset.tool = b.dataset.toolBtn; place(false);
+    if (run.tool === 'sketch') sizeSketch(); else document.getElementById('notes').focus();
+  });
+  run.sketch ||= [];
+  const cv = document.getElementById('sketch'), ctx = cv.getContext('2d');
+  const inkOf = i => i === 'e' ? null : getComputedStyle(pad).getPropertyValue(SK_INKS[i].slice(4, -1)).trim();
+  const line = (st) => {
+    const P = st.pts; if (!P.length) return;
+    ctx.globalCompositeOperation = st.c ? 'source-over' : 'destination-out';
+    ctx.strokeStyle = ctx.fillStyle = st.c || '#000'; ctx.lineWidth = st.w; ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(P[0][0], P[0][1]);
+    if (P.length < 3) { ctx.lineTo(P[P.length - 1][0] + .01, P[P.length - 1][1]); }
+    // Smooth the line through the midpoints so fast scribbles still look like ink, not a zigzag.
+    for (let i = 1; i < P.length - 1; i++) ctx.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + P[i + 1][0]) / 2, (P[i][1] + P[i + 1][1]) / 2);
+    if (P.length >= 3) ctx.lineTo(P[P.length - 1][0], P[P.length - 1][1]);
+    ctx.stroke();
+  };
+  const redraw = () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); const k = cv.width / cv.clientWidth || 1; ctx.setTransform(k, 0, 0, k, 0, 0); run.sketch.forEach(line); };
+  function sizeSketch() { const w = cv.clientWidth; if (!w) return; const dpr = devicePixelRatio || 1; cv.width = w * dpr; cv.height = cv.clientHeight * dpr; redraw(); }
+  wireTools.size = sizeSketch;
+  if (pad.dataset.tool === 'sketch') requestAnimationFrame(sizeSketch);
+  const pick = (v) => { skInk = v; pad.querySelectorAll('[data-ink]').forEach(b => b.classList.toggle('on', String(b.dataset.ink) === String(v))); };
+  pick(skInk);
+  pad.querySelectorAll('[data-ink]').forEach(b => b.onclick = () => { pick(b.dataset.ink === 'e' ? 'e' : +b.dataset.ink); replay(b, 'nudge'); });
+  let cur = null;
+  const pt = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); cur = { c: inkOf(skInk), w: skInk === 'e' ? 18 : 2.6, pts: [pt(e)] }; run.sketch.push(cur); redraw(); };
+  cv.onpointermove = e => { if (!cur) return; const p = pt(e), q = cur.pts[cur.pts.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 1.5) return; cur.pts.push(p); redraw(); };
+  cv.onpointerup = cv.onpointercancel = () => { cur = null; };
+  const undo = () => { run.sketch.pop(); redraw(); };
+  document.getElementById('skUndo').onclick = undo;
+  document.getElementById('skClear').onclick = () => { if (!run.sketch.length) return; run.sketch = []; redraw(); replay(cv, 'nudge'); };
+  pad.onkeydown = e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && pad.dataset.tool === 'sketch') { e.preventDefault(); undo(); } };
+}
+addEventListener('resize', () => { if (run && wireTools.size && document.getElementById('sketch')) wireTools.size(); });
 // ---------- calculator (only on harder questions) ----------
 function calcHTML() {
   const keys = ['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','^','+','(',')','√','=','C','⌫'];
