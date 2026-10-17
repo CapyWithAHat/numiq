@@ -99,9 +99,10 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row:hover span { color: var(--fg); }
 .node.locked:disabled { opacity: 1; background-color: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
-.path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
-.path-line .track { stroke: var(--line); }
-.path-line .fill { stroke: var(--done); transition: stroke-dashoffset .6s var(--ease-out); }
+.path-line path { fill: none; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+/* Same chunky ledge as the buttons: a darker edge sits 3px under the line. */
+.path-line .track { stroke: var(--line); filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--line), var(--fg) 16%)); }
+.path-line .fill { stroke: var(--done); filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--done), #000 22%)); transition: stroke-dashoffset .6s var(--ease-out); }
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
 .soon { color: var(--muted); font-size: 14px; }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
@@ -2068,12 +2069,13 @@ function measurePath() {
 }
 function shapeLine(L) {
   const pts = L.pts; if (!pts) return;
-  // Catmull-Rom spline: one smooth flowing curve through every node, no kinks where segments meet.
+  // Smooth S-curves: each node is left heading mostly straight down, with a gentle Catmull-Rom lean so the bends flow.
   const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))], f = n => n.toFixed(1);
   let d = `M${f(pts[0][0])},${f(pts[0][1])}`, upTo = '';
   for (let i = 1; i < pts.length; i++) {
     const [ax, ay] = P(i - 2), [bx, by] = P(i - 1), [cx, cy] = P(i), [ex, ey] = P(i + 1);
-    d += ` C${f(bx + (cx - ax) / 6)},${f(by + (cy - ay) / 6)} ${f(cx - (ex - bx) / 6)},${f(cy - (ey - by) / 6)} ${f(cx)},${f(cy)}`;
+    const k = (cy - by) * .42;
+    d += ` C${f(bx + (cx - ax) / 10)},${f(by + k)} ${f(cx - (ex - bx) / 10)},${f(cy - k)} ${f(cx)},${f(cy)}`;
     if (i === L.shown) upTo = d;
   }
   const [track, fill, m] = L.svg.children;
