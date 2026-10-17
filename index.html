@@ -367,7 +367,7 @@ button:disabled:not(.node) { box-shadow: none; }
 @keyframes fade-in { from { opacity: 0; } }
 
 .av-btn { padding: 0; border: none; overflow: hidden; }
-.av-btn:not(:disabled):hover { translate: 0 -2px; scale: 1.03; }
+.av-btn:not(:disabled):hover, .av-btn:not(:disabled):active { translate: none; scale: none; }
 .avatar { overflow: hidden; flex: none; }
 .avatar.big { width: 180px; height: 180px; }
 .av-svg { width: 100%; height: 100%; display: block; }
@@ -383,7 +383,11 @@ button:disabled:not(.node) { box-shadow: none; }
 .prof-hero .prof-sync .sync-dot { margin-top: 6px; }
 .prof-hero .prof-sync b { display: block; overflow-wrap: anywhere; }
 .prof-top.prof-hero .prof-btns { justify-content: flex-start; margin-top: 2px; }
-.prof-top .av-btn:not(:disabled):hover { translate: none; scale: 1.02; }
+.prof-top .av-btn:not(:disabled):hover { translate: none; scale: none; }
+/* No resizing on hover: scaling made the browser briefly redraw the picture, which flashed the white button behind
+   it. Instead a soft ring grows around the character, and the button behind it matches the avatar's own backdrop. */
+.av-btn { background: var(--line) !important; transition: box-shadow var(--t-med) var(--ease-out) !important; }
+.prof-top .av-btn:not(:disabled):hover { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 14%, transparent); }
 .av-edit { display: flex; gap: 28px; align-items: flex-start; align-self: stretch; text-align: left; }
 .av-left { display: flex; flex-direction: column; align-items: center; gap: 12px; position: sticky; top: 12px; }
 .av-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
