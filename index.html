@@ -49,7 +49,12 @@ button:disabled { opacity: .5; cursor: default; }
 .mini { width: 70px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .mini > div { height: 100%; background: var(--done); }
 .unit-head .testout { font-size: 13px; padding: 4px 10px; }
-.today { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 12px; margin-bottom: 6px; }
+.progress-strip { position: sticky; top: 8px; z-index: 4; display: flex; align-items: center; gap: 24px; padding: 10px 16px; margin-bottom: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); backdrop-filter: var(--glass-filter); -webkit-backdrop-filter: var(--glass-filter); box-shadow: var(--elev-1); font-size: 14px; }
+.progress-strip .ps-item { flex: 1; display: flex; align-items: center; gap: 10px; }
+.progress-strip .mini { flex: 1; width: auto; }
+.progress-strip small { color: var(--muted); white-space: nowrap; }
+.today { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 6px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .tile small { color: var(--muted); }
 .tile button { align-self: flex-start; margin-top: auto; }
@@ -82,7 +87,7 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row span { position: absolute; top: 23px; line-height: 18px; white-space: nowrap; } /* name sits beside the node, clear of the line; whole pixels keep the text sharp */
 .node-row.lbl-r span { left: calc(100% + 16px + var(--push, 0px)); }
 .node-row.lbl-l span { right: calc(100% + 16px + var(--push, 0px)); }
-.node-row span { transition: color var(--t-med) var(--ease-out); } /* names stay still so the text is always crisp */
+.node-row span { transition: color var(--t-med) var(--ease-out); } /* moved by floatStep() in script, never by a CSS animation (those turn text into a blurry picture) */
 .node-row:hover span { color: var(--fg); }
 .node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
@@ -300,10 +305,10 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 .slide-r { animation: in-right var(--t-med) var(--ease-out) both; }
 .pda-entry.leaving > * { animation: out-fade 110ms var(--ease-in) forwards; }
 .pda-entry.entering > * { animation: in-rise .32s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms); }
-#dg { position: relative; }
-#dg > svg { transition: opacity .22s var(--ease-out); }
-#dg > svg.dg-out { position: absolute; left: 0; top: 0; opacity: 0; }
-#dg > svg.dg-new { animation: fade-in .22s var(--ease-out); }
+#dg .dg-pop { animation: dg-pop .4s var(--ease-spring) both; transform-box: fill-box; transform-origin: center; }
+#dg .dg-ghost { animation: dg-gone .24s var(--ease-in) forwards; transform-box: fill-box; transform-origin: center; pointer-events: none; }
+@keyframes dg-pop { from { opacity: 0; scale: .3; } }
+@keyframes dg-gone { to { opacity: 0; scale: .5; } }
 .roll { animation: roll .2s var(--ease-out); }
 @keyframes roll { from { translate: 0 6px; opacity: 0; } }
 .stepper button:not(:disabled):hover, .pda-list button:not(:disabled):hover { translate: none; }
@@ -1315,7 +1320,7 @@ function swap(how, render) {
     swapTimer = 0; delete app.dataset.out; delete app.dataset.in;
     inSwap = !!how && !calm.matches; render(); inSwap = false;
     if (!how || calm.matches) return;
-    app.querySelectorAll('.today .mini > div, .profile .bar > div').forEach(b => { const w = b.style.width; b.style.width = '0'; setTimeout(() => { b.style.width = w; }, 160); });
+    app.querySelectorAll('.progress-strip .mini > div, .profile .bar > div').forEach(b => { const w = b.style.width; b.style.width = '0'; setTimeout(() => { b.style.width = w; }, 160); });
     void app.offsetWidth; app.dataset.in = how;
     inTimer = setTimeout(() => delete app.dataset.in, 900);
   };
@@ -1443,22 +1448,52 @@ function fillEntry(animate) {
   if (animate && !calm.matches && art.firstElementChild) { art.classList.remove('entering'); art.classList.add('leaving'); art._t = setTimeout(put, 110); }
   else put();
 }
+// Morph a diagram into its new version: shapes that stay glide and stretch to their new place and size, new ones
+// pop in, and ones that are no longer needed shrink away. Works on any of the diagrams, by matching shapes in order.
+const MORPH_ATTRS = ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'x1', 'y1', 'x2', 'y2'];
+const NUM_RE = /-?\d*\.?\d+(?:e[-+]?\d+)?/gi;
+let morphRaf = 0;
+function morphSvg(box, html) {
+  const old = box.firstElementChild;
+  cancelAnimationFrame(morphRaf);
+  if (!old || calm.matches) { box.innerHTML = html; return; }
+  const groups = svg => { const g = {}; [...svg.children].forEach(el => { const k = el.tagName + '.' + (el.getAttribute('class') || ''); (g[k] ||= []).push(el); }); return g; };
+  const before = groups(old), snap = {};
+  for (const k in before) snap[k] = before[k].map(el => ({ el, a: Object.fromEntries(MORPH_ATTRS.filter(n => el.hasAttribute(n)).map(n => [n, +el.getAttribute(n)])), d: el.getAttribute('d') }));
+  const vb0 = old.getAttribute('viewBox').split(' ').map(Number);
+  box.innerHTML = html;
+  const svg = box.firstElementChild, after = groups(svg), vb1 = svg.getAttribute('viewBox').split(' ').map(Number), jobs = [];
+  for (const k in after) after[k].forEach((el, i) => {
+    const o = snap[k] && snap[k][i];
+    if (!o) { el.classList.add('dg-pop'); el.style.animationDelay = Math.min(i, 8) * 25 + 'ms'; return; }
+    MORPH_ATTRS.forEach(n => { if (el.hasAttribute(n) && n in o.a && o.a[n] !== +el.getAttribute(n)) jobs.push({ el, n, from: o.a[n], to: +el.getAttribute(n) }); });
+    const d = el.getAttribute('d');
+    if (d && o.d && d !== o.d && d.replace(NUM_RE, '#') === o.d.replace(NUM_RE, '#')) {
+      const A = o.d.match(NUM_RE).map(Number), B = d.match(NUM_RE).map(Number), parts = d.split(NUM_RE);
+      jobs.push({ el, path: (t) => parts.reduce((acc, p, j) => acc + p + (j < B.length ? (A[j] + (B[j] - A[j]) * t).toFixed(2) : ''), '') });
+    }
+  });
+  for (const k in snap) snap[k].slice(after[k] ? after[k].length : 0).forEach(o => { o.el.classList.add('dg-ghost'); svg.appendChild(o.el); setTimeout(() => o.el.remove(), 260); });
+  const ease = t => 1 + 2.4 * Math.pow(t - 1, 3) + 1.4 * Math.pow(t - 1, 2); // ease out with a small, soft overshoot
+  const t0 = performance.now(), D = 420;
+  const frame = now => {
+    const k = Math.min(1, (now - t0) / D), e = k < 1 ? ease(k) : 1;
+    jobs.forEach(j => j.path ? j.el.setAttribute('d', j.path(e)) : j.el.setAttribute(j.n, (j.from + (j.to - j.from) * e).toFixed(2)));
+    svg.setAttribute('viewBox', vb1.map((v, i) => (vb0[i] + (v - vb0[i]) * Math.min(1, k < 1 ? 1 - Math.pow(1 - k, 3) : 1)).toFixed(2)).join(' '));
+    if (k < 1) morphRaf = requestAnimationFrame(frame);
+  };
+  frame(t0);
+}
 function wireDiagram(l) {
   const ctl = DIAGRAM_CONTROLS[l.id] || {}, params = {}, dg = document.getElementById('dg'), cap = document.getElementById('dgCap');
   Object.entries(ctl).forEach(([k, v]) => params[k] = v[3]);
   const draw = (smooth) => {
-    const [svg, text] = DIAGRAMS[l.id](params), old = dg.firstElementChild;
-    if (smooth && old && !calm.matches) {
-      // Crossfade: the new drawing fades in on top while the old one fades away, so it never blinks.
-      dg.querySelectorAll('.dg-out').forEach(x => x.remove());
-      dg.insertAdjacentHTML('beforeend', svg);
-      const nu = dg.lastElementChild; nu.classList.add('dg-new');
-      old.classList.add('dg-out'); setTimeout(() => old.remove(), 240);
-    } else dg.innerHTML = svg;
+    const [svg, text] = DIAGRAMS[l.id](params);
+    if (smooth) morphSvg(dg, svg); else dg.innerHTML = svg;
     cap.innerHTML = text;
     Object.keys(params).forEach(k => document.getElementById('dv-' + k).textContent = params[k]);
-    // Never let the box shrink while you click + and −, so nothing below it jumps around.
-    [dg, cap].forEach(el => { el.style.minHeight = Math.max(parseFloat(el.style.minHeight) || 0, el.offsetHeight) + 'px'; });
+    // The caption never shrinks while you click + and −, so the text below it doesn't jump.
+    cap.style.minHeight = Math.max(parseFloat(cap.style.minHeight) || 0, cap.offsetHeight) + 'px';
   };
   app.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
     const [, min, max] = ctl[b.dataset.k], was = params[b.dataset.k];
@@ -1589,13 +1624,16 @@ function stageProgress(stage) {
   const ids = UNITS.filter(u => u.stage === stage).flatMap(u => [...u.lessons.map(l => l.id), u.id + 'test']);
   return Math.round(ids.filter(id => state.done[id]).length / ids.length * 100);
 }
+// Your progress, pinned to the top of Learn: it stays in view while you scroll the path.
+function progressStrip() {
+  const item = (label, pct) => `<div class="ps-item"><b>${label}</b><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
+  return `<div class="progress-strip">📈${item('Stage 0', stageProgress('book'))}${item('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>`;
+}
 function todayPanel() {
   const due = dueReviews().length, waiting = Object.keys(state.review).length - due, dc = state.daily[today()];
-  const bar = (label, pct) => `<div class="row"><span style="min-width:62px">${label}</span><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
   return `<div class="today stagger">
     <div class="tile"><b>📝 Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
     <div class="tile"><b>⭐ Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
-    <div class="tile"><b>📈 Your progress</b>${bar('Stage 0', stageProgress('book'))}${bar('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>
   </div>`;
 }
 function renderPath() {
@@ -1603,7 +1641,7 @@ function renderPath() {
   // Coming back from a finished lesson: its node pops to ✓, then the next one pops awake.
   const just = ui.justDone; ui.justDone = null;
   const pop = (id, st) => !just ? '' : id === just && st === 'done' ? ' just' : st === 'current' ? ' arrive' : '';
-  let html = todayPanel();
+  let html = progressStrip() + todayPanel();
   let stage = null;
   UNITS.forEach((u, ui) => {
     if (u.stage !== stage) { stage = u.stage; html += `<div class="stage reveal">${STAGES[stage]}</div>`; }
@@ -1628,7 +1666,7 @@ function renderPath() {
   document.getElementById('reviewBtn').onclick = startReview;
   document.getElementById('dailyBtn').onclick = startDaily;
   const cur = app.querySelector('.node.current'); if (cur) cur.scrollIntoView({ block: 'center' });
-  drawPathLines(); fisheye(); watchReveals();
+  drawPathLines(); fisheye(); watchReveals(); initFloaters();
 }
 
 // Each unit gets a winding line through its nodes (S-curves): grey track, green fill up to where you are.
@@ -1737,6 +1775,39 @@ function watchReveals() { app.querySelectorAll('.reveal').forEach(el => revealer
     if (!raf) raf = requestAnimationFrame(step);
   }, { passive: false });
 })();
+// Floating names. A CSS animation moves text as a flat picture, which blurs; here the script moves each name a tiny
+// bit every frame and the browser redraws it as real text, so it stays sharp. Names bob gently, lag behind and
+// swing back when you scroll (like things floating in water), and slide out a little when you hover a lesson.
+const floaty = { items: [], raf: 0, last: 0 };
+function initFloaters() {
+  floaty.items = [...app.querySelectorAll('.node-row')].map((row, i) => {
+    const side = row.classList.contains('lbl-l') ? -1 : 1;
+    const f = { el: row.querySelector('span'), row, x: 0, y: i % 2 ? 7 : -7, vx: 0, vy: 0, tx: 0, k: .08 + (i * 37 % 10) / 70, ph: i * 1.7 };
+    row.addEventListener('mouseenter', () => { f.tx = 7 * side; });
+    row.addEventListener('mouseleave', () => { f.tx = 0; });
+    return f;
+  });
+  if (calm.matches) { floaty.items = []; return; }
+  if (!floaty.raf) { floaty.last = 0; floaty.raf = requestAnimationFrame(floatStep); }
+}
+function floatStep(t) {
+  if (view !== 'learn' || run || !floaty.items.length || !floaty.items[0].el.isConnected) { floaty.raf = 0; return; }
+  const dt = Math.min(1 / 30, (t - (floaty.last || t)) / 1000) || 1 / 60, s = t / 1000, H = innerHeight;
+  floaty.last = t;
+  floaty.items.forEach(f => {
+    // A soft spring (it wobbles once or twice before settling) pulls each name back to its spot.
+    f.vx += ((f.tx - f.x) * 160 - f.vx * 13) * dt; f.vy += (-f.y * 160 - f.vy * 13) * dt;
+    f.x += f.vx * dt; f.y += f.vy * dt;
+    const top = (f.row._by || 0) - scrollY; if (top < -120 || top > H + 120) return; // off screen: don't bother drawing
+    f.el.style.translate = `${(f.x + Math.sin(s * 1.1 + f.ph) * 1.5).toFixed(2)}px ${(f.y + Math.sin(s * 1.7 + f.ph) * 3).toFixed(2)}px`;
+  });
+  floaty.raf = requestAnimationFrame(floatStep);
+}
+let lastSY = scrollY;
+addEventListener('scroll', () => {
+  const dy = scrollY - lastSY; lastSY = scrollY;
+  floaty.items.forEach(f => { f.y = Math.max(-14, Math.min(14, f.y + dy * f.k)); });
+}, { passive: true });
 let lensQueued = false;
 addEventListener('scroll', () => { if (lensQueued) return; lensQueued = true; requestAnimationFrame(() => { lensQueued = false; fisheye(); }); }, { passive: true });
 addEventListener('resize', () => { if (view === 'learn' && !run && app.querySelector('.unit')) { measurePath(); fisheye(); } });
