@@ -616,6 +616,46 @@ button:disabled:not(.node) { box-shadow: none; }
 @keyframes av-blink { 0%, 94%, 100% { scale: 1 1; } 96% { scale: 1 .1; } }
 .av-tile .av-blink { animation: none; }
 
+/* ---------- avatar studio (edit profile): big living preview on the left, big clear option tiles on the right ---------- */
+.av-studio { padding: 24px !important; }
+.av-studio .av-edit { gap: 32px; }
+.av-studio .av-left { width: 270px; flex: none; gap: 14px; top: 16px; }
+.av-stage { position: relative; width: 256px; height: 256px; display: grid; place-items: center; margin-bottom: 4px; }
+.av-stage::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--accent), var(--done), #f2a93b, var(--accent));
+  opacity: .35; filter: blur(16px); animation: av-glow 10s linear infinite; }
+@keyframes av-glow { to { rotate: 360deg; } }
+.av-stage .avatar { position: relative; width: 240px; height: 240px; box-shadow: 0 6px 0 color-mix(in srgb, var(--fg) 14%, transparent); }
+.av-studio .av-left .field { width: 100%; }
+.av-studio .av-left .prof-btns { display: flex; gap: 10px; width: 100%; margin: 0; }
+.av-studio .av-left .prof-btns button, #avRand { flex: 1; justify-content: center; }
+#avRand { width: 100%; display: inline-flex; align-items: center; gap: 8px; }
+.av-studio .av-right { gap: 16px; }
+.av-studio .av-tabs { flex-wrap: nowrap; gap: 2px; padding: 5px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--line) 70%, transparent); width: fit-content; }
+.av-studio .av-tabs button { border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; border-radius: var(--r-pill);
+  padding: 7px 11px; font-size: 13.5px; font-weight: 600; color: var(--muted); white-space: nowrap; translate: none !important; scale: none !important; transition: background var(--t-fast), color var(--t-fast); }
+.av-studio .av-tabs button:hover { color: var(--fg); }
+.av-studio .av-tabs button.sel { background: var(--surface) !important; color: var(--accent); box-shadow: 0 2px 0 color-mix(in srgb, var(--fg) 10%, transparent) !important; }
+.av-studio .av-panel { gap: 20px; }
+.av-row-h { display: flex; align-items: center; gap: 10px; }
+.av-studio .av-row b { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.av-cur { font-size: 13px; font-weight: 700; color: var(--accent); padding: 3px 10px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.av-studio .av-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); gap: 10px; }
+.av-studio .av-opts.sw { display: flex; flex-wrap: wrap; gap: 12px; }
+.av-studio .av-opts > * { animation: in-rise var(--t-med) var(--ease-out) both; animation-delay: calc(min(var(--i), 24) * 16ms); }
+.av-studio .av-tile { width: auto; position: relative; padding: 10px 6px 9px; gap: 7px; border-radius: 18px; }
+.av-studio .av-tile .av-svg { width: 92px; height: 92px; transition: scale var(--t-med) var(--ease-spring); }
+.av-studio .av-tile:hover .av-svg { scale: 1.07; }
+.av-studio .av-tile span { font-size: 13px; font-weight: 600; color: var(--fg); }
+.av-studio .av-opts button.sel { outline: 3px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.av-studio .av-tile.sel { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.av-studio .av-swatch { width: 44px; height: 44px; position: relative; box-shadow: inset 0 0 0 2px color-mix(in srgb, #000 10%, transparent) !important; }
+.av-studio .av-swatch.sel { outline-offset: 3px; }
+.av-tick { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center;
+  scale: 0; transition: scale var(--t-med) var(--ease-spring); pointer-events: none; }
+.av-tick .ic { width: 14px; height: 14px; }
+.av-swatch .av-tick { top: auto; right: -5px; bottom: -5px; width: 20px; height: 20px; }
+.sel > .av-tick { scale: 1; }
+
 /* Reduced motion: everything still changes, it just doesn't move. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
@@ -1800,19 +1840,21 @@ const AV_TABS = [
   ['Background', [['bg', 'Colour'], ['pattern', 'Pattern']]],
 ];
 // Option tiles zoom in on the part they change.
-const AV_ZOOM = { face: '24 14 152 152', nose: '56 68 88 88', marks: '40 58 120 120', hair: '16 2 168 168', facial: '40 60 120 120', eyes: '48 56 104 104', brows: '48 56 104 104',
+const AV_ZOOM = { face: '24 14 152 152', nose: '56 68 88 88', marks: '40 58 120 120', hair: '18 -2 164 164', facial: '40 60 120 120', eyes: '48 56 104 104', brows: '48 56 104 104',
   mouth: '58 82 84 84', hat: '10 -8 180 180', glasses: '44 52 112 112', top: '30 96 140 140' };
 const AV_PART = { skin: 'face', face: 'face', nose: 'face', marks: 'face', facial: 'face', hair: 'hair', hairCol: 'hair', eyes: 'eyes', eyeCol: 'eyes', brows: 'eyes',
   mouth: 'mouth', hat: 'hat', hatCol: 'hat', glasses: 'acc', top: 'top', topCol: 'top', bg: '', pattern: '' };
 // A tile shows the avatar wearing that option; hair tiles take the hat off so you can see the hair.
-const tileLook = (look, k, v) => Object.assign({}, look, { [k]: v }, ['hair', 'facial'].includes(k) ? { hat: 'none' } : {});
+const tileLook = (look, k, v) => Object.assign({}, look, { [k]: v }, ['hair', 'facial'].includes(k) ? { hat: 'none' } : {}, ['bg', 'pattern'].includes(k) ? {} : { bg: '', pattern: 'plain' });
 function avatarEditorHtml(look) {
   const tab = AV_TABS[ui.avTab || 0];
   const rows = tab[1].map(([k, label]) => {
-    const opts = Array.isArray(AV[k])
-      ? AV[k].map(c => `<button class="av-swatch${look[k] === c ? ' sel' : ''}" data-k="${k}" data-v="${c}" style="--sw:${c || 'var(--line)'}" aria-label="${label} ${c || 'plain'}"></button>`).join('')
-      : Object.entries(AV[k]).map(([v, name]) => `<button class="av-tile${look[k] === v ? ' sel' : ''}" data-k="${k}" data-v="${v}" title="${name}">${avatarSvg(tileLook(look, k, v), '', AV_ZOOM[k])}<span>${name}</span></button>`).join('');
-    return `<div class="av-row"><b>${label}</b><div class="av-opts">${opts}</div></div>`;
+    const sw = Array.isArray(AV[k]), tick = `<i class="av-tick">${ic('check')}</i>`;
+    // --i staggers the tiles in when a tab opens; the tick marks what you're wearing.
+    const opts = sw
+      ? AV[k].map((c, i) => `<button class="av-swatch${look[k] === c ? ' sel' : ''}" data-k="${k}" data-v="${c}" style="--sw:${c || 'var(--line)'};--i:${i}" aria-label="${label} ${c || 'plain'}">${tick}</button>`).join('')
+      : Object.entries(AV[k]).map(([v, name], i) => `<button class="av-tile${look[k] === v ? ' sel' : ''}" data-k="${k}" data-v="${v}" title="${name}" style="--i:${i}">${avatarSvg(tileLook(look, k, v), '', AV_ZOOM[k])}<span>${name}</span>${tick}</button>`).join('');
+    return `<div class="av-row"><div class="av-row-h"><b>${label}</b>${sw ? '' : `<span class="av-cur">${AV[k][look[k]]}</span>`}</div><div class="av-opts${sw ? ' sw' : ''}">${opts}</div></div>`;
   }).join('');
   return `<div class="av-tabs">${AV_TABS.map((t, i) => `<button data-avtab="${i}" class="${i === (ui.avTab || 0) ? 'sel' : ''}">${t[0]}</button>`).join('')}</div><div class="av-panel" id="avPanel">${rows}</div>`;
 }
@@ -2321,11 +2363,13 @@ function renderProfile() {
   const stat = (label, val) => `<div class="stat"><b>${val}</b><span>${label}</span></div>`;
   let top;
   if (mode === 'edit') {
-    top = `<div class="card prof-top"><div class="av-edit"><div class="av-left"><div class="avatar big" id="avPreview">${avatarSvg(ui.pickLook)}</div>
-        <button id="avRand" title="Make a random avatar">${ic('dice')} Surprise me</button></div><div class="av-right" id="avEd">${avatarEditorHtml(ui.pickLook)}</div></div>
-      <label class="field">Name <input type="text" id="pfName" maxlength="30" value="${P.name.replace(/"/g, '&quot;')}" placeholder="Your name"></label>
-      <label class="field">Username <input type="text" id="pfUser" maxlength="20" value="${P.user.replace(/"/g, '&quot;')}" placeholder="username"></label>
-      <div class="prof-btns"><button id="pfCancel">Cancel</button><button class="primary" id="pfSave">Save</button></div></div>`;
+    top = `<div class="card prof-top av-studio"><div class="av-edit"><div class="av-left">
+        <div class="av-stage"><div class="avatar big" id="avPreview">${avatarSvg(ui.pickLook)}</div></div>
+        <button id="avRand" title="Make a random avatar">${ic('dice')} Surprise me</button>
+        <label class="field">Name <input type="text" id="pfName" maxlength="30" value="${P.name.replace(/"/g, '&quot;')}" placeholder="Your name"></label>
+        <label class="field">Username <input type="text" id="pfUser" maxlength="20" value="${P.user.replace(/"/g, '&quot;')}" placeholder="username"></label>
+        <div class="prof-btns"><button id="pfCancel">Cancel</button><button class="primary" id="pfSave">Save</button></div>
+      </div><div class="av-right" id="avEd">${avatarEditorHtml(ui.pickLook)}</div></div></div>`;
   } else if (mode === 'settings') {
     const opt = (key, val, label) => `<button data-set="${key}" data-val="${val}" class="${String(state.settings[key]) === String(val) ? 'sel' : ''}">${label}</button>`;
     top = `<div class="card"><div class="actions" style="align-items:center"><h2 style="margin:0">${ic('gear')} Settings</h2><button id="setClose">Done</button></div>
@@ -2377,7 +2421,8 @@ function renderProfile() {
   if ($('avOpen')) { $('avOpen').onclick = () => avPoke(openEditor); avLive($('avOpen')); }
   if (mode === 'edit') {
     const look = ui.pickLook, ed = $('avEd');
-    const redraw = part => { $('avPreview').innerHTML = avatarSvg(look, part); replay($('avPreview'), 'av-bump'); };
+    const redraw = part => { $('avPreview').innerHTML = avatarSvg(look, part); replay($('avPreview'), 'av-bump'); avLive($('avPreview')); };
+    avLive($('avPreview'));
     $('avRand').onclick = () => {
       Object.assign(look, randomLook()); redraw('');
       ed.innerHTML = avatarEditorHtml(look); replay($('avPanel'), 'soft-in');
@@ -2394,6 +2439,7 @@ function renderProfile() {
       // Keep the buttons in place (so they can animate); just re-dress the other tiles in the new look.
       ed.querySelectorAll('[data-k]').forEach(b => {
         if (b.dataset.k === k) b.classList.toggle('sel', b === t);
+        if (b === t && !Array.isArray(AV[k])) { const cur = b.closest('.av-row').querySelector('.av-cur'); cur.textContent = AV[k][t.dataset.v]; replay(cur, 'av-chose'); }
         else if (b.classList.contains('av-tile')) b.firstElementChild.outerHTML = avatarSvg(tileLook(look, b.dataset.k, b.dataset.v), '', AV_ZOOM[b.dataset.k]);
       });
       replay(t, 'av-chose');
