@@ -184,7 +184,18 @@ textarea { font: inherit; font-family: ui-monospace, Consolas, monospace; min-he
 .stats > * { display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px; font-size: 13px; line-height: 1;
   border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
   box-shadow: var(--elev-btn); color: var(--muted); white-space: nowrap; text-decoration: none; }
-.stats > .gear { padding: 0 9px; font-size: 15px; }
+.stats > .gear { width: 32px; padding: 0; justify-content: center; font-size: 15px; }
+.stats > .acct.on { color: var(--muted); }
+/* Little "connected" light: a soft dot that breathes, like a status LED. */
+.sync-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--done); box-shadow: 0 0 0 0 color-mix(in srgb, var(--done) 45%, transparent); animation: sync-breathe 2.8s ease-in-out infinite; flex: none; }
+.sync-dot.wait { background: var(--muted); animation-duration: 1s; }
+@keyframes sync-breathe { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--done) 0%, transparent); } 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--done) 40%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .sync-dot { animation: none; } }
+/* Profile card: name a touch bigger, sign-in status as a quiet pill, buttons centred with a little air above. */
+.prof-top h2 { font-size: 26px; letter-spacing: -.01em; margin-top: 4px !important; }
+.prof-sync { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-size: 13px; }
+.prof-sync b { color: var(--fg); font-weight: 600; }
+.prof-top .prof-btns { justify-content: center; margin-top: 6px; }
 .stats > .dev.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .acct[onclick], .acct.click { text-decoration: none; }
 .stats > .acct.click { transition: translate var(--t-fast) var(--ease-spring), box-shadow var(--t-fast) var(--ease-out); }
@@ -1305,7 +1316,7 @@ const cloud = {
   setStatus(st) {
     this.status = st; const el = document.getElementById('acct'); if (!el) return;
     el.classList.toggle('on', st === 'synced');
-    el.textContent = st === 'synced' ? '☁️ Saved to your account' : st === 'retry' ? '☁️ Reconnecting…' : this.kind === 'email' ? '🔑 Log in' : '💾 This browser';
+    el.innerHTML = st === 'synced' ? '<i class="sync-dot"></i>Synced' : st === 'retry' ? '<i class="sync-dot wait"></i>Reconnecting…' : this.kind === 'email' ? '🔑 Log in' : '💾 This browser';
     el.title = st === 'synced' ? `Signed in as ${this.email || this.name || 'you'}. Your progress follows you to any computer.` : 'Progress is saved in this browser only.';
   },
   // Signing in merges this browser's progress with the account's, so nothing is lost either way.
@@ -1720,7 +1731,7 @@ function renderProfile() {
     const joined = P.joined ? new Date(P.joined).toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' }) : '---';
     top = `<div class="card prof-top"><button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
       <h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'} · joined ${joined}</div>
-      <div class="cap">${cloud.status === 'synced' ? `☁️ Signed in ${cloud.kind === 'email' ? 'as ' + escapeHtml(cloud.email) : 'with Claude' + (cloud.name ? ' as ' + escapeHtml(cloud.name) : '')}. Your progress follows you to any computer.` : '💾 Not signed in, so progress is saved in this browser only.'}</div>
+      <div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : '💾 Saved in this browser only'}</div>
       <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div>`;
   }
   // Calendar, weeks start on Monday. Days with XP are ticked; days that hit the daily goal are filled.
