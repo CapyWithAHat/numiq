@@ -192,7 +192,13 @@ button:disabled { opacity: .5; cursor: default; }
 .deck .under.u2 { translate: 0 16px; scale: .94; opacity: .4; }
 /* The thrower moves the card off the deck; the card inside only turns over (opacity on a 3D card would flatten it and show the front mirrored). */
 .fc-throw { position: relative; z-index: 2; perspective: 1400px; }
-.fc3d { position: relative; transform-style: preserve-3d; transition: transform .6s var(--ease-spring); min-height: 300px; cursor: pointer; outline: none; }
+.fc3d { position: relative; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3, 1.3, .5, 1), translate .2s var(--ease-out), scale .15s var(--ease-out);
+  min-height: 300px; cursor: pointer; outline: none; will-change: transform; }
+.fc3d:not(.flipped):hover { translate: 0 -4px; }
+.fc3d:not(.flipped):active { scale: .985; translate: 0 -1px; }
+/* While turning over, the card lifts off the table a little and settles back down. */
+.fc-throw.lift { animation: lift .5s var(--ease-out); }
+@keyframes lift { 40% { scale: 1.035; translate: 0 -8px; } }
 .fc3d.flipped { transform: rotateY(180deg); cursor: default; }
 .fc3d .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; background: var(--surface);
   border: 1.5px solid var(--line); box-shadow: 0 6px 0 var(--line); padding: 26px 28px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
@@ -203,22 +209,31 @@ button:disabled { opacity: .5; cursor: default; }
 .fc3d .rule { font-size: 16px; line-height: 1.6; }
 .fc3d .ex { border-top: 1px dashed var(--line); padding-top: 10px; color: var(--muted); }
 .fc3d .kind { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.fc-throw.deal { animation: deal .45s var(--ease-out) .25s both; }
+.fc-throw.deal { animation: deal .38s var(--ease-spring) .24s both; }
 @keyframes deal { from { translate: 0 8px; scale: .97; } to { translate: 0; scale: 1; } }
 /* The answered card slides out to the side, then tucks in behind the deck like a real shuffle. */
-.fc-ghost { position: absolute; inset: 0; z-index: 3; perspective: 1400px; pointer-events: none; }
+.fc-ghost { position: absolute; inset: 0; z-index: 3; perspective: 1400px; pointer-events: none; will-change: translate, rotate; }
 .fc-ghost .fc3d { height: 100% !important; transition: none; }
-.fc-ghost.tuck-r { animation: tuck-r .85s cubic-bezier(.45, 0, .25, 1) both; }
-.fc-ghost.tuck-l { animation: tuck-l .85s cubic-bezier(.45, 0, .25, 1) both; }
-@keyframes tuck-r { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: 114% -14px; rotate: 9deg; z-index: 3; }
-  49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
-@keyframes tuck-l { 0% { translate: 0; rotate: 0deg; z-index: 3; } 48% { translate: -114% -14px; rotate: -9deg; z-index: 3; }
-  49% { z-index: 1; } 100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
+.fc-ghost.tuck-r { animation: tuck-r .62s linear both; }
+.fc-ghost.tuck-l { animation: tuck-l .62s linear both; }
+/* Out fast with a flick, then glide back in behind the deck. */
+@keyframes tuck-r { 0% { translate: 0; rotate: 0deg; z-index: 3; animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  45% { translate: 114% -16px; rotate: 9deg; scale: 1.02; z-index: 3; animation-timing-function: steps(1, end); }
+  46% { translate: 114% -16px; rotate: 9deg; scale: 1.02; z-index: 1; animation-timing-function: cubic-bezier(.5, 0, .2, 1); }
+  100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
+@keyframes tuck-l { 0% { translate: 0; rotate: 0deg; z-index: 3; animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  45% { translate: -114% -16px; rotate: -9deg; scale: 1.02; z-index: 3; animation-timing-function: steps(1, end); }
+  46% { translate: -114% -16px; rotate: -9deg; scale: 1.02; z-index: 1; animation-timing-function: cubic-bezier(.5, 0, .2, 1); }
+  100% { translate: 0 8px; rotate: 0deg; scale: .97; z-index: 1; } }
 .flash-btns { display: flex; justify-content: center; gap: 10px; }
-.flash-btns button { min-width: 140px; }
+.flash-btns button { min-width: 140px; animation: btn-in .3s var(--ease-spring) both; }
+.flash-btns button + button { animation-delay: .04s; }
+@keyframes btn-in { from { opacity: 0; translate: 0 8px; scale: .94; } }
+.flash-top span.tick { display: inline-block; animation: fc-tick .35s var(--ease-spring); }
+@keyframes fc-tick { 40% { scale: 1.2; color: var(--accent); } }
 .flash-btns .no { color: var(--bad); }
 .flash-hint { text-align: center; color: var(--muted); font-size: 13px; }
-@media (prefers-reduced-motion: reduce) { .fc3d { transition: none; } .fc-ghost { display: none; } .fc-throw.deal, .study .cal-d.today { animation: none; } .study .bar i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .fc3d { transition: none; } .fc-ghost { display: none; } .fc-throw.lift, .flash-btns button, .flash-top span.tick { animation: none; } .fc-throw.deal, .study .cal-d.today { animation: none; } .study .bar i { transition: none; } }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar > div { height: 100%; background: var(--done); width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
@@ -2419,7 +2434,7 @@ function renderFlash(dealt) {
     $('go').onclick = done; $('go').focus(); return;
   }
   const l = findLesson(id), u = unitOf(id), left = f.ids.length - f.i;
-  app.innerHTML = `<div class="flash-wrap"><div class="flash-top"><button id="fcQuit">✕ Quit</button><b>${ic('cards')} Formula cards</b><span>${f.i + 1} / ${f.ids.length}</span></div>
+  app.innerHTML = `<div class="flash-wrap"><div class="flash-top"><button id="fcQuit">✕ Quit</button><b>${ic('cards')} Formula cards</b><span${dealt ? ' class="tick"' : ''}>${f.i + 1} / ${f.ids.length}</span></div>
     <div class="deck">${left > 2 ? '<div class="under u2"></div>' : ''}${left > 1 ? '<div class="under u1"></div>' : ''}
       <div class="fc-throw${dealt ? ' deal' : ''}" id="fcThrow"><div class="fc3d" id="fc" role="button" tabindex="0" aria-label="Flip card">
         <div class="face front"><div class="kind">${u.title}</div><div class="big">${ic('bulb')}</div><h2>${l.title}</h2><div class="sub">What's the rule? Say it in your head, then flip the card.</div></div>
@@ -2436,7 +2451,7 @@ function renderFlash(dealt) {
     $('fcHint').textContent = f.flip ? 'Keys: ← not yet · → got it' : 'Click the card or press Space';
     if (f.flip) { $('fcNo').onclick = () => answer(false); $('fcYes').onclick = () => answer(true); } else $('fcFlip').onclick = turn;
   };
-  const turn = () => { if (f.flip || busy) return; f.flip = true; card.classList.add('flipped'); buttons(); };
+  const turn = () => { if (f.flip || busy) return; f.flip = true; card.classList.add('flipped'); const t = $('fcThrow'); t.classList.remove('deal'); replay(t, 'lift'); buttons(); };
   const answer = knew => {
     if (busy) return; busy = true;
     const r = state.fc[id] || { step: -1 };
