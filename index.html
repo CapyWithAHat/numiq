@@ -1910,8 +1910,8 @@ function fisheye() {
       }
       if (shift || row._shift) moved = true;
       row._shift = shift; row.style.translate = shift ? `0 ${shift}px` : '';
-      // Fade: none near the centre, up to about a third at the top and bottom edges.
-      row.style.setProperty('--fade', lens && row._by !== undefined ? (.34 * Math.min(1, Math.pow((row._by - sy - half) / half, 2))).toFixed(3) : 0);
+      // Fade: none near the centre, up to half at the top and bottom edges.
+      row.style.setProperty('--fade', lens && row._by !== undefined ? (.5 * Math.min(1, Math.pow(Math.abs((row._by - sy - half) / half), 1.6))).toFixed(3) : 0);
       row.style.setProperty('--lens', sc.toFixed(3)); row.style.setProperty('--push', Math.round((sc - 1) * 32) + 'px');
       pts.push([row._bx - sec._ox, row._by + shift - sec._oy]);
     });
