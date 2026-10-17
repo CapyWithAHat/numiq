@@ -77,14 +77,13 @@ button:disabled { opacity: .5; cursor: default; }
 /* The winding line that links a unit's nodes. Grey track, green fill up to the last finished node. */
 .unit { position: relative; }
 .unit > .unit-head, .unit > .node-row { position: relative; z-index: 1; }
-.node-row { transform-origin: 50% 32px; } /* scroll scaling shrinks around the node's centre so the line still meets it */
 .unit { gap: 40px; } /* room for the line to wind between nodes */
 .unit > .unit-head { margin-bottom: 6px; }
-.node-row span { position: absolute; top: 32px; translate: 0 -50%; white-space: nowrap; } /* name sits beside the node, clear of the line */
-.node-row.lbl-r span { left: calc(100% + 16px); }
-.node-row.lbl-l span { right: calc(100% + 16px); }
+.node-row span { position: absolute; top: 23px; line-height: 18px; white-space: nowrap; } /* name sits beside the node, clear of the line; whole pixels keep the text sharp */
+.node-row.lbl-r span { left: calc(100% + 16px + var(--push, 0px)); }
+.node-row.lbl-l span { right: calc(100% + 16px + var(--push, 0px)); }
 .node-row span { animation: float 3.6s ease-in-out infinite; animation-delay: var(--fd, 0s); } /* names gently drift, each out of step */
-@keyframes float { 0%, 100% { translate: 0 -50%; } 33% { translate: 2px calc(-50% - 5px); } 66% { translate: -1px calc(-50% - 2px); } }
+@keyframes float { 0%, 100% { translate: 0 0; } 33% { translate: 2px -4px; } 66% { translate: -1px -2px; } }
 .node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
 .path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
@@ -228,19 +227,35 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 
 /* path nodes: bouncy press, the current one breathes, a just-finished one pops in */
 .node { transition: translate var(--t-fast) var(--ease-spring), scale var(--t-fast) var(--ease-spring), background-color var(--t-med) var(--ease-out); }
-.node:not(:disabled):hover { translate: 0 -2px; scale: 1.06; }
-.node:not(:disabled):active { translate: 0 1px; scale: .9; }
+.node { scale: var(--lens, 1); }
+.node:not(:disabled):hover { translate: 0 -2px; scale: calc(var(--lens, 1) * 1.06); }
+.node:not(:disabled):active { translate: 0 1px; scale: calc(var(--lens, 1) * .9); }
 .node.current { animation: ring 2.4s ease-in-out infinite; }
 .node.just { animation: node-in var(--t-slow) var(--ease-spring) .55s both; }
 .node.current.arrive { animation: node-in var(--t-slow) var(--ease-spring) .8s both, ring 2.4s ease-in-out 1.2s infinite; }
 @keyframes ring { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent); } }
-@keyframes node-in { 0% { scale: .5; } 100% { scale: 1; } }
+@keyframes node-in { 0% { scale: .5; } 100% { scale: var(--lens, 1); } }
 
 /* tab bar: one pill slides to the active tab */
 .tab-pill { position: absolute; left: 0; top: 0; z-index: -1; opacity: 0; pointer-events: none; border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--accent) 15%, transparent);
   transition: translate var(--t-slow) var(--ease-spring), width var(--t-med) var(--ease-out), opacity var(--t-fast) linear; }
 .tabbar button[aria-current="page"] { background: transparent; }
+
+/* ---------- motion: the rest of the page ---------- */
+.tile, .stat, .unit-head, .stage { transition: translate var(--t-med) var(--ease-spring), box-shadow var(--t-med) var(--ease-out), opacity var(--t-slow) var(--ease-out); }
+.tile:hover, .stat:hover { translate: 0 -3px; }
+.unit-head:hover { translate: 0 -2px; }
+.pda-list .entry:not(:disabled):hover { translate: 4px 0; }
+.new { animation: badge 2.4s ease-in-out infinite; }
+@keyframes badge { 0%, 70%, 100% { scale: 1; } 80% { scale: 1.2; } 90% { scale: .95; } }
+.nudge { animation: nudge var(--t-slow) var(--ease-spring); }
+@keyframes nudge { 0% { scale: 1; } 30% { scale: .92; } 65% { scale: 1.05; } 100% { scale: 1; } }
+/* Scroll reveal: unit headers and stage banners rise in the first time they come on screen, and their bars fill. */
+.reveal { opacity: 0; translate: 0 18px; }
+.reveal.in { opacity: 1; translate: 0; transition: opacity var(--t-slow) var(--ease-out), translate .55s var(--ease-spring); }
+.reveal.in:hover { translate: 0 -2px; transition-duration: var(--t-med); }
+#app[data-in] .cal-d { animation: in-rise var(--t-med) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 10ms + 80ms); }
 
 /* ---------- motion: answers ---------- */
 .play .card.is-good { animation: good-pop var(--t-slow) var(--ease-spring); }
@@ -1287,6 +1302,7 @@ function swap(how, render) {
     swapTimer = 0; delete app.dataset.out; delete app.dataset.in;
     inSwap = !!how && !calm.matches; render(); inSwap = false;
     if (!how || calm.matches) return;
+    app.querySelectorAll('.today .mini > div, .profile .bar > div').forEach(b => { const w = b.style.width; b.style.width = '0'; setTimeout(() => { b.style.width = w; }, 160); });
     void app.offsetWidth; app.dataset.in = how;
     inTimer = setTimeout(() => delete app.dataset.in, 900);
   };
@@ -1333,7 +1349,7 @@ function show(v, how) {
   if (view === 'login') { document.getElementById('tabbar').hidden = true; document.querySelector('.footer').hidden = true; return swap(how, renderLogin); }
   swap(how, view === 'learn' ? renderPath : view === 'notes' ? renderNotes : view === 'profile' ? renderProfile : renderSoon);
 }
-document.querySelectorAll('#tabbar [data-view]').forEach(b => b.onclick = () => { ui.profileMode = 'view'; show(b.dataset.view); });
+document.querySelectorAll('#tabbar [data-view]').forEach(b => b.onclick = () => { ui.profileMode = 'view'; replay(b, 'nudge'); show(b.dataset.view); });
 
 function renderNotes() {
   const unlocked = id => devMode || !!state.done[id];
@@ -1437,7 +1453,7 @@ function renderProfile() {
   for (let d = 1; d <= days; d++) {
     const key = dayStr(new Date(y, mo, d)), xp = state.days[key] || 0, fire = xp || key === state.lastDay;
     const cls = [key === today() ? 'today' : '', xp >= state.settings.goal ? 'goal' : xp ? 'active' : ''].join(' ');
-    cells += `<div class="cal-d ${cls}"><span>${d} ${fire ? '<span class="fire">🔥</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
+    cells += `<div class="cal-d ${cls}" style="--i:${d}"><span>${d} ${fire ? '<span class="fire">🔥</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
   }
   const todayXp = state.days[today()] || 0;
   const modeChanged = ui.shownMode !== undefined && ui.shownMode !== mode, calDir = (ui.calOffset || 0) - (ui.shownCal ?? (ui.calOffset || 0));
@@ -1516,11 +1532,11 @@ function renderPath() {
   let html = todayPanel();
   let stage = null;
   UNITS.forEach((u, ui) => {
-    if (u.stage !== stage) { stage = u.stage; html += `<div class="stage">${STAGES[stage]}</div>`; }
+    if (u.stage !== stage) { stage = u.stage; html += `<div class="stage reveal">${STAGES[stage]}</div>`; }
     const ids = [...u.lessons.map(l => l.id), u.id + 'test'], nDone = ids.filter(id => state.done[id]).length;
     const canTestOut = !state.done[u.id + 'test'] && status(u.lessons[0].id) !== 'locked';
-    html += `<section class="unit"><div class="unit-head"><div class="uh-text"><b>Unit ${ui + 1}: ${u.title}</b><small>${u.desc}</small></div>
-      <div class="uh-prog"><div class="mini"><div style="width:${nDone / ids.length * 100}%"></div></div>${nDone}/${ids.length}</div>
+    html += `<section class="unit"><div class="unit-head reveal"><div class="uh-text"><b>Unit ${ui + 1}: ${u.title}</b><small>${u.desc}</small></div>
+      <div class="uh-prog"><div class="mini"><div style="width:0" data-w="${nDone / ids.length * 100}%"></div></div>${nDone}/${ids.length}</div>
       ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">⏩ Test out</button>` : ''}</div>`;
     u.lessons.forEach((l, li) => {
       const st = status(l.id);
@@ -1538,7 +1554,7 @@ function renderPath() {
   document.getElementById('reviewBtn').onclick = startReview;
   document.getElementById('dailyBtn').onclick = startDaily;
   const cur = app.querySelector('.node.current'); if (cur) cur.scrollIntoView({ block: 'center' });
-  drawPathLines(); fisheye();
+  drawPathLines(); fisheye(); watchReveals();
 }
 
 // Each unit gets a winding line through its nodes (S-curves): grey track, green fill up to where you are.
@@ -1598,16 +1614,27 @@ function fisheye() {
       let shift = 0, sc = 1;
       if (lens && row._by !== undefined) {
         const dd = (row._by - sy - half) / half, a = Math.abs(dd); // -1 top edge, 0 centre, 1 bottom edge
-        sc = .7 + .4 * Math.exp(-2.6 * dd * dd);                  // 1.1 in the centre, ~.73 at the edges
-        if (a < 1) shift = Math.sign(dd) * half * (1.3 * a / (.3 * a + 1) - a); // lens bulge, 0 at centre and edges
+        sc = .88 + .14 * Math.exp(-2.2 * dd * dd);                // 1.02 in the centre, ~.9 at the edges: subtle
+        if (a < 1) shift = Math.round(Math.sign(dd) * half * (1.1 * a / (.1 * a + 1) - a)); // gentle bulge, whole pixels
       }
       if (shift || row._shift) moved = true;
-      row._shift = shift; row.style.translate = shift ? `0 ${shift.toFixed(1)}px` : ''; row.style.scale = sc === 1 ? '' : sc.toFixed(3);
+      row._shift = shift; row.style.translate = shift ? `0 ${shift}px` : '';
+      row.style.setProperty('--lens', sc.toFixed(3)); row.style.setProperty('--push', Math.round((sc - 1) * 32) + 'px');
       pts.push([row._bx - sec._ox, row._by + shift - sec._oy]);
     });
     if (L && (moved || !L.pts)) { L.pts = pts; shapeLine(L); }
   });
 }
+// Reveal on scroll (see .reveal in the CSS). Bars inside fill when their header appears.
+const revealer = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  revealer.unobserve(e.target); showReveal(e.target);
+}), { rootMargin: '0px 0px -40px 0px' }) : null;
+function showReveal(el) {
+  el.classList.add('in');
+  el.querySelectorAll('[data-w]').forEach(b => setTimeout(() => { b.style.width = b.dataset.w; }, calm.matches ? 0 : 200));
+}
+function watchReveals() { app.querySelectorAll('.reveal').forEach(el => revealer && !calm.matches ? revealer.observe(el) : showReveal(el)); }
 let lensQueued = false;
 addEventListener('scroll', () => { if (lensQueued) return; lensQueued = true; requestAnimationFrame(() => { lensQueued = false; fisheye(); }); }, { passive: true });
 addEventListener('resize', () => { if (view === 'learn' && !run && app.querySelector('.unit')) { measurePath(); fisheye(); } });
