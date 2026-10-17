@@ -119,51 +119,84 @@ button:disabled { opacity: .5; cursor: default; }
 .path-line .fill { stroke: var(--done); filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--done), #000 22%)); transition: stroke-dashoffset .6s var(--ease-out); }
 .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
 .soon { color: var(--muted); font-size: 14px; }
-/* Study page: looks like the mockup, but nothing is clickable yet (sample data only) */
-.study { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; --amber: #f0a020; }
+/* Study page: same cards, buttons and colours as the rest of Numiq */
+.study { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .study .col { display: flex; flex-direction: column; gap: 16px; }
-.study .card { min-height: 0; }
-.study .lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.study .preview { font-size: 12px; color: var(--muted); text-align: center; grid-column: 1 / -1; }
-.study .sess { background: linear-gradient(135deg, #3b6cf6, #5b86ff); border: none; color: #fff; }
-.study .sess .lbl, .study .sess .sub { color: rgba(255,255,255,.85); }
-.study .sess h2 { margin: 0; font-size: 26px; }
+.study .card { min-height: 0; transition: translate var(--t-med) var(--ease-spring), box-shadow var(--t-med) var(--ease-out); }
+.study .card:hover { translate: 0 -2px; }
+.study .lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.study .lbl .ic { color: var(--accent); }
+.study h2 { margin: 0; }
+.study .sub { color: var(--muted); font-size: 14px; }
 .study .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.study .chip { font-size: 14px; padding: 6px 12px; }
 .study .chip .ic { width: 1em; height: 1em; vertical-align: -.12em; }
-.study .chip { border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 7px 14px; font-weight: 600; font-size: 15px; box-shadow: none; cursor: pointer; }
-.study .chips.plain .chip { border-color: var(--line); background: transparent; color: var(--fg); font-size: 13px; padding: 5px 10px; }
-.study .chips.plain .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.study .chip.on { background: #fff; color: var(--accent); border-color: #fff; }
-.study .go { align-self: flex-start; border: none; cursor: pointer; background: var(--done); color: #fff; font-weight: 800; letter-spacing: .03em; border-radius: 12px; padding: 12px 26px; box-shadow: 0 4px 0 color-mix(in srgb, var(--done) 70%, #000); }
+/* Picked chips stay tinted (never white), even on hover. */
+.study .chip.on, .study .chip.on:hover { background-color: color-mix(in srgb, var(--accent) 14%, var(--surface)) !important; border-color: var(--accent) !important; color: var(--accent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 45%, var(--line)) !important; }
+.study .chip.pop { animation: sel-pop var(--t-med) var(--ease-spring); }
+.study .go { align-self: flex-start; font-size: 16px; padding: 11px 24px; }
+.study .go .ic { transition: translate var(--t-med) var(--ease-spring); }
+.study .go:not(:disabled):hover .ic { translate: 3px 0; }
 .study .qs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.study .q { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 12px; padding: 14px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
-.study .q:disabled { opacity: .55; cursor: default; }
-.study .q .em { font-size: 26px; color: var(--accent); line-height: 1; }
-.study .q small { color: var(--muted); font-size: 13px; }
+.study .q { padding: 14px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.study .q .em { font-size: 28px; color: var(--accent); line-height: 1; }
 .study .q b { font-size: 15px; }
-.study .count { display: flex; align-items: center; gap: 16px; }
-.study .count .big { font-size: 46px; font-weight: 800; color: var(--amber); line-height: 1; }
-.study .count small { color: var(--muted); display: block; }
-.study .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.study .day { border-radius: 8px; padding: 10px 0; text-align: center; font-size: 13px; font-weight: 700; background: var(--line); color: var(--muted); }
-.study .day.done { background: var(--done); color: #fff; }
-.study .day.now { background: var(--accent); color: #fff; }
-.study .day.miss { opacity: .5; }
-.study .ws .drill { align-self: flex-start; font-size: 13px; }
-.study .row-btns, .flash .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.study input[type=date] { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-size: 15px; }
-.flash-wrap { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; width: 100%; }
+.study .q small { color: var(--muted); font-size: 13px; font-weight: 500; }
+.study .q .due { color: var(--accent); font-weight: 700; }
+.study .q:not(:disabled):hover .ic-retry .spin { animation: ic-spin .7s var(--ease-out); transform-origin: 12px 12px; }
+.study .q:not(:disabled):hover .ic-cards .card-f { animation: ic-shuffle .55s var(--ease-spring); }
+.study .q:not(:disabled):hover .ic-star { animation: ic-burst .6s var(--ease-spring); }
+.study .count { display: flex; align-items: center; gap: 14px; }
+.study .count .big { font-size: 48px; font-weight: 800; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; min-width: 1.2em; text-align: center; }
+.study .count small { color: var(--muted); display: block; margin-top: 2px; }
+/* Countdown calendar: the Profile calendar's cells, one row per week up to the test. */
+.study .cal-d { min-height: 50px; padding: 5px; }
+.study .cal-d small { font-size: 10px; line-height: 1.2; }
+.study .cal-d.off { border-color: transparent; opacity: .35; }
+.study .cal-d.miss { opacity: .55; }
+.study .cal-d.plan { border-style: solid; border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.study .cal-d.test { border: 2px solid var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad); font-weight: 700; }
+.study .cal-d.today:not(.goal) { animation: ring 2.4s ease-in-out infinite; --ledge: 0 0 0 transparent; }
+.study .ws { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); }
+.study .lbl + .ws { border-top: none; padding-top: 0; }
+.study .ws .row { display: flex; justify-content: space-between; align-items: center; font-weight: 600; gap: 8px; }
+.study .ws .row span { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.study .ws .drill { font-size: 13px; padding: 4px 10px; align-self: flex-start; }
+.study .bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.study .bar i { display: block; height: 100%; border-radius: 5px; width: 0; transition: width .9s var(--ease-out); }
+.study .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.study input[type=date] { padding: 8px 10px; border-radius: var(--r-sm); border: 1.5px solid var(--line); background: var(--bg); color: var(--fg); font: inherit; }
+/* Formula cards: a real card with two faces. Flip turns it over; your answer throws it off the deck and deals the next. */
+.flash-wrap { display: flex; flex-direction: column; gap: 14px; max-width: 600px; margin: 0 auto; width: 100%; }
 .flash-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.flash-top span { color: var(--muted); }
-.flash { min-height: 260px; }
-.flash .rule { font-size: 16px; line-height: 1.6; }
-.flash.back { border-color: var(--accent); }
-.study .day.test { background: var(--amber); color: #fff; }
-.study .ws { display: flex; flex-direction: column; gap: 6px; }
-.study .ws .row { display: flex; justify-content: space-between; font-weight: 600; }
-.study .ws .row span { color: var(--muted); font-weight: 500; }
-.study .bar { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
-.study .bar i { display: block; height: 100%; border-radius: 6px; }
+.flash-top span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.deck { position: relative; margin-bottom: 16px; }
+.deck .under { position: absolute; inset: 0; border-radius: 18px; background: var(--surface); border: 1.5px solid var(--line); }
+.deck .under.u1 { translate: 0 8px; scale: .97; opacity: .7; }
+.deck .under.u2 { translate: 0 16px; scale: .94; opacity: .4; }
+/* The thrower moves the card off the deck; the card inside only turns over (opacity on a 3D card would flatten it and show the front mirrored). */
+.fc-throw { position: relative; perspective: 1400px; transition: translate .45s var(--ease-in), rotate .45s var(--ease-in), opacity .45s var(--ease-in); }
+.fc3d { position: relative; transform-style: preserve-3d; transition: transform .6s var(--ease-spring); min-height: 300px; cursor: pointer; outline: none; }
+.fc3d.flipped { transform: rotateY(180deg); cursor: default; }
+.fc3d .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; background: var(--surface);
+  border: 1.5px solid var(--line); box-shadow: 0 6px 0 var(--line); padding: 26px 28px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.fc3d .front { align-items: center; justify-content: center; text-align: center; }
+.fc3d .front .big { font-size: 46px; color: var(--accent); }
+.fc3d .front h2 { margin: 0; font-size: 28px; }
+.fc3d .back { transform: rotateY(180deg); border-color: var(--accent); box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.fc3d .rule { font-size: 16px; line-height: 1.6; }
+.fc3d .ex { border-top: 1px dashed var(--line); padding-top: 10px; color: var(--muted); }
+.fc3d .kind { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.fc-throw.gone-r { translate: 130% -20px; rotate: 14deg; opacity: 0; }
+.fc-throw.gone-l { translate: -130% -20px; rotate: -14deg; opacity: 0; }
+.fc-throw.deal { animation: deal .5s var(--ease-spring) both; }
+@keyframes deal { from { translate: 0 16px; scale: .94; opacity: .4; } to { translate: 0; scale: 1; opacity: 1; } }
+.flash-btns { display: flex; justify-content: center; gap: 10px; }
+.flash-btns button { min-width: 140px; }
+.flash-btns .no { color: var(--bad); }
+.flash-hint { text-align: center; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .fc3d, .fc-throw { transition: none; } .fc-throw.deal, .study .cal-d.today { animation: none; } .study .bar i { transition: none; } }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar > div { height: 100%; background: var(--done); width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
@@ -2218,59 +2251,85 @@ function renderStudy() {
   const sb = ui.sb = ui.sb || { units: [], len: 20, exam: false };
   const units = openUnits();
   sb.units = sb.units.filter(id => units.some(u => u.id === id));
-  const chip = (attr, label, on) => `<button class="chip${on ? ' on' : ''}" ${attr}>${label}</button>`;
+  const chip = (attr, label, on) => `<button class="chip${on ? ' on' : ''}" ${attr} aria-pressed="${!!on}">${label}</button>`;
   const topicChips = units.map(u => chip(`data-su="${u.id}"`, (sb.units.includes(u.id) ? ic('check') : ic('plus')) + ' ' + u.title, sb.units.includes(u.id))).join('');
   const lenChips = [10, 20, 40].map(m => chip(`data-len="${m}"`, `${ic('clock')} ${m} min`, sb.len === m)).join('') + chip('data-exam', `${ic('target')} Exam style`, sb.exam);
 
   // School test countdown
-  const plan = testPlan(), t = state.test, DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const plan = testPlan(), t = state.test;
   let testCard;
   if (!t || ui.testEdit) {
     const sel = ui.tsel = ui.tsel || (t ? [...t.units] : []);
     const book = UNITS.filter(u => u.stage === 'book');
-    testCard = `<div class="card"><div class="lbl">School test countdown</div>
-      <div class="soon">When's your next maths test, and which chapters are on it? Numiq splits the revision into a bit each day.</div>
+    testCard = `<div class="card"><div class="lbl">${ic('trophy')} School test countdown</div>
+      <div class="sub">When's your next maths test, and which chapters are on it? Numiq splits the revision into a bit each day.</div>
       <label class="field" style="width:auto">Test date <input type="date" id="tDate" min="${addDays(1)}" value="${ui.tdate || (t ? t.date : '')}"></label>
-      <div class="chips plain">${book.map(u => chip(`data-tu="${u.id}"`, `${chapterOf(u)} · ${u.title}`, sel.includes(u.id))).join('')}</div>
-      <div class="row-btns"><button class="primary" id="tSave">Save test</button>${t ? '<button id="tCancel">Cancel</button>' : ''}</div><small id="tMsg" class="soon"></small></div>`;
+      <div class="chips">${book.map(u => chip(`data-tu="${u.id}"`, `${chapterOf(u)} · ${u.title}`, sel.includes(u.id))).join('')}</div>
+      <div class="row-btns"><button class="primary" id="tSave">Save test</button>${t ? '<button id="tCancel">Cancel</button>' : ''}</div><small id="tMsg" class="sub"></small></div>`;
   } else {
-    const days = [];
-    for (let d = dayAfter(today(), -Math.min(2, Math.max(0, dayDiff(t.start, today())))); d < t.date && days.length < 6; d = dayAfter(d, 1)) days.push(d);
-    const tile = d => `<div class="day ${d < today() ? (t.doneDays[d] ? 'done' : 'miss') : d === today() ? (t.doneDays[d] ? 'done' : 'now') : ''}" title="${d}">${DAYN[dayDate(d).getDay()]}</div>`;
+    // Weeks from this Monday to the test's week (at most 4), like the Profile calendar.
+    const per = plan.left > 0 ? Math.ceil(plan.todo.length / plan.left) : 0;
+    const mon = dayAfter(today(), -((dayDate(today()).getDay() + 6) % 7));
+    const weeks = Math.min(4, Math.max(1, Math.ceil((dayDiff(mon, t.date) + 1) / 7)));
+    let cells = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-h">${d}</div>`).join(''), left = plan.todo.length;
+    for (let i = 0; i < weeks * 7; i++) {
+      const d = dayAfter(mon, i), n = dayDate(d).getDate();
+      let cls = 'off', note = '';
+      if (d === t.date) { cls = 'test'; note = 'TEST'; }
+      else if (d > t.date || d < t.start) cls = 'off';
+      else if (t.doneDays[d]) { cls = 'goal'; note = '✓ done'; }
+      else if (d < today()) { cls = 'miss'; note = 'missed'; }
+      else { const k = d === today() ? plan.chunk.length : Math.min(per, left); left -= k; cls = k ? 'plan' : ''; note = k ? `${k} topic${k > 1 ? 's' : ''}` : ''; }
+      if (d === today()) cls += ' today';
+      cells += `<div class="cal-d ${cls}" style="--i:${i}"><span>${n}</span>${note ? `<small>${note}</small>` : ''}</div>`;
+    }
     const line = plan.left < 0 ? 'Your test has been and gone. How did it go?' : plan.left === 0 ? 'Your test is today. Good luck!'
       : t.doneDays[today()] ? "Today's revision is done ✓" : plan.todo.length ? `Today: ${plan.chunk.map(topicName).join(', ')}` : 'Everything is revised. Do a mixed session to stay sharp.';
-    testCard = `<div class="card"><div class="lbl">School test countdown</div>
-      <div class="count"><span class="big">${Math.max(0, plan.left)}</span><div><b>${plan.left === 1 ? 'day' : 'days'} until your ${t.units.map(id => chapterOf(UNITS.find(u => u.id === id))).join(', ')} test</b><small>${line}</small></div></div>
-      <div class="days" style="grid-template-columns:repeat(${days.length + 1},1fr)">${days.map(tile).join('')}<div class="day test">TEST</div></div>
-      <div class="mini"><div style="width:${plan.all.length ? Math.round((plan.all.length - plan.todo.length) / plan.all.length * 100) : 0}%"></div></div>
-      <div class="row-btns">${plan.chunk.length ? `<button class="primary" id="tGo">Start today's revision</button>` : plan.left === 0 ? `<button class="primary" id="tLast">Last warm-up</button>` : ''}<button class="linkish" id="tEdit">${plan.left < 0 ? 'Set up your next test' : 'Change test'}</button></div></div>`;
+    const pct = plan.all.length ? Math.round((plan.all.length - plan.todo.length) / plan.all.length * 100) : 0;
+    testCard = `<div class="card"><div class="lbl">${ic('trophy')} School test countdown</div>
+      <div class="count"><span class="big" id="tDays">${Math.max(0, plan.left)}</span><div><b>${plan.left === 1 ? 'day' : 'days'} until your ${t.units.map(id => chapterOf(UNITS.find(u => u.id === id))).join(', ')} test</b><small>${line}</small></div></div>
+      <div class="cal">${cells}</div>
+      <div class="ws"><div class="row">Revised so far<span>${pct}%</span></div><div class="bar"><i data-w="${pct}" style="background:var(--done)"></i></div></div>
+      <div class="row-btns">${plan.chunk.length ? `<button class="primary" id="tGo">${ic('target')} Start today's revision</button>` : plan.left === 0 ? `<button class="primary" id="tLast">Last warm-up</button>` : ''}<button class="linkish" id="tEdit">${plan.left < 0 ? 'Set up your next test' : 'Change test'}</button></div></div>`;
   }
 
-  const weak = weakSpots().slice(0, 4), col = p => p < 60 ? 'var(--bad)' : p < 80 ? 'var(--amber)' : 'var(--done)';
+  const weak = weakSpots().slice(0, 4), col = p => p < 60 ? 'var(--bad)' : p < 80 ? 'var(--accent)' : 'var(--done)';
   const due = dueReviews().length, fc = fcDue().length, dc = state.daily[today()];
-  const qs = (id, icon, name, sub, off) => `<button class="q" id="${id}" ${off ? 'disabled' : ''}><span class="em">${ic(icon)}</span><b>${name}</b><small>${sub}</small></button>`;
+  const qs = (id, icon, name, sub, off, hot) => `<button class="q" id="${id}" ${off ? 'disabled' : ''}><span class="em">${ic(icon)}</span><b>${name}</b><small class="${hot ? 'due' : ''}">${sub}</small></button>`;
 
-  app.innerHTML = `<div class="study">
+  app.innerHTML = `<div class="study stagger">
     <div class="col">
-      <div class="card sess"><div class="lbl">Build a study session</div><h2>What are we revising?</h2>
-        <div class="sub">Pick topics and a length, and Numiq mixes review, weak spots and new questions.${sb.units.length ? '' : ' No topics picked means a mix of everything you\'ve unlocked.'}</div>
+      <div class="card"><div class="lbl">${ic('target')} Build a study session</div><h2>What are we revising?</h2>
+        <div class="sub" id="sbSub">${sbLine(sb)}</div>
         <div class="chips">${topicChips}</div><div class="chips">${lenChips}</div>
-        <button class="go" id="sGo">START SESSION</button></div>
-      <div class="card"><div class="lbl">Quick starts</div>
-        <div class="qs">${qs('qReview', 'retry', 'Review', due ? `${due} due` : 'nothing due', !due)}${qs('qCards', 'cards', 'Formula cards', fc ? `${fc} due` : lessonsDone() ? 'all caught up' : 'finish a lesson first', !fc)}${qs('qDaily', 'star', 'Daily challenge', dc === undefined ? 'not done' : dc ? 'done ✓' : 'missed today', dc !== undefined)}</div></div>
+        <button class="primary go" id="sGo">Start session ${ic('forward')}</button></div>
+      <div class="card"><div class="lbl">${ic('bolt')} Quick starts</div>
+        <div class="qs">${qs('qReview', 'retry', 'Review', due ? `${due} due` : 'nothing due', !due, due)}${qs('qCards', 'cards', 'Formula cards', fc ? `${fc} due` : lessonsDone() ? 'all caught up' : 'finish a lesson first', !fc, fc)}${qs('qDaily', 'star', 'Daily challenge', dc === undefined ? `+${XP_DAILY} XP` : dc ? 'done ✓' : 'missed today', dc !== undefined, dc === undefined)}</div></div>
     </div>
     <div class="col">
       ${testCard}
-      <div class="card"><div class="lbl">Weak spots</div>
-        ${weak.length ? weak.map(id => { const p = accPct(id); return `<div class="ws"><div class="row">${topicName(id)}<span>${p}%</span></div><div class="bar"><i style="width:${p}%;background:${col(p)}"></i></div><button class="linkish drill" data-drill="${id}">${ic('target')} Drill this</button></div>`; }).join('')
-          : '<div class="soon">Answer a few questions on a topic and your weakest ones show up here, with a button to drill them.</div>'}</div>
+      <div class="card"><div class="lbl">${ic('chart')} Weak spots</div>
+        ${weak.length ? weak.map(id => { const p = accPct(id); return `<div class="ws"><div class="row">${topicName(id)}<span>${p}%</span></div><div class="bar"><i data-w="${p}" style="background:${col(p)}"></i></div><button class="drill" data-drill="${id}">${ic('target')} Drill this</button></div>`; }).join('')
+          : '<div class="sub">Answer a few questions on a topic and your weakest ones show up here, with a button to drill them.</div>'}</div>
     </div>
   </div>`;
 
-  const redraw = () => { keepScroll = scrollY; renderStudy(); scrollTo(0, keepScroll); keepScroll = null; };
-  app.querySelectorAll('[data-su]').forEach(b => b.onclick = () => { const id = b.dataset.su; sb.units = sb.units.includes(id) ? sb.units.filter(x => x !== id) : [...sb.units, id]; redraw(); });
-  app.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { sb.len = +b.dataset.len; redraw(); });
-  app.querySelector('[data-exam]').onclick = () => { sb.exam = !sb.exam; redraw(); };
+  // Bars fill and the countdown counts up as the page arrives.
+  const bars = app.querySelectorAll('.bar i[data-w]');
+  requestAnimationFrame(() => requestAnimationFrame(() => bars.forEach(b => b.style.width = b.dataset.w + '%')));
+  if (!ui.studyQuiet) countUp($('tDays'), Math.max(0, plan ? plan.left : 0), '', 600, 250);
+  ui.studyQuiet = false;
+
+  const redraw = () => { keepScroll = scrollY; ui.studyQuiet = true; renderStudy(); scrollTo(0, keepScroll); keepScroll = null; };
+  // Chips change in place (no redraw), with a little pop.
+  const flip = (b, on) => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); replay(b, 'pop'); };
+  app.querySelectorAll('[data-su]').forEach(b => b.onclick = () => {
+    const id = b.dataset.su, on = !sb.units.includes(id);
+    sb.units = on ? [...sb.units, id] : sb.units.filter(x => x !== id);
+    b.innerHTML = (on ? ic('check') : ic('plus')) + ' ' + units.find(u => u.id === id).title; flip(b, on); $('sbSub').textContent = sbLine(sb);
+  });
+  app.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { sb.len = +b.dataset.len; app.querySelectorAll('[data-len]').forEach(x => flip(x, x === b)); $('sbSub').textContent = sbLine(sb); });
+  app.querySelector('[data-exam]').onclick = e => { sb.exam = !sb.exam; flip(e.currentTarget, sb.exam); $('sbSub').textContent = sbLine(sb); };
   $('sGo').onclick = () => {
     const pool = (sb.units.length ? units.filter(u => sb.units.includes(u.id)) : units).flatMap(u => u.lessons.map(l => l.id)).filter(id => status(id) !== 'locked');
     startSession(pool, { count: SESSION_LEN[sb.len], exam: sb.exam });
@@ -2281,14 +2340,14 @@ function renderStudy() {
   app.querySelectorAll('[data-drill]').forEach(b => b.onclick = () => startPractice(b.dataset.drill, 'study'));
   if (!t || ui.testEdit) {
     $('tDate').onchange = e => { ui.tdate = e.target.value; };
-    app.querySelectorAll('[data-tu]').forEach(b => b.onclick = () => { const id = b.dataset.tu; ui.tsel = ui.tsel.includes(id) ? ui.tsel.filter(x => x !== id) : [...ui.tsel, id]; redraw(); });
+    app.querySelectorAll('[data-tu]').forEach(b => b.onclick = () => { const id = b.dataset.tu, on = !ui.tsel.includes(id); ui.tsel = on ? [...ui.tsel, id] : ui.tsel.filter(x => x !== id); flip(b, on); });
     $('tSave').onclick = () => {
       const date = $('tDate').value;
       if (!date || date <= today()) return $('tMsg').textContent = 'Pick a date after today.';
       if (!ui.tsel.length) return $('tMsg').textContent = 'Pick at least one chapter.';
       const same = t && t.date === date;
       state.test = { date, units: ui.tsel, start: same ? t.start : today(), covered: same ? t.covered : {}, doneDays: same ? t.doneDays : {} };
-      ui.testEdit = false; ui.tsel = ui.tdate = null; save(); redraw();
+      ui.testEdit = false; ui.tsel = ui.tdate = null; save(); keepScroll = scrollY; renderStudy(); scrollTo(0, keepScroll); keepScroll = null;
     };
     if ($('tCancel')) $('tCancel').onclick = () => { ui.testEdit = false; ui.tsel = ui.tdate = null; redraw(); };
   } else {
@@ -2297,30 +2356,49 @@ function renderStudy() {
     if ($('tLast')) $('tLast').onclick = () => startSession(plan.all, { count: 10, exam: true });
   }
 }
+const sbLine = sb => `${sb.units.length ? `${sb.units.length} topic${sb.units.length > 1 ? 's' : ''}` : 'A mix of everything you\'ve unlocked'} · ${SESSION_LEN[sb.len]} questions${sb.exam ? ' · no hints, harder' : ''}. Numiq mixes in your reviews and weak spots.`;
 
-// Formula cards: the rule on the back, you say if you knew it. Ones you knew come back later and later.
-function renderFlash() {
+// Formula cards: a real two-sided card. Click or Space flips it; your answer throws it off the deck and deals the next one.
+function renderFlash(dealt) {
   const f = ui.fc, id = f.ids[f.i];
   const done = () => { if (f.got) finishItem(null, f.got); ui.fc = null; renderStats(); swap('zoom', renderStudy); };
   if (!id) {
-    app.innerHTML = `<div class="card finish"><div class="big">${ic('cards', 'ic-big')}</div><h2>Cards done</h2><div>You knew ${f.got} of them. The ones you knew come back later, the rest tomorrow.</div><button class="primary" id="go">Back to Study</button></div>`;
+    app.innerHTML = `<div class="card finish stagger"><div class="big">${ic('cards', 'ic-big')}</div><h2>Cards done</h2><div>You knew ${f.got} of them. The ones you knew come back later, the rest tomorrow.</div><button class="primary" id="go">Back to Study</button></div>`;
+    if (f.got) setTimeout(confetti, 200);
     $('go').onclick = done; $('go').focus(); return;
   }
-  const l = findLesson(id), u = unitOf(id);
-  app.innerHTML = `<div class="flash-wrap"><div class="flash-top"><button id="fcQuit">✕ Quit</button><b>Formula cards</b><span>${f.i + 1} / ${f.ids.length}</span></div>
-    <div class="card flash ${f.flip ? 'back' : ''}"><div class="kind">${u.title}</div><h2 style="margin:0">${l.title}</h2>
-      ${f.flip ? `<div class="rule">${l.idea}</div><div class="soon">Example</div><div>${l.example}</div>` : '<div class="soon">What\'s the rule? Say it in your head, then flip the card.</div>'}
-      <div class="row-btns">${f.flip ? '<button id="fcNo">Not yet</button><button class="primary" id="fcYes">Got it</button>' : '<button class="primary" id="fcFlip">Flip (Space)</button>'}</div></div></div>`;
-  const step = knew => {
+  const l = findLesson(id), u = unitOf(id), left = f.ids.length - f.i;
+  app.innerHTML = `<div class="flash-wrap"><div class="flash-top"><button id="fcQuit">✕ Quit</button><b>${ic('cards')} Formula cards</b><span>${f.i + 1} / ${f.ids.length}</span></div>
+    <div class="deck">${left > 2 ? '<div class="under u2"></div>' : ''}${left > 1 ? '<div class="under u1"></div>' : ''}
+      <div class="fc-throw${dealt ? ' deal' : ''}" id="fcThrow"><div class="fc3d" id="fc" role="button" tabindex="0" aria-label="Flip card">
+        <div class="face front"><div class="kind">${u.title}</div><div class="big">${ic('bulb')}</div><h2>${l.title}</h2><div class="sub">What's the rule? Say it in your head, then flip the card.</div></div>
+        <div class="face back"><div class="kind">${l.title}</div><div class="rule">${l.idea}</div><div class="ex"><b>Example</b><div>${l.example}</div></div></div>
+      </div></div></div>
+    <div class="flash-btns" id="fcBtns"></div><div class="flash-hint" id="fcHint"></div></div>`;
+  const card = $('fc'), front = card.querySelector('.front'), back = card.querySelector('.back');
+  card.style.height = Math.max(300, front.scrollHeight, back.scrollHeight) + 'px';
+  let busy = false;
+  const buttons = () => {
+    $('fcBtns').innerHTML = f.flip ? `<button class="no" id="fcNo">${ic('cross')} Not yet</button><button class="primary" id="fcYes">${ic('check')} Got it</button>` : `<button class="primary" id="fcFlip">Flip card</button>`;
+    $('fcHint').textContent = f.flip ? 'Keys: ← not yet · → got it' : 'Click the card or press Space';
+    if (f.flip) { $('fcNo').onclick = () => answer(false); $('fcYes').onclick = () => answer(true); } else $('fcFlip').onclick = turn;
+  };
+  const turn = () => { if (f.flip || busy) return; f.flip = true; card.classList.add('flipped'); buttons(); };
+  const answer = knew => {
+    if (busy) return; busy = true;
     const r = state.fc[id] || { step: -1 };
     if (knew) { r.step = Math.min(r.step + 1, FC_GAPS.length - 1); r.due = addDays(FC_GAPS[r.step]); f.got++; }
     else { r.step = -1; r.due = addDays(1); if (!f.again[id]) { f.again[id] = 1; f.ids.push(id); } }
-    state.fc[id] = r; save(); f.i++; f.flip = false; swap('next', renderFlash);
+    state.fc[id] = r; save(); beep(knew);
+    $('fcThrow').classList.add(knew ? 'gone-r' : 'gone-l');
+    setTimeout(() => { f.i++; f.flip = false; renderFlash(true); }, calm.matches ? 0 : 380);
   };
+  card.onclick = turn;
+  ui.fcKey = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); f.flip ? null : turn(); } else if (f.flip && e.key === 'ArrowRight') answer(true); else if (f.flip && e.key === 'ArrowLeft') answer(false); };
   $('fcQuit').onclick = done;
-  if (f.flip) { $('fcNo').onclick = () => step(false); $('fcYes').onclick = () => step(true); $('fcYes').focus(); }
-  else { $('fcFlip').onclick = () => { f.flip = true; renderFlash(); }; $('fcFlip').focus(); }
+  buttons(); card.focus({ preventScroll: true });
 }
+document.addEventListener('keydown', e => { if (ui.fc && view === 'study' && !run && ui.fcKey && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName) && !e.target.closest('button')) ui.fcKey(e); });
 
 function renderSoon() {
   app.innerHTML = `<div class="card"><h2 style="margin:0">Coming soon</h2>
