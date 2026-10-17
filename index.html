@@ -1895,6 +1895,7 @@ function shapeLine(L) {
 }
 // Fisheye: the node at the centre of the screen is biggest, and nodes shrink smoothly the further they are from it
 // (no flat zone). Spacing bulges out a little in the middle and squeezes towards the edges, like looking through a lens.
+const edgeFade = a => { const t = Math.max(0, Math.min(1, (a - .6) / .4)); return .5 * t * t * (3 - 2 * t); };
 function fisheye() {
   if (view !== 'learn' || run || !app.querySelector('.unit')) return;
   const half = (innerHeight - (document.getElementById('tabbar').offsetHeight || 0)) / 2, sy = scrollY, lens = !calm.matches;
@@ -1910,8 +1911,8 @@ function fisheye() {
       }
       if (shift || row._shift) moved = true;
       row._shift = shift; row.style.translate = shift ? `0 ${shift}px` : '';
-      // Fade: none near the centre, up to half at the top and bottom edges.
-      row.style.setProperty('--fade', lens && row._by !== undefined ? (.5 * Math.min(1, Math.pow(Math.abs((row._by - sy - half) / half), 1.6))).toFixed(3) : 0);
+      // Fade: nothing across most of the screen, then up to half in a narrow band at the top and bottom edges.
+      row.style.setProperty('--fade', lens && row._by !== undefined ? edgeFade(Math.abs((row._by - sy - half) / half)).toFixed(3) : 0);
       row.style.setProperty('--lens', sc.toFixed(3)); row.style.setProperty('--push', Math.round((sc - 1) * 32) + 'px');
       pts.push([row._bx - sec._ox, row._by + shift - sec._oy]);
     });
