@@ -83,7 +83,7 @@ button:disabled { opacity: .5; cursor: default; }
 .node-row.lbl-r span { left: calc(100% + 16px + var(--push, 0px)); }
 .node-row.lbl-l span { right: calc(100% + 16px + var(--push, 0px)); }
 .node-row span { animation: float 3.6s ease-in-out infinite; animation-delay: var(--fd, 0s); } /* names gently drift, each out of step */
-@keyframes float { 0%, 100% { translate: 0 0; } 33% { translate: 2px -4px; } 66% { translate: -1px -2px; } }
+@keyframes float { 0%, 100% { top: 23px; margin-left: 0; } 33% { top: 19px; margin-left: 2px; } 66% { top: 21px; margin-left: -1px; } } /* top/margin, not translate: the text is redrawn on whole pixels each frame so it never blurs */
 .node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
 .path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
@@ -239,14 +239,15 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 /* tab bar: one pill slides to the active tab */
 .tab-pill { position: absolute; left: 0; top: 0; z-index: -1; opacity: 0; pointer-events: none; border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--accent) 15%, transparent);
-  transition: translate var(--t-slow) var(--ease-spring), width var(--t-med) var(--ease-out), opacity var(--t-fast) linear; }
+  transition: translate .38s cubic-bezier(.3, 1.18, .5, 1), width .3s cubic-bezier(.3, 1.18, .5, 1), scale var(--t-med) var(--ease-out), opacity var(--t-fast) linear; }
+.tab-pill.stretch { transition-duration: .16s, .16s, var(--t-med), var(--t-fast); transition-timing-function: var(--ease-out); }
+.tabbar button { transition: scale var(--t-med) var(--ease-out), color var(--t-med) var(--ease-out); }
 .tabbar button[aria-current="page"] { background: transparent; }
 
 /* ---------- motion: the rest of the page ---------- */
 .tile, .stat, .unit-head, .stage { transition: translate var(--t-med) var(--ease-spring), box-shadow var(--t-med) var(--ease-out), opacity var(--t-slow) var(--ease-out); }
 .tile:hover, .stat:hover { translate: 0 -3px; }
 .unit-head:hover { translate: 0 -2px; }
-.pda-list .entry:not(:disabled):hover { translate: 4px 0; }
 .new { animation: badge 2.4s ease-in-out infinite; }
 @keyframes badge { 0%, 70%, 100% { scale: 1; } 80% { scale: 1.2; } 90% { scale: .95; } }
 .nudge { animation: nudge var(--t-slow) var(--ease-spring); }
@@ -293,7 +294,8 @@ input[type=text], textarea { transition: border-color var(--t-med) var(--ease-ou
 .slide-l { animation: in-left var(--t-med) var(--ease-out) both; }
 .slide-r { animation: in-right var(--t-med) var(--ease-out) both; }
 .pda-list .items.opening { animation: drop var(--t-med) var(--ease-out); }
-#dg > svg { animation: fade-in var(--t-fast) var(--ease-out); }
+.pda-entry.soft-in { animation: fade-in var(--t-med) var(--ease-out) both; }
+.stepper button:not(:disabled):hover, .pda-list button:not(:disabled):hover { translate: none; }
 @keyframes out-fade { to { opacity: 0; } }
 @keyframes out-left { to { opacity: 0; translate: -18px 0; } }
 @keyframes out-right { to { opacity: 0; translate: 18px 0; } }
@@ -1326,10 +1328,32 @@ function placePill(instant) {
   const bar = document.getElementById('tabbar'), pill = bar.querySelector('.tab-pill'), b = bar.querySelector('[aria-current="page"]');
   if (bar.hidden) return;
   if (!b) { pill.style.opacity = 0; return; }
-  if (instant || pill.style.opacity !== '1') pill.style.transition = 'none';
-  Object.assign(pill.style, { opacity: 1, width: b.offsetWidth + 'px', height: b.offsetHeight + 'px', translate: `${b.offsetLeft}px ${b.offsetTop}px` });
-  void pill.offsetWidth; pill.style.transition = '';
+  const to = { x: b.offsetLeft, w: b.offsetWidth }, from = pill._at;
+  clearTimeout(pill._t); pill.classList.remove('stretch');
+  if (instant || pill.style.opacity !== '1' || !from || calm.matches) {
+    pill.style.transition = 'none';
+    Object.assign(pill.style, { opacity: 1, width: to.w + 'px', height: b.offsetHeight + 'px', translate: `${to.x}px ${b.offsetTop}px` });
+    void pill.offsetWidth; pill.style.transition = '';
+  } else if (from.x !== to.x) {
+    // Liquid move: the front edge shoots ahead so the pill stretches over both tabs, then the back edge catches up.
+    const x = Math.min(from.x, to.x), w = Math.max(from.x + from.w, to.x + to.w) - x;
+    pill.classList.add('stretch'); Object.assign(pill.style, { width: w + 'px', translate: `${x}px ${b.offsetTop}px` });
+    pill._t = setTimeout(() => { pill.classList.remove('stretch'); Object.assign(pill.style, { width: to.w + 'px', translate: `${to.x}px ${b.offsetTop}px` }); }, 150);
+  }
+  pill._at = to;
 }
+// Dock-style fisheye on the tab bar: tabs near the mouse swell a little, the pill swells with its tab.
+(() => {
+  const bar = document.getElementById('tabbar'), tabs = [...bar.querySelectorAll('[data-view]')], pill = bar.querySelector('.tab-pill');
+  const set = mx => tabs.forEach(t => {
+    const r = t.getBoundingClientRect(), d = mx == null ? 1e9 : (mx - (r.left + r.width / 2)) / 140;
+    const sc = (1 + .08 * Math.exp(-d * d)).toFixed(3);
+    t.style.scale = mx == null ? '' : sc;
+    if (t.getAttribute('aria-current') === 'page') pill.style.scale = mx == null ? '' : sc;
+  });
+  bar.addEventListener('mousemove', e => { if (!calm.matches) set(e.clientX); });
+  bar.addEventListener('mouseleave', () => set(null));
+})();
 addEventListener('resize', () => placePill(true));
 const TAB_ORDER = ['learn', 'notes', 'profile', 'soon'];
 
@@ -1376,7 +1400,9 @@ function renderNotes() {
     ? `<h2>Notes</h2><div class="cap">Pick a topic on the left.</div>`
     : `<h2>Notes</h2><div class="cap">Your notes are empty for now. Each lesson you finish adds an entry here, with an explanation, an example, a diagram and a practice button.</div>`;
   const fresh = ui.entry !== ui.shownEntry; ui.shownEntry = ui.entry;
+  const listScroll = app.querySelector('.pda-list')?.scrollTop || 0;
   app.innerHTML = `<div class="pda"><nav class="pda-list" aria-label="Topics">${list}</nav><article class="pda-entry${fresh && !inSwap ? ' soft-in' : ''}">${entry}</article></div>`;
+  app.querySelector('.pda-list').scrollTop = listScroll;
   if (ui.opened) { const c = app.querySelector(`[data-cat="${ui.opened}"]`); if (c && c.nextElementSibling) c.nextElementSibling.classList.add('opening'); ui.opened = null; }
   app.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { ui.closed[b.dataset.cat] = !ui.closed[b.dataset.cat]; if (!ui.closed[b.dataset.cat]) ui.opened = b.dataset.cat; renderNotes(); });
   app.querySelectorAll('[data-e]').forEach(b => b.onclick = () => { ui.entry = b.dataset.e; state.seen[ui.entry] = true; save(); show('notes'); });
@@ -1385,11 +1411,12 @@ function renderNotes() {
     const ctl = DIAGRAM_CONTROLS[l.id] || {}, params = {};
     Object.entries(ctl).forEach(([k, v]) => params[k] = v[3]);
     const draw = () => { const [svg, cap] = DIAGRAMS[l.id](params); document.getElementById('dg').innerHTML = svg; document.getElementById('dgCap').innerHTML = cap;
-      Object.keys(params).forEach(k => document.getElementById('dv-' + k).textContent = params[k]); };
+      Object.keys(params).forEach(k => document.getElementById('dv-' + k).textContent = params[k]);
+      // Never let the box shrink while you click + and −, so nothing below it jumps around.
+      ['dg', 'dgCap'].forEach(id => { const el = document.getElementById(id); el.style.minHeight = Math.max(parseFloat(el.style.minHeight) || 0, el.offsetHeight) + 'px'; }); };
     app.querySelectorAll('.stepper button').forEach(b => b.onclick = () => {
       const [, min, max] = ctl[b.dataset.k], was = params[b.dataset.k];
       params[b.dataset.k] = Math.min(max, Math.max(min, params[b.dataset.k] + Number(b.dataset.d) * (ctl[b.dataset.k][4] || 1))); draw();
-      if (params[b.dataset.k] !== was) replay(document.getElementById('dv-' + b.dataset.k), 'tick');
     });
     draw();
   }
@@ -1811,9 +1838,9 @@ function renderCard() {
     if (!c.item) return next();
     if (checked) return next();
     const given = c.item.choices ? selected : input.value;
-    if (given == null || String(given).trim() === '') return;
+    if (!devMode && (given == null || String(given).trim() === '')) return;
     checked = true; if (input) input.disabled = true;
-    const ok = isRight(c.item, given), fb = document.getElementById('fb');
+    const ok = devMode || isRight(c.item, given), fb = document.getElementById('fb');
     run.answered = (run.answered || 0) + 1;
     if (!ok && !c.retry) run.misses++;
     noteResult(c, ok);
