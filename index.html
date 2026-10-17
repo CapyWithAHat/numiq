@@ -2420,6 +2420,8 @@ function renderFlash(dealt) {
       </div></div></div>
     <div class="flash-btns" id="fcBtns"></div><div class="flash-hint" id="fcHint"></div></div>`;
   const card = $('fc'), front = card.querySelector('.front'), back = card.querySelector('.back');
+  // The deal animation holds its end position, which would block the throw: drop it once it has played.
+  $('fcThrow').addEventListener('animationend', e => e.currentTarget.classList.remove('deal'));
   card.style.height = Math.max(300, front.scrollHeight, back.scrollHeight) + 'px';
   let busy = false;
   const buttons = () => {
@@ -2441,7 +2443,7 @@ function renderFlash(dealt) {
     if (calm.matches) return next();
     thrower.addEventListener('transitionend', e => { if (e.target === thrower && e.propertyName === 'translate') next(); });
     setTimeout(next, 800);
-    thrower.classList.add(knew ? 'gone-r' : 'gone-l');
+    thrower.classList.remove('deal'); thrower.classList.add(knew ? 'gone-r' : 'gone-l');
   };
   card.onclick = turn;
   ui.fcKey = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); f.flip ? null : turn(); } else if (f.flip && e.key === 'ArrowRight') answer(true); else if (f.flip && e.key === 'ArrowLeft') answer(false); };
