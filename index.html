@@ -2351,14 +2351,15 @@ function seaSize() {
   sea.cv.width = sea.w * d; sea.cv.height = sea.h * d;
   sea.cv.getContext('2d').setTransform(d, 0, 0, d, 0, 0);
   sea.col = (document.querySelector('.wrap') || {}).offsetWidth || 720;
-  sea.ink = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || sea.ink;
+  const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
+  sea.ink = v('--muted') || sea.ink; sea.inks = [sea.ink, v('--accent') || sea.ink, v('--done') || sea.ink]; // grey, plus a few blue and green ones
   sea.font = getComputedStyle(document.body).fontFamily;
   const want = Math.round(sea.w * sea.h / 26000);
   while (sea.bits.length < want) {
     const z = .25 + Math.random() * .75, shape = Math.random() < .3;
     sea.bits.push({ x: Math.random() * sea.w, y: Math.random() * (sea.h + 160) - 80, z, ox: 0, oy: 0, vx: 0, vy: 0,
       dx: (Math.random() - .5) * 8, dy: -(3 + Math.random() * 7), r: Math.random() * 6.28, vr: (Math.random() - .5) * .4,
-      size: 12 + z * 26, ph: Math.random() * 6.28, kind: shape ? ['o', 't', 's'][Math.floor(Math.random() * 3)] : SEA_GLYPHS[Math.floor(Math.random() * SEA_GLYPHS.length)] });
+      size: 14 + z * 30, ph: Math.random() * 6.28, tint: Math.random() < .3 ? 1 + (Math.random() < .4) : 0, kind: shape ? ['o', 't', 's'][Math.floor(Math.random() * 3)] : SEA_GLYPHS[Math.floor(Math.random() * SEA_GLYPHS.length)] });
   }
   sea.bits.length = want;
 }
@@ -2370,7 +2371,7 @@ function seaStep(t) {
   const g = sea.cv.getContext('2d'); g.clearRect(0, 0, sea.w, sea.h);
   if (sea.a > .01) {
     const cx = sea.w / 2, half = sea.col / 2;
-    g.fillStyle = g.strokeStyle = sea.ink; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 1.5;
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 2;
     sea.bits.forEach(b => {
       // drift upward like bubbles, sway, and get carried a little by the scroll (more for near ones)
       b.x += (b.dx + Math.sin(s * .5 + b.ph) * 6) * b.z * dt;
@@ -2385,9 +2386,9 @@ function seaStep(t) {
       b.ox += b.vx * dt; b.oy += b.vy * dt;
       // fade over the middle column, full strength out in the side space
       const side = Math.max(0, Math.min(1, (Math.abs(px - cx) - half + 40) / 160));
-      const alpha = sea.a * side * (.05 + b.z * .11) * (.8 + .2 * Math.sin(s * .7 + b.ph));
+      const alpha = sea.a * side * (.12 + b.z * .22) * (.8 + .2 * Math.sin(s * .7 + b.ph));
       if (alpha < .004) return;
-      g.globalAlpha = alpha; g.save(); g.translate(px, py); g.rotate(b.r);
+      g.globalAlpha = alpha; g.fillStyle = g.strokeStyle = (sea.inks || [sea.ink])[b.tint || 0] || sea.ink; g.save(); g.translate(px, py); g.rotate(b.r);
       const z = b.size;
       if (b.kind === 'o') { g.beginPath(); g.arc(0, 0, z * .45, 0, 6.28); g.stroke(); }
       else if (b.kind === 't') { g.beginPath(); g.moveTo(0, -z * .5); g.lineTo(z * .45, z * .35); g.lineTo(-z * .45, z * .35); g.closePath(); g.stroke(); }
