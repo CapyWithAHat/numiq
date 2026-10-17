@@ -78,7 +78,12 @@ button:disabled { opacity: .5; cursor: default; }
 .unit { position: relative; }
 .unit > .unit-head, .unit > .node-row { position: relative; z-index: 1; }
 .node-row { transform-origin: 50% 32px; } /* scroll scaling shrinks around the node's centre so the line still meets it */
-.node-row span { background: var(--bg); padding: 0 6px; border-radius: var(--r-sm); } /* label sits over the line */
+.unit { gap: 40px; } /* room for the line to wind between nodes */
+.unit > .unit-head { margin-bottom: 6px; }
+.node-row span { position: absolute; top: 32px; translate: 0 -50%; white-space: nowrap; } /* name sits beside the node, clear of the line */
+.node-row.lbl-r span { left: calc(100% + 16px); }
+.node-row.lbl-l span { right: calc(100% + 16px); }
+.node-row { transition: scale .2s var(--ease-out); }
 .node.locked:disabled { opacity: 1; background: color-mix(in srgb, var(--locked) 50%, var(--bg)); color: color-mix(in srgb, #fff 50%, var(--bg)); } /* same look as half-faded, but solid so the line hides behind it */
 .path-line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
 .path-line path { fill: none; stroke-width: 10; stroke-linecap: round; }
@@ -1518,10 +1523,11 @@ function renderPath() {
       ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">⏩ Test out</button>` : ''}</div>`;
     u.lessons.forEach((l, li) => {
       const st = status(l.id);
-      html += `<div class="node-row" style="transform:translateX(${Math.round(Math.sin(li * 1.1) * 70)}px)"><button class="node ${st}${pop(l.id, st)}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
+      const dx = Math.round(Math.sin(li * 1.1) * 70); // labels go on the outer side, away from the line
+      html += `<div class="node-row ${dx < 0 ? 'lbl-l' : 'lbl-r'}" style="transform:translateX(${dx}px)"><button class="node ${st}${pop(l.id, st)}" data-l="${l.id}" ${st === 'locked' ? 'disabled' : ''} aria-label="${l.title} (${st})">${st === 'done' ? '✓' : li + 1}</button><span>${l.title}</span></div>`;
     });
     const tst = status(u.id + 'test');
-    html += `<div class="node-row"><button class="node test ${tst}${pop(u.id + 'test', tst)}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
+    html += `<div class="node-row lbl-r"><button class="node test ${tst}${pop(u.id + 'test', tst)}" data-t="${u.id}" ${tst === 'locked' ? 'disabled' : ''} aria-label="Unit test (${tst})">${tst === 'done' ? '✓' : 'TEST'}</button><span>Unit test</span></div></section>`;
   });
   COMING.forEach((t, i) => { html += `<section class="unit"><div class="unit-head"><b>Unit ${UNITS.length + i + 1}: ${t}</b><small>Coming soon</small></div></section>`; });
   app.innerHTML = html;
@@ -1571,8 +1577,8 @@ function scaleNodes() {
     if (calm.matches) { row.style.scale = ''; return; }
     const n = row.firstElementChild.getBoundingClientRect(), y = n.top + n.height / 2;
     const dist = Math.abs(y - mid) / half; // 0 = middle, 1 = screen edge
-    const k = Math.min(1, Math.max(0, (dist - .45) / .6));
-    row.style.scale = (1 - k * .4).toFixed(3);
+    const t = Math.min(1, Math.max(0, (dist - .5) / .55)), k = t * t * (3 - 2 * t); // smoothstep: full size through the middle half, eases off towards the edges
+    row.style.scale = (1 - k * .3).toFixed(3);
   });
 }
 let scaleQueued = false;
