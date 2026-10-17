@@ -166,6 +166,21 @@ button:disabled { opacity: .5; cursor: default; }
 .study .bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
 .study .bar i { display: block; height: 100%; border-radius: 5px; width: 0; transition: width .9s var(--ease-out); }
 .study .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* Test date picker */
+.pick-wrap { display: flex; flex-direction: column; gap: 8px; }
+.pick-label { font-size: 15px; }
+.pick-label .ic { color: var(--accent); }
+.pick-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pick-head b { font-size: 16px; }
+.pick-head button { padding: 4px 8px; font-size: 18px; }
+.study button.pick { box-shadow: none !important; font: inherit; font-weight: 600; text-align: left; align-items: flex-start; border: 1px dashed var(--line); background: transparent; min-height: 44px; color: var(--fg); }
+.study button.pick:not(:disabled):hover { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); translate: 0 -2px; }
+.study button.pick:disabled { opacity: .35; }
+.study button.pick.sel, .study button.pick.sel:hover { border: 2px solid var(--accent) !important; background-color: color-mix(in srgb, var(--accent) 16%, var(--surface)) !important; color: var(--accent); }
+.study button.pick.today { animation: none; }
+.pop { animation: sel-pop var(--t-med) var(--ease-spring); }
+#tPick.slide[data-slide="l"] { animation: in-right var(--t-med) var(--ease-out); }
+#tPick.slide[data-slide="r"] { animation: in-left var(--t-med) var(--ease-out); }
 .study input[type=date] { padding: 8px 10px; border-radius: var(--r-sm); border: 1.5px solid var(--line); background: var(--bg); color: var(--fg); font: inherit; }
 /* Formula cards: a real card with two faces. Flip turns it over; your answer throws it off the deck and deals the next. */
 .flash-wrap { display: flex; flex-direction: column; gap: 14px; max-width: 600px; margin: 0 auto; width: 100%; }
@@ -2263,7 +2278,8 @@ function renderStudy() {
     const book = UNITS.filter(u => u.stage === 'book');
     testCard = `<div class="card"><div class="lbl">${ic('trophy')} School test countdown</div>
       <div class="sub">When's your next maths test, and which chapters are on it? Numiq splits the revision into a bit each day.</div>
-      <label class="field" style="width:auto">Test date <input type="date" id="tDate" min="${addDays(1)}" value="${ui.tdate || (t ? t.date : '')}"></label>
+      <div class="pick-wrap"><div class="pick-label" id="tPicked">${pickedLine(ui.tdate || (t ? t.date : ''))}</div><div id="tPick">${pickCal(ui.tdate || (t ? t.date : ''))}</div></div>
+      <div class="pick-label">Chapters on the test:</div>
       <div class="chips">${book.map(u => chip(`data-tu="${u.id}"`, `${chapterOf(u)} · ${u.title}`, sel.includes(u.id))).join('')}</div>
       <div class="row-btns"><button class="primary" id="tSave">Save test</button>${t ? '<button id="tCancel">Cancel</button>' : ''}</div><small id="tMsg" class="sub"></small></div>`;
   } else {
@@ -2339,22 +2355,50 @@ function renderStudy() {
   $('qCards').onclick = () => { ui.fc = { ids: shuffle(fcDue()).slice(0, 10), i: 0, flip: false, got: 0, again: {} }; swap('zoom', renderStudy); };
   app.querySelectorAll('[data-drill]').forEach(b => b.onclick = () => startPractice(b.dataset.drill, 'study'));
   if (!t || ui.testEdit) {
-    $('tDate').onchange = e => { ui.tdate = e.target.value; };
+    if (!ui.tdate && t) ui.tdate = t.date;
+    wirePick();
     app.querySelectorAll('[data-tu]').forEach(b => b.onclick = () => { const id = b.dataset.tu, on = !ui.tsel.includes(id); ui.tsel = on ? [...ui.tsel, id] : ui.tsel.filter(x => x !== id); flip(b, on); });
     $('tSave').onclick = () => {
-      const date = $('tDate').value;
-      if (!date || date <= today()) return $('tMsg').textContent = 'Pick a date after today.';
+      const date = ui.tdate;
+      if (!date || date <= today()) return $('tMsg').textContent = 'Tap the day of your test on the calendar.';
       if (!ui.tsel.length) return $('tMsg').textContent = 'Pick at least one chapter.';
       const same = t && t.date === date;
       state.test = { date, units: ui.tsel, start: same ? t.start : today(), covered: same ? t.covered : {}, doneDays: same ? t.doneDays : {} };
-      ui.testEdit = false; ui.tsel = ui.tdate = null; save(); keepScroll = scrollY; renderStudy(); scrollTo(0, keepScroll); keepScroll = null;
+      ui.testEdit = false; ui.tsel = ui.tdate = ui.pm = null; save(); keepScroll = scrollY; renderStudy(); scrollTo(0, keepScroll); keepScroll = null;
     };
-    if ($('tCancel')) $('tCancel').onclick = () => { ui.testEdit = false; ui.tsel = ui.tdate = null; redraw(); };
+    if ($('tCancel')) $('tCancel').onclick = () => { ui.testEdit = false; ui.tsel = ui.tdate = ui.pm = null; redraw(); };
   } else {
     $('tEdit').onclick = () => { ui.testEdit = true; ui.tsel = plan.left < 0 ? [] : null; if (plan.left < 0) state.test = null; redraw(); };
     if ($('tGo')) $('tGo').onclick = () => startSession(plan.chunk, { count: Math.min(15, plan.chunk.length * 3), chunk: true });
     if ($('tLast')) $('tLast').onclick = () => startSession(plan.all, { count: 10, exam: true });
   }
+}
+// Test date picker: a month of big day cells (same look as the Profile calendar). Days before tomorrow can't be picked.
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function pickCal(sel) {
+  const now = new Date();
+  if (ui.pm == null) ui.pm = sel ? Math.max(0, (dayDate(sel).getFullYear() - now.getFullYear()) * 12 + dayDate(sel).getMonth() - now.getMonth()) : 0; // open on the saved test's month
+  const v = new Date(now.getFullYear(), now.getMonth() + ui.pm, 1);
+  const y = v.getFullYear(), mo = v.getMonth(), first = (v.getDay() + 6) % 7, n = new Date(y, mo + 1, 0).getDate();
+  const atStart = ui.pm <= 0;
+  let cells = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-h">${d}</div>`).join('');
+  for (let i = 0; i < first; i++) cells += '<div></div>';
+  for (let d = 1; d <= n; d++) {
+    const k = dayStr(new Date(y, mo, d)), off = k <= today();
+    cells += `<button class="cal-d pick${k === sel ? ' sel' : ''}${k === today() ? ' today' : ''}" data-pd="${k}" ${off ? 'disabled' : ''} style="--i:${d}" aria-label="${d} ${MONTHS[mo]}">${d}</button>`;
+  }
+  return `<div class="pick-head"><button class="linkish" id="pmPrev" aria-label="Previous month" ${atStart ? 'disabled' : ''}>${ic('chev-l')}</button><b>${MONTHS[mo]} ${y}</b><button class="linkish" id="pmNext" aria-label="Next month">${ic('chev-r')}</button></div><div class="cal">${cells}</div>`;
+}
+const pickedLine = d => d ? `${ic('trophy')} Test on <b>${dayDate(d).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</b> · ${dayDiff(today(), d)} days away` : 'Tap the day of your test:';
+function wirePick() {
+  const box = $('tPick');
+  box.querySelectorAll('[data-pd]').forEach(b => b.onclick = () => {
+    ui.tdate = b.dataset.pd;
+    box.querySelectorAll('.pick.sel').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); replay(b, 'pop');
+    $('tPicked').innerHTML = pickedLine(ui.tdate); replay($('tPicked'), 'pop'); $('tMsg').textContent = '';
+  });
+  const month = dir => { ui.pm = Math.max(0, ui.pm + dir); box.innerHTML = pickCal(ui.tdate); box.dataset.slide = dir > 0 ? 'l' : 'r'; replay(box, 'slide'); wirePick(); };
+  $('pmPrev').onclick = () => month(-1); $('pmNext').onclick = () => month(1);
 }
 const sbLine = sb => `${sb.units.length ? `${sb.units.length} topic${sb.units.length > 1 ? 's' : ''}` : 'A mix of everything you\'ve unlocked'} · ${SESSION_LEN[sb.len]} questions${sb.exam ? ' · no hints, harder' : ''}. Numiq mixes in your reviews and weak spots.`;
 
