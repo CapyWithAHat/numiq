@@ -191,7 +191,7 @@ button:disabled { opacity: .5; cursor: default; }
 .deck .under.u1 { translate: 0 8px; scale: .97; opacity: .7; }
 .deck .under.u2 { translate: 0 16px; scale: .94; opacity: .4; }
 /* The thrower moves the card off the deck; the card inside only turns over (opacity on a 3D card would flatten it and show the front mirrored). */
-.fc-throw { position: relative; perspective: 1400px; transition: translate .45s var(--ease-in), rotate .45s var(--ease-in), opacity .45s var(--ease-in); }
+.fc-throw { position: relative; perspective: 1400px; transition: translate .55s cubic-bezier(.4, 0, .6, 1), rotate .55s cubic-bezier(.4, 0, .6, 1), opacity .3s ease-in .25s; }
 .fc3d { position: relative; transform-style: preserve-3d; transition: transform .6s var(--ease-spring); min-height: 300px; cursor: pointer; outline: none; }
 .fc3d.flipped { transform: rotateY(180deg); cursor: default; }
 .fc3d .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; background: var(--surface);
@@ -2434,8 +2434,14 @@ function renderFlash(dealt) {
     if (knew) { r.step = Math.min(r.step + 1, FC_GAPS.length - 1); r.due = addDays(FC_GAPS[r.step]); f.got++; }
     else { r.step = -1; r.due = addDays(1); if (!f.again[id]) { f.again[id] = 1; f.ids.push(id); } }
     state.fc[id] = r; save(); beep(knew);
-    $('fcThrow').classList.add(knew ? 'gone-r' : 'gone-l');
-    setTimeout(() => { f.i++; f.flip = false; renderFlash(true); }, calm.matches ? 0 : 380);
+    $('fcBtns').querySelectorAll('button').forEach(x => x.disabled = true);
+    // Deal the next card only once the thrown one has fully left the screen.
+    const thrower = $('fcThrow');
+    const next = () => { if (ui.fc !== f || !thrower.isConnected) return; f.i++; f.flip = false; renderFlash(true); };
+    if (calm.matches) return next();
+    thrower.addEventListener('transitionend', e => { if (e.target === thrower && e.propertyName === 'translate') next(); });
+    setTimeout(next, 800);
+    thrower.classList.add(knew ? 'gone-r' : 'gone-l');
   };
   card.onclick = turn;
   ui.fcKey = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); f.flip ? null : turn(); } else if (f.flip && e.key === 'ArrowRight') answer(true); else if (f.flip && e.key === 'ArrowLeft') answer(false); };
