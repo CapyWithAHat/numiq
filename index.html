@@ -260,6 +260,20 @@ button:not(:disabled):active { translate: 0 1px; scale: .96; transition-duration
 .choice.sel { animation: sel-pop var(--t-med) var(--ease-spring); }
 #go.ready { animation: sel-pop var(--t-med) var(--ease-spring); }
 input[type=text], textarea { transition: border-color var(--t-med) var(--ease-out), opacity var(--t-med) var(--ease-out); }
+/* Chunky, pressable buttons (Duolingo-style): a little ledge underneath that the button sinks into when pressed,
+   a lift and a hint of accent on hover. Skips the bits that have their own feel (path nodes, tabs, header pills, links). */
+button:not(.node):not(.linkish):not(.av-btn):not(.tabbar button):not(.stats > *) {
+  font-weight: 600; border-width: 1.5px; box-shadow: 0 3px 0 var(--line);
+  --ledge: var(--line); }
+button:not(.node):not(.linkish):not(.av-btn):not(.tabbar button):not(.stats > *):not(:disabled):hover {
+  translate: 0 -1px; box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background-color: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+button:not(.node):not(.linkish):not(.av-btn):not(.tabbar button):not(.stats > *):not(:disabled):active {
+  translate: 0 3px; scale: 1; box-shadow: 0 0 0 var(--line); transition-duration: 60ms; }
+button.primary:not(.node) { box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 70%, #000); }
+button.primary:not(.node):not(:disabled):hover { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #000); border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 90%, #fff); }
+button:disabled:not(.node) { box-shadow: none; }
 .stats b { display: inline-block; }
 .tick { animation: tick var(--t-med) var(--ease-spring); }
 @keyframes sel-pop { 0% { scale: .97; } 60% { scale: 1.02; } 100% { scale: 1; } }
@@ -1778,7 +1792,7 @@ function renderProfile() {
     top = `<div class="card prof-top prof-hero"><div class="ph-side ph-l"><h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'}</div><div class="cap">Joined ${joined}</div></div>
       <button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
       <div class="ph-side ph-r"><div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : '💾 Saved in this browser only'}</div>
-      <div class="prof-btns"><button id="pfEdit">Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div></div>`;
+      <div class="prof-btns"><button id="pfEdit">✏️ Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">👋 Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div></div>`;
   }
   // Calendar, weeks start on Monday. Days with XP are ticked; days that hit the daily goal are filled.
   const now = new Date(), view = new Date(now.getFullYear(), now.getMonth() + (ui.calOffset || 0), 1);
