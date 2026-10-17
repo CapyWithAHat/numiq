@@ -248,6 +248,72 @@ html, body { overflow-anchor: none; } /* the browser's scroll anchoring nudged t
 .card, .tile, .unit-head, .calc, .notepad, .pda-entry, .stat, .hint, .tabbar { backdrop-filter: var(--glass-filter); -webkit-backdrop-filter: var(--glass-filter); box-shadow: var(--elev-1); }
 .tabbar { box-shadow: var(--elev-2); }
 
+/* ---------- Numiq icons (ic() in script) ---------- */
+.ic { width: 1.2em; height: 1.2em; display: inline-block; vertical-align: -.22em; overflow: visible; flex: none; }
+.ic * { transform-box: fill-box; transform-origin: center; }
+.stats .ic { width: 1.35em; height: 1.35em; vertical-align: -.3em; }
+.ic-big { width: 1.5em; height: 1.5em; vertical-align: middle; }
+/* idle life */
+.ic-fire { transform-origin: 50% 90%; animation: ic-flicker 1.8s ease-in-out infinite; }
+.ic-fire .fl-i { transform-origin: 50% 100%; animation: ic-flicker-in 1.1s ease-in-out infinite; }
+@keyframes ic-flicker { 0%, 100% { scale: 1 1; rotate: 0deg; } 30% { scale: .97 1.05; rotate: -2deg; } 60% { scale: 1.03 .97; rotate: 2deg; } }
+@keyframes ic-flicker-in { 0%, 100% { scale: 1; } 50% { scale: .82 1.12; } }
+.ic-star { animation: ic-twinkle 5s ease-in-out infinite; }
+@keyframes ic-twinkle { 0%, 86%, 100% { rotate: 0deg; scale: 1; } 90% { rotate: 18deg; scale: 1.18; } 95% { rotate: -6deg; scale: .96; } }
+.ic-chart .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ic-draw 1s .3s var(--ease-out) forwards; }
+@keyframes ic-draw { to { stroke-dashoffset: 0; } }
+.ic-bolt { animation: ic-zap 4s ease-in-out infinite; }
+@keyframes ic-zap { 0%, 90%, 100% { scale: 1; } 93% { scale: 1.2; rotate: -8deg; } 96% { scale: .95; rotate: 4deg; } }
+/* react when the thing they sit in is hovered */
+:is(button, .tile, .stats > *, h2, .calc-tag, .hint):hover > .ic-gear .spin, .ic-gear:hover .spin { animation: ic-spin 1.4s linear infinite; }
+@keyframes ic-spin { to { rotate: 360deg; } }
+:is(button, .stats > *):hover > .ic-lock .shackle { translate: 0 -2px; transition: translate var(--t-fast) var(--ease-spring); }
+:is(button, .stats > *):hover > .ic-unlock .shackle { rotate: -14deg; transition: rotate var(--t-fast) var(--ease-spring); }
+.ic .shackle { transition: translate var(--t-fast) var(--ease-spring), rotate var(--t-fast) var(--ease-spring); transform-origin: 30% 100%; }
+button:hover > .ic-dice .roll { animation: ic-roll .6s var(--ease-spring); }
+@keyframes ic-roll { 0% { rotate: 0deg; } 60% { rotate: 200deg; scale: .85; } 100% { rotate: 180deg; } }
+button:hover > .ic-pencil .scribble { animation: ic-scribble .5s ease-in-out 2; }
+@keyframes ic-scribble { 25% { translate: -1.5px 1px; rotate: -8deg; } 75% { translate: 1.5px -1px; rotate: 6deg; } }
+button:hover > .ic-door .exit { animation: ic-exit .7s ease-in-out infinite; }
+@keyframes ic-exit { 50% { translate: -2.5px 0; } }
+button:hover > .ic-key .turn { animation: ic-turn .5s var(--ease-spring); }
+@keyframes ic-turn { 50% { rotate: -25deg; } }
+button:hover > .ic-forward .dash { animation: ic-dash .6s ease-in-out infinite; }
+@keyframes ic-dash { 50% { translate: 2.5px 0; } }
+button:hover > .ic-bulb .glow, .hint b > .ic-bulb .glow { animation: ic-glow 1.2s ease-in-out infinite; }
+@keyframes ic-glow { 50% { filter: drop-shadow(0 0 3px #ffd166); scale: 1.06; } }
+:is(button, .tile):hover .ic-star { animation: ic-twinkle-now .7s var(--ease-spring); }
+@keyframes ic-twinkle-now { 50% { rotate: 72deg; scale: 1.25; } 100% { rotate: 72deg; } }
+.tile:hover .ic-note .tick-d, .ic-big.ic-note .tick-d { stroke-dasharray: 1; animation: ic-draw-from .6s var(--ease-out) both; }
+@keyframes ic-draw-from { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* bottom tabs: each icon does its own little thing when hovered or picked */
+.tabbar button:hover .ic-book .pg-r, .tabbar button[aria-current="page"] .ic-book .pg-r { animation: ic-page .6s var(--ease-out); transform-origin: 0% 50%; }
+@keyframes ic-page { 40% { scale: .2 1; } 100% { scale: 1 1; } }
+.tabbar button:hover .ic-cards .card-f, .tabbar button[aria-current="page"] .ic-cards .card-f { animation: ic-shuffle .55s var(--ease-spring); }
+@keyframes ic-shuffle { 50% { translate: -3px -2px; rotate: -10deg; } }
+.tabbar button:hover .ic-user, .tabbar button[aria-current="page"] .ic-user { animation: ic-hop .5s var(--ease-spring); }
+@keyframes ic-hop { 40% { translate: 0 -3px; } }
+.tabbar button:hover .ic-rocket .fly { animation: ic-fly .9s ease-in-out infinite; }
+.ic-rocket .flame { animation: ic-flame .25s ease-in-out infinite alternate; transform-origin: 50% 0%; }
+@keyframes ic-fly { 50% { translate: 1px -2.5px; } }
+@keyframes ic-flame { to { scale: 1 1.4; } }
+/* finish screen: the big icon keeps moving after it pops in */
+.ic-big.ic-trophy { animation: ic-bob 2.4s ease-in-out infinite; }
+.ic-big.ic-trophy .shine { animation: ic-shine 2.4s ease-in-out infinite; }
+@keyframes ic-shine { 0%, 60%, 100% { opacity: 0; } 75% { opacity: 1; } }
+.ic-big.ic-party { animation: ic-bob 2s ease-in-out infinite; }
+.ic-big.ic-party .confetti { animation: ic-burst 1.6s var(--ease-out) infinite; }
+@keyframes ic-burst { 0%, 100% { scale: .92; } 40% { scale: 1.18; rotate: 6deg; } }
+.ic-big.ic-moon { animation: ic-rock 3s ease-in-out infinite; }
+.ic-big.ic-moon .tw { animation: ic-shine 2s ease-in-out infinite; }
+@keyframes ic-rock { 50% { rotate: -10deg; } }
+.ic-big.ic-retry .spin { animation: ic-spin 2.5s var(--ease-out) infinite; }
+.ic-big.ic-target .bull { animation: ic-pulse 1.4s ease-in-out infinite; }
+@keyframes ic-pulse { 50% { scale: 1.7; } }
+.ic-big.ic-star { animation: ic-bob 2.2s ease-in-out infinite, ic-twinkle 3s ease-in-out infinite; }
+@keyframes ic-bob { 50% { translate: 0 -4px; } }
+@media (prefers-reduced-motion: reduce) { .ic, .ic * { animation: none !important; transition: none !important; } .ic-chart .draw { stroke-dashoffset: 0; } }
+
 /* ---------- motion: controls ---------- */
 button { box-shadow: var(--elev-btn);
   transition: translate var(--t-fast) var(--ease-spring), scale var(--t-fast) var(--ease-spring),
@@ -425,20 +491,52 @@ button:disabled:not(.node) { box-shadow: none; }
 <div class="wrap">
   <header>
     <h1>Numiq</h1>
-    <div class="stats"><span>🔥 <b id="streak">0</b> day streak</span><span>⭐ <b id="xp">0</b> XP</span><span id="acct" class="acct" title="Where your progress is saved">💾 This browser</span><button id="dev" class="dev" title="Developer mode: unlocks everything">🔓 Dev</button><button id="gear" class="gear" aria-label="Settings" title="Settings" hidden>⚙️</button></div>
+    <div class="stats"><span><i data-ic="fire"></i> <b id="streak">0</b> day streak</span><span><i data-ic="star"></i> <b id="xp">0</b> XP</span><span id="acct" class="acct" title="Where your progress is saved"><i data-ic="screen"></i> This browser</span><button id="dev" class="dev" title="Developer mode: unlocks everything"><i data-ic="unlock"></i> Dev</button><button id="gear" class="gear" aria-label="Settings" title="Settings" hidden><i data-ic="gear"></i></button></div>
   </header>
   <main id="app"></main>
   <div class="footer"><button id="reset">Reset progress</button> <span id="resetMsg"></span></div>
 </div>
 <nav class="tabbar" id="tabbar" aria-label="Sections">
   <span class="tab-pill" aria-hidden="true"></span>
-  <button data-view="learn">📘 Learn</button>
-  <button data-view="notes">🗂️ Notes <span id="notesNew"></span></button>
-  <button data-view="profile">👤 Profile</button>
-  <button data-view="soon">🚧 Coming soon</button>
+  <button data-view="learn"><i data-ic="book"></i> Learn</button>
+  <button data-view="notes"><i data-ic="cards"></i> Notes <span id="notesNew"></span></button>
+  <button data-view="profile"><i data-ic="user"></i> Profile</button>
+  <button data-view="soon"><i data-ic="rocket"></i> Coming soon</button>
 </nav>
 
 <script>
+const ICONS = {
+  fire: '<g stroke="none"><path class="fl-o" d="M12 2.5c1.2 3.6 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.7 1.3-4.3 2.7-5.3.2 1.9 1 3 2.1 3.4C10.9 8.7 10.8 5.6 12 2.5z" fill="#ff7a2f"/><path class="fl-i" d="M12 12.2c.7 1.7 2.7 2.5 2.7 4.8a2.7 2.7 0 0 1-5.4 0c0-1.5.9-2.4 1.7-3 .1.9.5 1.3 1 1.5-.1-1.2-.2-2.3 0-3.3z" fill="#ffd166"/></g>',
+  star: '<path d="M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.2 9.6l1.4-.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
+  screen: '<rect x="3" y="4" width="18" height="12.5" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="3" y="4" width="18" height="12.5" rx="2.5"/><path d="M12 16.5V20M8 20h8"/>',
+  lock: '<path class="shackle" d="M8 11V7.5a4 4 0 0 1 8 0V11"/><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M12 15v2"/>',
+  unlock: '<path class="shackle" d="M8 11V7.5a4 4 0 0 1 7.6-1.7"/><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M12 15v2"/>',
+  gear: '<g class="spin"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" fill="currentColor" fill-opacity=".16"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></g>',
+  user: '<circle cx="12" cy="8" r="4" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="8" r="4"/><path d="M4.5 21c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7" fill="currentColor" fill-opacity=".16"/><path d="M4.5 21c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"/>',
+  book: '<path class="pg-l" d="M12 6.5C10 5 7 4.4 3.5 5v14c3.5-.6 6.5 0 8.5 1.5" fill="currentColor" fill-opacity=".16"/><path class="pg-l" d="M12 6.5C10 5 7 4.4 3.5 5v14c3.5-.6 6.5 0 8.5 1.5"/><path class="pg-r" d="M12 6.5c2-1.5 5-2.1 8.5-1.5v14c-3.5-.6-6.5 0-8.5 1.5z" fill="currentColor" fill-opacity=".16"/><path class="pg-r" d="M12 6.5c2-1.5 5-2.1 8.5-1.5v14c-3.5-.6-6.5 0-8.5 1.5V6.5"/>',
+  cards: '<rect class="card-b" x="8" y="3" width="12.5" height="15" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect class="card-b" x="8" y="3" width="12.5" height="15" rx="2.5"/><rect class="card-f" x="3.5" y="6" width="12.5" height="15" rx="2.5" fill="var(--surface, #fff)"/><g class="card-f"><rect x="3.5" y="6" width="12.5" height="15" rx="2.5"/><path d="M7 11h5.5M7 14.5h4"/></g>',
+  rocket: '<g class="fly"><path d="M12 2.5c3.2 2.1 5.1 6.3 4.5 11.2L14 16.2h-4l-2.5-2.5C6.9 8.8 8.8 4.6 12 2.5z" fill="currentColor" fill-opacity=".16"/><path d="M12 2.5c3.2 2.1 5.1 6.3 4.5 11.2L14 16.2h-4l-2.5-2.5C6.9 8.8 8.8 4.6 12 2.5z"/><circle cx="12" cy="9" r="1.8"/><path d="M7.5 13.7 5 16.5l3 .4M16.5 13.7l2.5 2.8-3 .4"/><path class="flame" d="M10.6 18 12 21.5l1.4-3.5" stroke="#ff8a3d"/></g>',
+  bolt: '<path d="M13.5 2.5 4.5 14h7l-1 7.5 9-11.5h-7z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6" stroke-linejoin="round"/>',
+  key: '<g class="turn"><circle cx="8" cy="15" r="4.2" fill="currentColor" fill-opacity=".16"/><circle cx="8" cy="15" r="4.2"/><path d="M11 12 20 3M16.5 6.5l3 3M14.5 8.5l2 2"/></g>',
+  dice: '<g class="roll"><rect x="4" y="4" width="16" height="16" rx="4" fill="currentColor" fill-opacity=".16"/><rect x="4" y="4" width="16" height="16" rx="4"/><g fill="currentColor" stroke="none"><circle cx="8.8" cy="8.8" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="15.2" cy="15.2" r="1.4"/></g></g>',
+  pencil: '<g class="scribble"><path d="M4 20l1.2-4.3L16 4.9l3.1 3.1L8.3 18.8z" fill="currentColor" fill-opacity=".16"/><path d="M4 20l1.2-4.3L16 4.9l3.1 3.1L8.3 18.8z"/><path d="M13.8 7.1l3.1 3.1"/></g>',
+  door: '<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14" fill="currentColor" fill-opacity=".16"/><path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><g class="exit"><path d="M9 8l-4 4 4 4M5 12h10"/></g>',
+  chart: '<path d="M4 4v16h16"/><path class="draw" d="M7 15l4-4 3 2.5 5.5-6" pathLength="1"/><path d="M15.5 7.5h4v4"/>',
+  calc: '<rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="5.5" width="8" height="3.5" rx="1"/><g fill="currentColor" stroke="none"><circle cx="9" cy="13" r="1.1"/><circle cx="12" cy="13" r="1.1"/><circle cx="15" cy="13" r="1.1"/><circle cx="9" cy="17" r="1.1"/><circle cx="12" cy="17" r="1.1"/><circle cx="15" cy="17" r="1.1"/></g>',
+  moon: '<path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.3 6.3 0 0 0 10 10z" fill="#b9b3ff" stroke="#7d74e8" stroke-width="1.6" stroke-linejoin="round"/><path class="tw" d="M17 4.5v3M15.5 6h3" stroke="#7d74e8"/>',
+  trophy: '<path d="M7 3.5h10v5.5a5 5 0 0 1-10 0z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6"/><path d="M7 5.5H4.5a3 3 0 0 0 3 4.3M17 5.5h2.5a3 3 0 0 1-3 4.3M12 14v3.5M8.5 21h7M9.5 17.5h5V21h-5z" stroke="#e9a400"/><path class="shine" d="M9.5 5.5v3" stroke="#fff" stroke-width="1.8"/>',
+  retry: '<g class="spin"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4v4.5H15"/></g>',
+  target: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.3"/><circle class="bull" cx="12" cy="12" r="1.9" fill="currentColor"/>',
+  party: '<path d="M3.5 20.5l4.8-12.3 7.5 7.5z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 14.2l3.8 3.8M7.3 10.9l5.8 5.8" stroke="#ff8a3d" stroke-width="1.6"/><g class="confetti" stroke-width="2"><path d="M13.5 3.5l.8 2.4" stroke="#4f8cff"/><path d="M20.5 9.5l-2.4.8" stroke="#ff6b8a"/><path d="M12.5 9.5c1.6-1.9 3.2-1.4 3.7-3.6" stroke="#2fbf71"/><circle cx="18.5" cy="4.5" r="1.2" fill="#ff8a3d" stroke="none"/><circle cx="20.5" cy="14" r="1.2" fill="#4f8cff" stroke="none"/><circle cx="9.5" cy="4" r="1" fill="#2fbf71" stroke="none"/></g>',
+  forward: '<g class="dash"><path d="M3.5 6l7 6-7 6z" fill="currentColor" fill-opacity=".16"/><path d="M3.5 6l7 6-7 6z"/><path d="M12 6l7 6-7 6z" fill="currentColor" fill-opacity=".16"/><path d="M12 6l7 6-7 6z"/></g>',
+  note: '<rect x="4.5" y="3" width="15" height="18" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="4.5" y="3" width="15" height="18" rx="2.5"/><path d="M8 8h8M8 11.5h5"/><path class="tick-d" d="M8.5 16l2 2 4-4.5" pathLength="1"/>',
+  bulb: '<path class="glow" d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="#ffd166" stroke="#e9a400" stroke-width="1.6"/><path d="M9.5 18.5h5M10.5 21h3"/>'
+};
+// Numiq's own icon set (replaces keyboard emojis). Each is a tiny drawing that inherits the text colour, with
+// a few warm accents (fire, stars, trophy). They move a little: some idle (the flame flickers), most react when you
+// hover the button or card they sit in. See the .ic CSS.
+const ic = (n, cls = '') => `<svg class="ic ic-${n} ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+document.querySelectorAll('i[data-ic]').forEach(e => { e.outerHTML = ic(e.dataset.ic); });
 // ---------- helpers ----------
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = arr => arr[rnd(0, arr.length - 1)];
@@ -559,7 +657,7 @@ const BOOK_UNITS = [
   { id: 'b1', stage: 'book', title: 'Natural numbers', desc: 'Book chapter 1: factors, primes, HCF, LCM, order of operations, rounding', lessons: [
     { id: 'b1l1', title: 'Factors and primes',
       idea: `A <b>factor</b> of a number divides into it exactly. A <b>prime</b> number has exactly two factors: 1 and itself. 1 is not prime.<br><br>
-        <b>⚡ Shortcuts</b><br>
+        <b>${ic('bolt')} Shortcuts</b><br>
         • <b>Find factors in pairs.</b> Try 1, 2, 3… and each one that works gives you two factors: 3 × 8 = 24 gives 3 and 8. Stop when the pairs meet in the middle (at the square root).<br>
         • <b>Divisibility tricks:</b> 2 if it's even · 3 if its digits add to a multiple of 3 · 4 if the last two digits divide by 4 · 5 if it ends in 0 or 5 · 6 if it works for 2 and 3 · 9 if its digits add to a multiple of 9 · 10 if it ends in 0.<br>
         • <b>Is it prime?</b> Only test the primes 2, 3, 5 and 7 (up to the square root). If none divide in, it's prime. For numbers under 100 that's all you ever need.<br>
@@ -1380,7 +1478,7 @@ const cloud = {
   setStatus(st) {
     this.status = st; const el = document.getElementById('acct'); if (!el) return;
     el.classList.toggle('on', st === 'synced');
-    el.innerHTML = st === 'synced' ? '<i class="sync-dot"></i>Synced' : st === 'retry' ? '<i class="sync-dot wait"></i>Reconnecting…' : this.kind === 'email' ? '🔑 Log in' : '💾 This browser';
+    el.innerHTML = st === 'synced' ? '<i class="sync-dot"></i>Synced' : st === 'retry' ? '<i class="sync-dot wait"></i>Reconnecting…' : this.kind === 'email' ? ic('key') + ' Log in' : ic('screen') + ' This browser';
     el.title = st === 'synced' ? `Signed in as ${this.email || this.name || 'you'}. Your progress follows you to any computer.` : 'Progress is saved in this browser only.';
   },
   // Signing in merges this browser's progress with the account's, so nothing is lost either way.
@@ -1634,7 +1732,7 @@ function renderNotes() {
     list += `<button class="cat" data-cat="${u.id}" aria-expanded="${!closed}">Unit ${ui2 + 1}: ${u.title}<span class="chev">▾</span></button>`;
     list += `<div class="items-wrap${closed ? ' closed' : ''}"><div class="items">${u.lessons.map(l => unlocked(l.id)
       ? `<button class="entry ${ui.entry === l.id ? 'sel' : ''}" data-e="${l.id}">${l.title}${state.seen[l.id] ? '' : '<span class="new">+</span>'}</button>`
-      : `<button class="entry" disabled>🔒 Locked</button>`).join('')}</div></div>`;
+      : `<button class="entry" disabled>${ic('lock')} Locked</button>`).join('')}</div></div>`;
   });
   const listScroll = app.querySelector('.pda-list')?.scrollTop || 0;
   app.innerHTML = `<div class="pda"><nav class="pda-list" aria-label="Topics">${list}</nav><article class="pda-entry stagger"></article></div>`;
@@ -1774,13 +1872,13 @@ function renderProfile() {
   let top;
   if (mode === 'edit') {
     top = `<div class="card prof-top"><div class="av-edit"><div class="av-left"><div class="avatar big" id="avPreview">${avatarSvg(ui.pickLook)}</div>
-        <button id="avRand" title="Make a random avatar">🎲 Surprise me</button></div><div class="av-right" id="avEd">${avatarEditorHtml(ui.pickLook)}</div></div>
+        <button id="avRand" title="Make a random avatar">${ic('dice')} Surprise me</button></div><div class="av-right" id="avEd">${avatarEditorHtml(ui.pickLook)}</div></div>
       <label class="field">Name <input type="text" id="pfName" maxlength="30" value="${P.name.replace(/"/g, '&quot;')}" placeholder="Your name"></label>
       <label class="field">Username <input type="text" id="pfUser" maxlength="20" value="${P.user.replace(/"/g, '&quot;')}" placeholder="username"></label>
       <div class="prof-btns"><button id="pfCancel">Cancel</button><button class="primary" id="pfSave">Save</button></div></div>`;
   } else if (mode === 'settings') {
     const opt = (key, val, label) => `<button data-set="${key}" data-val="${val}" class="${String(state.settings[key]) === String(val) ? 'sel' : ''}">${label}</button>`;
-    top = `<div class="card"><div class="actions" style="align-items:center"><h2 style="margin:0">⚙️ Settings</h2><button id="setClose">Done</button></div>
+    top = `<div class="card"><div class="actions" style="align-items:center"><h2 style="margin:0">${ic('gear')} Settings</h2><button id="setClose">Done</button></div>
       <div class="set-row"><b>Theme</b><div class="prof-btns">${opt('theme', 'system', 'Match my computer')}${opt('theme', 'light', 'Light')}${opt('theme', 'dark', 'Dark')}</div></div>
       <div class="set-row"><b>Daily goal</b><div class="prof-btns">${opt('goal', 10, '10 XP')}${opt('goal', 20, '20 XP')}${opt('goal', 30, '30 XP')}${opt('goal', 50, '50 XP')}</div></div>
       <div class="set-row"><b>Sound</b><div class="prof-btns">${opt('sound', true, 'On')}${opt('sound', false, 'Off')}</div></div>
@@ -1795,8 +1893,8 @@ function renderProfile() {
     const joined = P.joined ? new Date(P.joined).toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' }) : '---';
     top = `<div class="card prof-top prof-hero"><div class="ph-side ph-l"><h2 style="margin:0">${P.name ? escapeHtml(P.name) : 'Your name'}</h2><div class="cap">@${P.user ? escapeHtml(P.user) : 'username'}</div><div class="cap">Joined ${joined}</div></div>
       <button class="avatar av-btn" id="avOpen" title="Change your avatar" aria-label="Change your avatar">${avatarSvg(P.look)}</button>
-      <div class="ph-side ph-r"><div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : '💾 Saved in this browser only'}</div>
-      <div class="prof-btns"><button id="pfEdit">✏️ Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">👋 Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div></div>`;
+      <div class="ph-side ph-r"><div class="prof-sync" title="${cloud.status === 'synced' ? 'Your progress follows you to any computer.' : 'Log in to keep your progress on any computer.'}">${cloud.status === 'synced' ? `<i class="sync-dot"></i><span>Signed in ${cloud.kind === 'email' ? 'as <b>' + escapeHtml(cloud.email) + '</b>' : 'with Claude' + (cloud.name ? ' as <b>' + escapeHtml(cloud.name) + '</b>' : '')}</span>` : ic('screen') + ' Saved in this browser only'}</div>
+      <div class="prof-btns"><button id="pfEdit">${ic('pencil')} Edit profile</button>${cloud.kind === 'email' ? (cloud.status === 'synced' ? '<button id="pfOut">' + ic('door') + ' Log out</button>' : '<button class="primary" id="pfIn">Log in / Sign up</button>') : ''}</div></div></div>`;
   }
   // Calendar, weeks start on Monday. Days with XP are ticked; days that hit the daily goal are filled.
   const now = new Date(), view = new Date(now.getFullYear(), now.getMonth() + (ui.calOffset || 0), 1);
@@ -1807,14 +1905,14 @@ function renderProfile() {
   for (let d = 1; d <= days; d++) {
     const key = dayStr(new Date(y, mo, d)), xp = state.days[key] || 0, fire = xp || key === state.lastDay;
     const cls = [key === today() ? 'today' : '', xp >= state.settings.goal ? 'goal' : xp ? 'active' : ''].join(' ');
-    cells += `<div class="cal-d ${cls}" style="--i:${d}"><span>${d} ${fire ? '<span class="fire">🔥</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
+    cells += `<div class="cal-d ${cls}" style="--i:${d}"><span>${d} ${fire ? '<span class="fire">' + ic('fire') + '</span>' : ''}</span>${xp ? `<small>${xp >= state.settings.goal ? '✓ ' : ''}${xp} XP</small>` : ''}</div>`;
   }
   const todayXp = state.days[today()] || 0;
   const modeChanged = ui.shownMode !== undefined && ui.shownMode !== mode, calDir = (ui.calOffset || 0) - (ui.shownCal ?? (ui.calOffset || 0));
   ui.shownMode = mode; ui.shownCal = ui.calOffset || 0;
   if (modeChanged && !inSwap) top = top.replace('<div class="card', '<div class="soft-in card');
   app.innerHTML = `<div class="profile">${top}
-    <div class="prof-grid stagger">${stat('day streak 🔥', shownStreak())}${stat('total XP ⭐', state.xp)}${stat('lessons done', `${lessonsDone()} / ${UNITS.reduce((n, u) => n + u.lessons.length, 0)}`)}${stat('best practice level', state.bestLevel || '–')}</div>
+    <div class="prof-grid stagger">${stat('day streak ' + ic('fire'), shownStreak())}${stat('total XP ' + ic('star'), state.xp)}${stat('lessons done', `${lessonsDone()} / ${UNITS.reduce((n, u) => n + u.lessons.length, 0)}`)}${stat('best practice level', state.bestLevel || '–')}</div>
     <div class="card"><div class="goal-row"><span>Today: <b>${todayXp} / ${state.settings.goal} XP</b></span><div class="bar" style="flex:1"><div style="width:${Math.min(100, todayXp / state.settings.goal * 100)}%"></div></div></div>
       <div class="actions" style="align-items:center"><button id="calPrev" aria-label="Previous month">‹</button><b>${view.toLocaleString('en-IE', { month: 'long', year: 'numeric' })}</b><button id="calNext" aria-label="Next month">›</button></div>
       <div class="cal${calDir > 0 ? ' slide-r' : calDir < 0 ? ' slide-l' : ''}">${cells}</div></div>
@@ -1870,7 +1968,7 @@ function renderProfile() {
 }
 function escapeHtml(t) { return t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 const devBtn = document.getElementById('dev');
-const paintDev = () => { devBtn.classList.toggle('on', devMode); devBtn.textContent = devMode ? '🔓 Dev: ON' : '🔓 Dev'; };
+const paintDev = () => { devBtn.classList.toggle('on', devMode); devBtn.innerHTML = ic(devMode ? 'unlock' : 'lock') + (devMode ? ' Dev: ON' : ' Dev'); };
 devBtn.onclick = () => { devMode = !devMode; try { localStorage.setItem('numiq-dev', devMode ? '1' : '0'); } catch (e) {} paintDev(); if (!run) show(view); };
 paintDev();
 document.getElementById('gear').onclick = () => { ui.profileMode = ui.profileMode === 'settings' ? 'view' : 'settings'; show('profile'); };
@@ -1880,7 +1978,7 @@ function renderSoon() {
     <div>Things that aren't built yet:</div>
     <ul style="margin:0;line-height:1.8">
       <li>More units (${COMING.length} planned, from ratios and Pythagoras up to intro to calculus)</li>
-      <li>Placement test for the whole path (for now, use ⏩ Test out on each unit)</li>
+      <li>Placement test for the whole path (for now, use ${ic('forward')} Test out on each unit)</li>
       <li>Problem-solving puzzles side path</li>
     </ul></div>`;
 }
@@ -1892,13 +1990,13 @@ function stageProgress(stage) {
 // Your progress, pinned to the top of Learn: it stays in view while you scroll the path.
 function progressStrip() {
   const item = (label, pct) => `<div class="ps-item"><b>${label}</b><div class="mini"><div style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
-  return `<div class="progress-strip">📈${item('Stage 0', stageProgress('book'))}${item('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>`;
+  return `<div class="progress-strip">${ic('chart')}${item('Stage 0', stageProgress('book'))}${item('Stage 1', stageProgress('main'))}<small>${lessonsDone()} of ${UNITS.reduce((n, u) => n + u.lessons.length, 0)} lessons done</small></div>`;
 }
 function todayPanel() {
   const due = dueReviews().length, waiting = Object.keys(state.review).length - due, dc = state.daily[today()];
   return `<div class="today stagger">
-    <div class="tile"><b>📝 Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
-    <div class="tile"><b>⭐ Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
+    <div class="tile"><b>${ic('note')} Review mistakes</b><small>${due ? `${due} topic${due > 1 ? 's' : ''} ready to review` : waiting ? `Nothing due now. ${waiting} coming back later.` : 'No mistakes to review. Nice.'}</small><button id="reviewBtn" ${due ? '' : 'disabled'}>Review</button></div>
+    <div class="tile"><b>${ic('star')} Daily challenge</b><small>${dc === undefined ? `One harder question, +${XP_DAILY} XP` : dc ? 'Done for today ✓ Come back tomorrow.' : 'Missed it today. New one tomorrow.'}</small><button id="dailyBtn" ${dc === undefined ? '' : 'disabled'}>Start</button></div>
   </div>`;
 }
 function renderPath() {
@@ -1914,7 +2012,7 @@ function renderPath() {
     const canTestOut = !state.done[u.id + 'test'] && status(u.lessons[0].id) !== 'locked';
     html += `<section class="unit"><div class="unit-head reveal"><div class="uh-text"><b>Unit ${ui + 1}: ${u.title}</b><small>${u.desc}</small></div>
       <div class="uh-prog"><div class="mini"><div style="width:0" data-w="${nDone / ids.length * 100}%"></div></div>${nDone}/${ids.length}</div>
-      ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">⏩ Test out</button>` : ''}</div>`;
+      ${canTestOut ? `<button class="testout" data-to="${u.id}" title="Pass a harder test (${TEST_PASS}/${TEST_COUNT}) to skip this unit">${ic('forward')} Test out</button>` : ''}</div>`;
     u.lessons.forEach((l, li) => {
       const st = status(l.id);
       const dx = Math.round(Math.sin(li * 1.1) * 80); // labels go on the outer side, away from the line
@@ -2246,7 +2344,7 @@ function startDaily() {
   const seed = Number(today().replace(/-/g, '')), rand = seeded(seed), real = Math.random;
   Math.random = rand; let l, item;
   try { l = findLesson(pool[Math.floor(rand() * pool.length)]); item = l.gen(3); } finally { Math.random = real; }
-  run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, id: null, title: '⭐ Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
+  run = { notes: '', cards: [{ kind: `Daily challenge · ${TOPIC[l.id]}`, lid: l.id, item: Object.assign(item, { hint: l.idea }) }], i: 0, isTest: false, daily: true, id: null, title: ic('star') + ' Daily challenge', xp: 0, correct: 0, misses: 0, total: 1 };
   swap('zoom', renderCard);
 }
 
@@ -2296,17 +2394,17 @@ function renderCard() {
   let body = `<div class="kind">${c.kind}</div>`;
   if (c.item) {
     const it = c.item;
-    body += `${it.calc ? '<div class="calc-tag">🧮 Calculator allowed for this one</div>' : ''}<div class="q">${it.q}</div>`;
+    body += `${it.calc ? '<div class="calc-tag">' + ic('calc') + ' Calculator allowed for this one</div>' : ''}<div class="q">${it.q}</div>`;
     body += it.choices
       ? `<div class="choices">${shuffle(it.choices).map((ch, i) => `<button class="choice"><span class="kn">${i + 1}</span><span class="ct">${ch}</span></button>`).join('')}</div>`
       : `<div class="answer-row"><input type="text" id="ans" autocomplete="off" aria-label="Your answer">${it.suffix ? `<span class="q">${it.suffix}</span>` : ''}</div>`;
-    body += `<div><button id="hintBtn" aria-expanded="false" title="Shortcut: H">💡 Hint</button></div><div id="fb"></div>`;
+    body += `<div><button id="hintBtn" aria-expanded="false" title="Shortcut: H">${ic('bulb')} Hint</button></div><div id="fb"></div>`;
   } else body += `<div class="q">${c.html}</div>`;
 
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
     <div class="actions"><button id="quit">${run.practice ? '■ Stop' : '✕ Quit'}</button><b>${run.title}</b><span>${run.practice ? `Level ${practiceLevel() + 1} · ✓ ${run.correct} / ${run.answered}` : ''}</span></div>
     <div class="bar"><div style="width:${run.shownPct ?? 0}%"></div></div>
-    <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>💡 Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
+    <div class="play"><div class="left"><div class="card">${body}</div>${c.item ? `<div class="hint" id="hint" hidden><b>${ic('bulb')} Hint</b><div>${c.item.hint}</div></div>` : ''}<div class="actions" style="margin-top:12px"><span></span><button class="primary" id="go">${c.item ? 'Check' : 'Continue'}</button></div></div>
       ${c.item ? `<div class="side">${c.item.calc ? calcHTML() : ''}<div class="notepad"><div class="actions"><b>Notepad</b><button id="notesClear">Clear</button></div><textarea id="notes" aria-label="Notepad" placeholder="Write your working here"></textarea></div></div>` : ''}</div>
 </div>`;
   const barFill = app.querySelector('.bar > div'); run.shownPct = pct;
@@ -2409,11 +2507,11 @@ function finish() {
   const answered = run.practice || run.review || run.daily ? run.answered || 0 : run.total;
   const right = run.practice || run.isTest || run.review || run.daily ? run.correct : run.total - run.misses;
   const acc = answered ? Math.round(right / answered * 100) : 0;
-  const [icon, head, sub] = run.daily ? (run.correct ? ['⭐', 'Challenge beaten!', 'Come back tomorrow for a new one.'] : ['🌙', 'Not this time', "It's been added to your review pile. New challenge tomorrow."])
-    : run.review ? ['📝', 'Review done', Object.keys(state.review).length ? 'Topics you got right come back later, spaced out, until they stick.' : 'Your review pile is empty!']
-    : run.isTest ? (passed ? ['🏆', run.testOut ? 'Tested out!' : 'Unit passed!', run.testOut ? `You skipped "${run.unit.title}". All its notes are unlocked.` : 'Next unit unlocked.'] : ['💪', 'Not quite', `You need ${TEST_PASS}/${TEST_COUNT} to pass. Your mistakes went to the review pile.`])
-    : run.practice ? ['🎯', 'Practice stopped', `You reached level ${practiceLevel() + 1}.`]
-    : ['🎉', 'Lesson complete!', 'A new entry was added to your Notes.'];
+  const [icon, head, sub] = run.daily ? (run.correct ? [ic('star', 'ic-big'), 'Challenge beaten!', 'Come back tomorrow for a new one.'] : [ic('moon', 'ic-big'), 'Not this time', "It's been added to your review pile. New challenge tomorrow."])
+    : run.review ? [ic('note', 'ic-big'), 'Review done', Object.keys(state.review).length ? 'Topics you got right come back later, spaced out, until they stick.' : 'Your review pile is empty!']
+    : run.isTest ? (passed ? [ic('trophy', 'ic-big'), run.testOut ? 'Tested out!' : 'Unit passed!', run.testOut ? `You skipped "${run.unit.title}". All its notes are unlocked.` : 'Next unit unlocked.'] : [ic('retry', 'ic-big'), 'Not quite', `You need ${TEST_PASS}/${TEST_COUNT} to pass. Your mistakes went to the review pile.`])
+    : run.practice ? [ic('target', 'ic-big'), 'Practice stopped', `You reached level ${practiceLevel() + 1}.`]
+    : [ic('party', 'ic-big'), 'Lesson complete!', 'A new entry was added to your Notes.'];
   const streakNow = shownStreak(), goal = state.settings.goal, todayXp = state.days[today()] || 0;
   const earned = passed ? run.xp : 0, xpBefore = Math.max(0, todayXp - earned);
   if (passed && run.id) ui.justDone = run.id;
@@ -2422,7 +2520,7 @@ function finish() {
     <div class="stats3">
       <div><b class="bump" id="xpWon">+${earned}</b><small>XP earned</small></div>
       <div><b>${acc}%</b><small>accuracy (${right}/${answered})</small></div>
-      <div><b class="${streakNow > streakBefore ? 'bump' : ''}">🔥 ${streakNow}</b><small>${streakNow > streakBefore ? 'streak up!' : 'day streak'}</small></div>
+      <div><b class="${streakNow > streakBefore ? 'bump' : ''}">${ic('fire')} ${streakNow}</b><small>${streakNow > streakBefore ? 'streak up!' : 'day streak'}</small></div>
     </div>
     <div class="goalbar"><small>Daily goal: ${Math.min(todayXp, goal)} / ${goal} XP ${todayXp >= goal ? '✓' : ''}</small><div class="mini"><div id="goalFill" style="width:${Math.min(100, (calm.matches ? todayXp : xpBefore) / goal * 100)}%"></div></div></div>
     <button class="primary" id="go">${run.back === 'notes' ? 'Back to notes' : 'Back to path'}</button></div>`;
