@@ -2015,9 +2015,9 @@ let lensQueued = false;
 addEventListener('scroll', () => { if (lensQueued) return; lensQueued = true; requestAnimationFrame(() => { lensQueued = false; fisheye(); }); }, { passive: true });
 addEventListener('resize', () => { if (view === 'learn' && !run && app.querySelector('.unit')) { measurePath(); fisheye(); } });
 
-// Living background on Learn: faint maths symbols and shapes drifting like particles in water. Near ones are bigger,
+// Living background on every page: faint maths symbols and shapes drifting like particles in water. Near ones are bigger,
 // move faster with the page (parallax) and are a touch stronger; far ones are small and slow. Scrolling stirs them,
-// the mouse gently pushes them aside, and they fade out over the middle column so the path stays clean.
+// the mouse gently pushes them aside, and they fade out over the middle column so the content stays clean.
 const sea = { cv: document.getElementById('sea'), bits: [], raf: 0, last: 0, a: 0, vy: 0, mx: -1e4, my: -1e4, w: 0, h: 0, col: 720, ink: '#6b7285' };
 const SEA_GLYPHS = ['π', '√', '∑', '∞', '÷', '×', '+', '−', '=', '%', 'x²', '∫', 'θ', 'Δ', '½', '∠', 'y', '7', '3', '0'];
 function seaSize() {
@@ -2039,8 +2039,8 @@ function seaSize() {
 }
 function seaStep(t) {
   const dt = Math.min(1 / 30, (t - (sea.last || t)) / 1000) || 1 / 60, s = t / 1000; sea.last = t;
-  const on = view === 'learn' && !run;
-  sea.a += ((on ? 1 : 0) - sea.a) * Math.min(1, dt * 5);
+  // On every page; a bit calmer during a lesson so it never distracts from the question.
+  sea.a += ((run ? .6 : 1) - sea.a) * Math.min(1, dt * 5);
   sea.vy *= Math.exp(-dt * 3);
   const g = sea.cv.getContext('2d'); g.clearRect(0, 0, sea.w, sea.h);
   if (sea.a > .01) {
