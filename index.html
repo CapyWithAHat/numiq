@@ -251,13 +251,15 @@ html, body { overflow-anchor: none; } /* the browser's scroll anchoring nudged t
 /* ---------- Numiq icons (ic() in script) ---------- */
 .ic { width: 1.2em; height: 1.2em; display: inline-block; vertical-align: -.22em; overflow: visible; flex: none; }
 .ic * { transform-box: fill-box; transform-origin: center; }
-.stats .ic { width: 1.35em; height: 1.35em; vertical-align: -.3em; }
+/* the flame: its shape morphs (SMIL in the icon) while the whole thing sways from its base and sheds an ember */
+.ic-fire { width: 1.5em; height: 1.5em; vertical-align: -.36em; margin: -.1em -.05em; transform-origin: 50% 92%; animation: ic-sway 2.2s ease-in-out infinite; filter: drop-shadow(0 0 2px rgb(255 120 40 / .35)); }
+.ic-fire .ember { animation: ic-ember 1.6s ease-out infinite; }
+@keyframes ic-sway { 0%, 100% { rotate: -3deg; scale: 1 1; } 50% { rotate: 3deg; scale: 1.02 .97; } }
+@keyframes ic-ember { 0% { translate: 0 6px; opacity: 0; } 25% { opacity: 1; } 100% { translate: 2px -5px; opacity: 0; scale: .4; } }
+.stats .ic:not(.ic-fire) { width: 1.35em; height: 1.35em; vertical-align: -.3em; }
+.stats .ic-fire { width: 1.7em; height: 1.7em; vertical-align: -.45em; }
 .ic-big { width: 1.5em; height: 1.5em; vertical-align: middle; }
 /* idle life */
-.ic-fire { transform-origin: 50% 90%; animation: ic-flicker 1.8s ease-in-out infinite; }
-.ic-fire .fl-i { transform-origin: 50% 100%; animation: ic-flicker-in 1.1s ease-in-out infinite; }
-@keyframes ic-flicker { 0%, 100% { scale: 1 1; rotate: 0deg; } 30% { scale: .97 1.05; rotate: -2deg; } 60% { scale: 1.03 .97; rotate: 2deg; } }
-@keyframes ic-flicker-in { 0%, 100% { scale: 1; } 50% { scale: .82 1.12; } }
 .ic-star { animation: ic-twinkle 5s ease-in-out infinite; }
 @keyframes ic-twinkle { 0%, 86%, 100% { rotate: 0deg; scale: 1; } 90% { rotate: 18deg; scale: 1.18; } 95% { rotate: -6deg; scale: .96; } }
 .ic-chart .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ic-draw 1s .3s var(--ease-out) forwards; }
@@ -506,7 +508,7 @@ button:disabled:not(.node) { box-shadow: none; }
 
 <script>
 const ICONS = {
-  fire: '<g stroke="none"><path class="fl-o" d="M12 2.5c1.2 3.6 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.7 1.3-4.3 2.7-5.3.2 1.9 1 3 2.1 3.4C10.9 8.7 10.8 5.6 12 2.5z" fill="#ff7a2f"/><path class="fl-i" d="M12 12.2c.7 1.7 2.7 2.5 2.7 4.8a2.7 2.7 0 0 1-5.4 0c0-1.5.9-2.4 1.7-3 .1.9.5 1.3 1 1.5-.1-1.2-.2-2.3 0-3.3z" fill="#ffd166"/></g>',
+  fire: '<g stroke="none"><path d="M12 1.8C13.4 5.4 18.8 7.8 18.8 14C18.8 18.4 15.8 22 12 22C8.2 22 5.2 18.4 5.2 14C5.2 10.6 7 8.6 8.2 6.4C8.6 9 9.6 10.4 10.8 10.8C10.2 7.6 10.6 4.2 12 1.8Z" fill="#ff5a2a"><animate attributeName="d" dur="1.3s" repeatCount="indefinite" values="M12 1.8C13.4 5.4 18.8 7.8 18.8 14C18.8 18.4 15.8 22 12 22C8.2 22 5.2 18.4 5.2 14C5.2 10.6 7 8.6 8.2 6.4C8.6 9 9.6 10.4 10.8 10.8C10.2 7.6 10.6 4.2 12 1.8Z;M13.4 2.6C14.8 6.2 19.3 7.8 19.3 14C19.3 18.4 15.8 22 12 22C8.2 22 5.6 18.4 5.6 14C5.6 10.6 7 8.6 8.2 7.2C8.6 9.8 9.6 10.4 10.8 10.8C10.2 7.6 12 5 13.4 2.6Z;M10.8 2.2C12.2 5.8 18.5 7.8 18.5 14C18.5 18.4 15.8 22 12 22C8.2 22 4.7 18.4 4.7 14C4.7 10.6 7 8.6 8.2 5.8C8.6 8.4 9.6 10.4 10.8 10.8C10.2 7.6 9.4 4.6 10.8 2.2Z;M12.6 1.4C14 5 19 7.8 19 14C19 18.4 15.8 22 12 22C8.2 22 5 18.4 5 14C5 10.6 7 8.6 8.2 6.8C8.6 9.4 9.6 10.4 10.8 10.8C10.2 7.6 11.2 3.8 12.6 1.4Z;M12 1.8C13.4 5.4 18.8 7.8 18.8 14C18.8 18.4 15.8 22 12 22C8.2 22 5.2 18.4 5.2 14C5.2 10.6 7 8.6 8.2 6.4C8.6 9 9.6 10.4 10.8 10.8C10.2 7.6 10.6 4.2 12 1.8Z" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1"/></path><path d="M12 1.8C13.4 5.4 18.8 7.8 18.8 14C18.8 18.4 15.8 22 12 22C8.2 22 5.2 18.4 5.2 14C5.2 10.6 7 8.6 8.2 6.4C8.6 9 9.6 10.4 10.8 10.8C10.2 7.6 10.6 4.2 12 1.8Z" fill="#ff9a3c" style="transform-box:view-box;transform-origin:12px 22px;transform:scale(.74)"><animate attributeName="d" dur="1s" repeatCount="indefinite" values="M10.8 2.2C12.2 5.8 18.5 7.8 18.5 14C18.5 18.4 15.8 22 12 22C8.2 22 4.7 18.4 4.7 14C4.7 10.6 7 8.6 8.2 5.8C8.6 8.4 9.6 10.4 10.8 10.8C10.2 7.6 9.4 4.6 10.8 2.2Z;M12.6 1.4C14 5 19 7.8 19 14C19 18.4 15.8 22 12 22C8.2 22 5 18.4 5 14C5 10.6 7 8.6 8.2 6.8C8.6 9.4 9.6 10.4 10.8 10.8C10.2 7.6 11.2 3.8 12.6 1.4Z;M12 1.8C13.4 5.4 18.8 7.8 18.8 14C18.8 18.4 15.8 22 12 22C8.2 22 5.2 18.4 5.2 14C5.2 10.6 7 8.6 8.2 6.4C8.6 9 9.6 10.4 10.8 10.8C10.2 7.6 10.6 4.2 12 1.8Z;M13.4 2.6C14.8 6.2 19.3 7.8 19.3 14C19.3 18.4 15.8 22 12 22C8.2 22 5.6 18.4 5.6 14C5.6 10.6 7 8.6 8.2 7.2C8.6 9.8 9.6 10.4 10.8 10.8C10.2 7.6 12 5 13.4 2.6Z;M10.8 2.2C12.2 5.8 18.5 7.8 18.5 14C18.5 18.4 15.8 22 12 22C8.2 22 4.7 18.4 4.7 14C4.7 10.6 7 8.6 8.2 5.8C8.6 8.4 9.6 10.4 10.8 10.8C10.2 7.6 9.4 4.6 10.8 2.2Z" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1"/></path><path d="M12 10.8C12.8 13.2 15.4 15 15.4 18C15.4 20.4 13.8 22 12 22C10.2 22 8.6 20.4 8.6 18C8.6 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 11.4 12.2 12 10.8Z" fill="#ffd166"><animate attributeName="d" dur=".8s" repeatCount="indefinite" values="M12 10.8C12.8 13.2 15.4 15 15.4 18C15.4 20.4 13.8 22 12 22C10.2 22 8.6 20.4 8.6 18C8.6 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 11.4 12.2 12 10.8Z;M12.9 11.6C13.7 14 15.7 15 15.7 18C15.7 20.4 13.8 22 12 22C10.2 22 8.3 20.4 8.3 18C8.3 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 12.3 13 12.9 11.6Z;M11.2 11.2C12 13.6 15.2 15 15.2 18C15.2 20.4 13.8 22 12 22C10.2 22 8.8 20.4 8.8 18C8.8 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 10.6 12.6 11.2 11.2Z;M12.3 10.4C13.1 12.8 15.5 15 15.5 18C15.5 20.4 13.8 22 12 22C10.2 22 8.5 20.4 8.5 18C8.5 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 11.7 11.8 12.3 10.4Z;M12 10.8C12.8 13.2 15.4 15 15.4 18C15.4 20.4 13.8 22 12 22C10.2 22 8.6 20.4 8.6 18C8.6 15.6 10 14.6 10.6 13.4C11 14.6 11.6 15.2 12.2 15.4C11.8 14 11.4 12.2 12 10.8Z" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1"/></path><circle class="ember" cx="15.5" cy="6" r=".9" fill="#ffb347"/></g>',
   star: '<path d="M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z" fill="#ffc93c" stroke="#e9a400" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.2 9.6l1.4-.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>',
   screen: '<rect x="3" y="4" width="18" height="12.5" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="3" y="4" width="18" height="12.5" rx="2.5"/><path d="M12 16.5V20M8 20h8"/>',
   lock: '<path class="shackle" d="M8 11V7.5a4 4 0 0 1 8 0V11"/><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" fill-opacity=".16"/><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M12 15v2"/>',
@@ -535,7 +537,7 @@ const ICONS = {
 // Numiq's own icon set (replaces keyboard emojis). Each is a tiny drawing that inherits the text colour, with
 // a few warm accents (fire, stars, trophy). They move a little: some idle (the flame flickers), most react when you
 // hover the button or card they sit in. See the .ic CSS.
-const ic = (n, cls = '') => `<svg class="ic ic-${n} ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const ic = (n, cls = '') => `<svg class="ic ic-${n} ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${matchMedia('(prefers-reduced-motion: reduce)').matches ? (ICONS[n] || '').replace(/<animate[^>]*\/>/g, '') : ICONS[n] || ''}</svg>`;
 document.querySelectorAll('i[data-ic]').forEach(e => { e.outerHTML = ic(e.dataset.ic); });
 // ---------- helpers ----------
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
