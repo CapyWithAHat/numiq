@@ -40,7 +40,7 @@ button { font: inherit; cursor: pointer; border-radius: var(--r-sm); border: 1px
 button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button:disabled { opacity: .5; cursor: default; }
-.unit { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 8px; }
+.unit { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-block: 8px 30px; } /* bottom room so the last node's ring clears the next unit's card */
 .unit-head { align-self: stretch; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); }
 .unit-head small { color: var(--muted); display: block; }
 .unit-head { display: flex; align-items: center; gap: 12px; }
@@ -79,7 +79,7 @@ button:disabled { opacity: .5; cursor: default; }
 /* Same chunky ledge as the buttons and the path line: a darker edge sits under each circle (fades with --fade too). */
 .node { --ledge-c: color-mix(in srgb, var(--locked), #000 14%); --ledge: 0 4px 0 color-mix(in srgb, var(--ledge-c), var(--bg) calc(var(--fade, 0) * 100%)); box-shadow: var(--ledge); }
 .node.done { --ledge-c: color-mix(in srgb, var(--done), #000 22%); }
-.node.current { --ledge-c: color-mix(in srgb, var(--accent), #000 25%); box-shadow: var(--ledge), 0 2px 0 8px color-mix(in srgb, var(--accent) 30%, transparent); } /* ring nudged down 2px so it centres on circle + ledge */
+.node.current { --ledge-c: color-mix(in srgb, var(--accent), #000 25%); box-shadow: var(--ledge), 0 2px 0 8px color-mix(in srgb, var(--accent) 30%, var(--bg)); } /* ring nudged down 2px so it centres on circle + ledge; solid so the path line hides behind it */
 .node.locked:disabled { --ledge-c: color-mix(in srgb, color-mix(in srgb, var(--locked) 50%, var(--bg)), #000 9%); }
 .node .ic-check { width: 28px; height: 28px; vertical-align: middle; }
 .node.locked { background-color: var(--locked); cursor: default; }
@@ -366,7 +366,7 @@ button:disabled:not(.node) { box-shadow: none; }
 .node.current { animation: ring 2.4s ease-in-out infinite; }
 .node.just { animation: node-in var(--t-slow) var(--ease-spring) .55s both; }
 .node.current.arrive { animation: node-in var(--t-slow) var(--ease-spring) .8s both, ring 2.4s ease-in-out 1.2s infinite; }
-@keyframes ring { 50% { box-shadow: var(--ledge), 0 2px 0 12px color-mix(in srgb, var(--accent) 14%, transparent); } }
+@keyframes ring { 50% { box-shadow: var(--ledge), 0 2px 0 12px color-mix(in srgb, var(--accent) 14%, var(--bg)); } }
 @keyframes node-in { 0% { scale: .5; } 100% { scale: var(--lens, 1); } }
 
 /* tab bar: one pill slides to the active tab */
